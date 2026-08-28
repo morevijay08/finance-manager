@@ -1,5 +1,8 @@
 package com.finance.manager.controller;
 
+import com.finance.manager.firebase.FirebaseAuthException;
+import com.finance.manager.service.FirebaseAuthService;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -11,6 +14,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.concurrent.CompletionException;
 
 public class RegisterController {
 
@@ -19,6 +23,8 @@ public class RegisterController {
     public PasswordField passwordField;
     public PasswordField confirmPasswordField;
     public Label errorLabel;
+
+    private final FirebaseAuthService authService = new FirebaseAuthService();
 
     public void handleRegister(ActionEvent event) {
         String name = nameField.getText().trim();
@@ -51,8 +57,19 @@ public class RegisterController {
             return;
         }
 
-        // Firebase Authentication will be connected in Phase 4.
-        showError("Authentication is not connected yet.");
+        errorLabel.setText("Creating account...");
+        authService.register(name, email, password)
+                .thenAccept(session -> Platform.runLater(() -> {
+                    try {
+                        switchScene(event, "/fxml/Main.fxml");
+                    } catch (IOException e) {
+                        showError("Account created, but the application could not be opened.");
+                    }
+                }))
+                .exceptionally(throwable -> {
+                    Platform.runLater(() -> showError(authenticationMessage(throwable)));
+                    return null;
+                });
     }
 
     public void handleLogin(ActionEvent event) throws IOException {
@@ -61,6 +78,20 @@ public class RegisterController {
 
     private void showError(String message) {
         errorLabel.setText(message);
+    }
+
+    private String authenticationMessage(Throwable throwable) {
+        Throwable cause = throwable;
+        if (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) {
+            return authException.getMessage();
+        }
+        if (cause instanceof IllegalStateException) {
+            return cause.getMessage();
+        }
+        return "Unable to create the account. Please try again.";
     }
 
     private boolean isValidEmail(String email) {
