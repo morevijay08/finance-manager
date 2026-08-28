@@ -1,0 +1,12 @@
+target/
+.idea/
+.vscode/
+*.iml
+
+# Local environment/configuration files
+.env
+.env.*
+
+# Firebase/service-account credentials - never commit these
+serviceAccountKey.json
+firebase-service-account.json
