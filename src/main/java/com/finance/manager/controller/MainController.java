@@ -29,8 +29,10 @@ public class MainController {
         authService.logout();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Login.fxml"));
         Parent root = loader.load();
+        Scene scene = new Scene(root, 900, 600);
+        scene.getStylesheets().add(getClass().getResource("/css/application.css").toExternalForm());
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(new Scene(root, 900, 600));
+        stage.setScene(scene);
         stage.show();
     }
 }
