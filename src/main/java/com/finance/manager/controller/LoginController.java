@@ -78,6 +78,9 @@ public class LoginController {
         if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) {
             return authException.getMessage();
         }
+        if (cause instanceof IllegalStateException) {
+            return cause.getMessage();
+        }
         return "Unable to sign in. Check your Firebase configuration and try again.";
     }
 
@@ -88,8 +91,10 @@ public class LoginController {
     private void switchScene(ActionEvent event, String resource) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(resource));
         Parent root = loader.load();
+        Scene scene = new Scene(root, 900, 600);
+        scene.getStylesheets().add(getClass().getResource("/css/application.css").toExternalForm());
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(new Scene(root, 900, 600));
+        stage.setScene(scene);
         stage.show();
     }
 }
