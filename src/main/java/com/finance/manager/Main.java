@@ -1,21 +1,25 @@
 package com.finance.manager;
 
 import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+
+import java.io.IOException;
 
 public class Main extends Application {
 
     @Override
-    public void start(Stage stage) {
-        Label welcomeLabel = new Label("Khatabook Finance Manager");
-        StackPane root = new StackPane(welcomeLabel);
+    public void start(Stage stage) throws IOException {
+        FXMLLoader loader = new FXMLLoader(
+                Main.class.getResource("/fxml/Main.fxml")
+        );
+        Parent root = loader.load();
 
         Scene scene = new Scene(root, 900, 600);
         scene.getStylesheets().add(
-                getClass().getResource("/css/application.css").toExternalForm()
+                Main.class.getResource("/css/application.css").toExternalForm()
         );
 
         stage.setTitle("Khatabook Finance Manager");
