@@ -23,8 +23,8 @@ public class FirebaseAuthService {
             "https://securetoken.googleapis.com/v1/token?key=";
     private static final long EXPIRY_SAFETY_WINDOW_MS = 60_000L;
 
+    private static volatile AuthSession currentSession;
     private final HttpClient httpClient = HttpClient.newHttpClient();
-    private volatile AuthSession currentSession;
 
     public CompletableFuture<AuthSession> register(String name, String email, String password) {
         return CompletableFuture.supplyAsync(() -> {
@@ -36,7 +36,6 @@ public class FirebaseAuthService {
 
                 AuthSession session = authenticate("signUp", request);
 
-                // Firebase Auth supports a displayName update through the same REST API.
                 JsonObject profile = new JsonObject();
                 profile.addProperty("idToken", session.getIdToken());
                 profile.addProperty("displayName", name);
@@ -148,7 +147,6 @@ public class FirebaseAuthService {
     }
 
     public void logout() {
-        // Firebase ID tokens expire server-side; logout clears this application's session.
         currentSession = null;
     }
 
