@@ -3,8 +3,78 @@ root {
     -fx-background-color: #f5f7fa;
 }
 
-.label {
+.auth-screen {
+    -fx-background-color: #f5f7fa;
+}
+
+.app-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2937;
+}
+
+.screen-title {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-text-fill: #1f2937;
+}
+
+.subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6b7280;
+}
+
+.field-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #374151;
+}
+
+.text-field,
+.password-field {
+    -fx-pref-height: 40px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-border-color: #d1d5db;
+    -fx-background-color: white;
+    -fx-padding: 0 12px;
+}
+
+.text-field:focused,
+.password-field:focused {
+    -fx-border-color: #2563eb;
+    -fx-border-width: 1.5px;
+}
+
+.primary-button {
+    -fx-pref-height: 42px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #1d4ed8;
+}
+
+.hyperlink {
+    -fx-text-fill: #2563eb;
+    -fx-border-color: transparent;
+    -fx-padding: 4px;
+    -fx-cursor: hand;
+}
+
+.error-label {
+    -fx-min-height: 20px;
+    -fx-font-size: 12px;
+    -fx-text-fill: #dc2626;
+}
+
+.message-label {
+    -fx-min-height: 20px;
+    -fx-font-size: 12px;
+    -fx-text-fill: #374151;
 }
