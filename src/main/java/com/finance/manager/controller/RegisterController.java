@@ -91,7 +91,7 @@ public class RegisterController {
         if (cause instanceof IllegalStateException) {
             return cause.getMessage();
         }
-        return "Unable to create the account. Please try again.";
+       return "Unable to create the account. Please try again.";
     }
 
     private boolean isValidEmail(String email) {

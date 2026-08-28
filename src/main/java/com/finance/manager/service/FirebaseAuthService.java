@@ -42,11 +42,10 @@ public class FirebaseAuthService {
                 profile.addProperty("returnSecureToken", true);
 
                 try {
-                    JsonObject response = postJson("update", profile);
-                    session = sessionFromResponse(response, session.getEmail());
-                } catch (FirebaseAuthException ignored) {
-                    // Account creation succeeded. The display name can be stored in Firestore later.
-                }
+    postJson("update", profile);
+} catch (FirebaseAuthException ignored) {
+    // Account creation succeeded. The display name can be stored in Firestore later.
+}
 
                 currentSession = session;
                 return session;
