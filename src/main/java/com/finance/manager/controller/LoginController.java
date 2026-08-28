@@ -1,5 +1,8 @@
 package com.finance.manager.controller;
 
+import com.finance.manager.firebase.FirebaseAuthException;
+import com.finance.manager.service.FirebaseAuthService;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -11,12 +14,15 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.concurrent.CompletionException;
 
 public class LoginController {
 
     public TextField emailField;
     public PasswordField passwordField;
     public Label errorLabel;
+
+    private final FirebaseAuthService authService = new FirebaseAuthService();
 
     public void handleLogin(ActionEvent event) {
         String email = emailField.getText().trim();
@@ -37,8 +43,19 @@ public class LoginController {
             return;
         }
 
-        // Firebase Authentication will be connected in Phase 4.
-        showError("Authentication is not connected yet.");
+        errorLabel.setText("Signing in...");
+        authService.signIn(email, password)
+                .thenAccept(session -> Platform.runLater(() -> {
+                    try {
+                        switchScene(event, "/fxml/Main.fxml");
+                    } catch (IOException e) {
+                        showError("Unable to open the application.");
+                    }
+                }))
+                .exceptionally(throwable -> {
+                    Platform.runLater(() -> showError(authenticationMessage(throwable)));
+                    return null;
+                });
     }
 
     public void handleRegister(ActionEvent event) throws IOException {
@@ -51,6 +68,17 @@ public class LoginController {
 
     private void showError(String message) {
         errorLabel.setText(message);
+    }
+
+    private String authenticationMessage(Throwable throwable) {
+        Throwable cause = throwable;
+        if (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) {
+            return authException.getMessage();
+        }
+        return "Unable to sign in. Check your Firebase configuration and try again.";
     }
 
     private boolean isValidEmail(String email) {
