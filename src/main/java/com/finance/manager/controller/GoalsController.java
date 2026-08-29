@@ -133,9 +133,7 @@ public class GoalsController {
 
     private void renderGoals() {
         goalsBox.getChildren().clear();
-        for (FinancialGoal goal : goals) {
-            goalsBox.getChildren().add(createGoalCard(goal));
-        }
+        for (FinancialGoal goal : goals) goalsBox.getChildren().add(createGoalCard(goal));
     }
 
     private VBox createGoalCard(FinancialGoal goal) {
@@ -152,15 +150,12 @@ public class GoalsController {
 
         ProgressBar progress = new ProgressBar(goal.getProgress());
         progress.setMaxWidth(Double.MAX_VALUE);
-
         Label details = new Label(String.format(Locale.US, "Saved %s  •  Remaining %s  •  %.1f%%",
                 formatMoney(goal.getSavedAmount()), formatMoney(goal.getRemainingAmount()), goal.getProgress() * 100));
         details.getStyleClass().add("subtitle");
-
         Button delete = new Button("Delete");
         delete.getStyleClass().add("secondary-button");
         delete.setOnAction(event -> deleteGoal(goal));
-
         card.getChildren().addAll(header, progress, details, delete);
         return card;
     }
@@ -201,14 +196,10 @@ public class GoalsController {
             if (amount <= 0 || recurringNextDatePicker.getValue() == null) throw new NumberFormatException();
 
             RecurringTransaction item = new RecurringTransaction(
-                    null,
-                    Transaction.Type.valueOf(recurringTypeCombo.getValue()),
-                    amount,
-                    recurringCategoryCombo.getValue(),
-                    recurringDescriptionField.getText().trim(),
+                    null, Transaction.Type.valueOf(recurringTypeCombo.getValue()), amount,
+                    recurringCategoryCombo.getValue(), recurringDescriptionField.getText().trim(),
                     RecurringTransaction.Frequency.valueOf(recurringFrequencyCombo.getValue()),
-                    recurringNextDatePicker.getValue(),
-                    true);
+                    recurringNextDatePicker.getValue(), true);
 
             addRecurringButton.setDisable(true);
             recurringStatusLabel.setText("Saving recurring transaction...");
@@ -227,7 +218,7 @@ public class GoalsController {
                         });
                         return null;
                     });
-        } catch (NumberFormatException | IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             recurringStatusLabel.setText("Enter a valid amount and next date.");
         }
     }
@@ -269,8 +260,8 @@ public class GoalsController {
             LocalDate transactionDate = next;
             Transaction transaction = new Transaction(
                     null, item.getType(), item.getAmount(), item.getCategory(),
-                    item.getDescription().isBlank() ? "Recurring transaction" : item.getDescription(),
-                    transactionDate);
+                    item.getDescription() == null || item.getDescription().isBlank()
+                            ? "Recurring transaction" : item.getDescription(), transactionDate);
             chain = chain.thenCompose(v -> transactionRepository.addTransaction(session, transaction).thenApply(saved -> null));
             next = nextDate(next, item.getFrequency());
         }
@@ -289,15 +280,12 @@ public class GoalsController {
 
     private void renderRecurringTransactions() {
         recurringBox.getChildren().clear();
-        for (RecurringTransaction item : recurringTransactions) {
-            recurringBox.getChildren().add(createRecurringCard(item));
-        }
+        for (RecurringTransaction item : recurringTransactions) recurringBox.getChildren().add(createRecurringCard(item));
     }
 
     private VBox createRecurringCard(RecurringTransaction item) {
         VBox card = new VBox(7);
         card.getStyleClass().add("summary-card");
-
         HBox header = new HBox(10);
         Label title = new Label(String.format("%s • %s", item.getType(), formatMoney(item.getAmount())));
         title.getStyleClass().add("card-title");
@@ -315,13 +303,10 @@ public class GoalsController {
         Button toggle = new Button(item.isActive() ? "Pause" : "Resume");
         toggle.getStyleClass().add("secondary-button");
         toggle.setOnAction(event -> toggleRecurring(item));
-
         Button delete = new Button("Delete");
         delete.getStyleClass().add("secondary-button");
         delete.setOnAction(event -> deleteRecurring(item));
-
-        HBox actions = new HBox(8, toggle, delete);
-        card.getChildren().addAll(header, details, actions);
+        card.getChildren().addAll(header, details, new HBox(8, toggle, delete));
         return card;
     }
 
