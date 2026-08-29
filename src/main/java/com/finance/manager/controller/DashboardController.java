@@ -14,11 +14,20 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.PieChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.Month;
+import java.time.YearMonth;
+import java.time.format.TextStyle;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class DashboardController {
 
@@ -37,6 +46,8 @@ public class DashboardController {
     @FXML private TextField searchField;
     @FXML private ComboBox<String> filterTypeCombo;
     @FXML private ComboBox<String> filterCategoryCombo;
+    @FXML private BarChart<String, Number> monthlyChart;
+    @FXML private PieChart expenseChart;
     @FXML private TableView<Transaction> transactionTable;
     @FXML private TableColumn<Transaction, String> typeColumn;
     @FXML private TableColumn<Transaction, Number> amountColumn;
@@ -56,6 +67,7 @@ public class DashboardController {
         setupForm();
         setupTable();
         setupFilters();
+        setupCharts();
 
         AuthSession session = authService.getCurrentSession();
         if (session == null) {
@@ -118,6 +130,13 @@ public class DashboardController {
         filterCategoryCombo.valueProperty().addListener((observable, oldValue, newValue) -> applyFilters());
     }
 
+    private void setupCharts() {
+        monthlyChart.setLegendVisible(true);
+        monthlyChart.setAnimated(false);
+        expenseChart.setLegendVisible(true);
+        expenseChart.setAnimated(false);
+    }
+
     private void applyFilters() {
         if (filteredTransactions == null) return;
 
@@ -148,6 +167,7 @@ public class DashboardController {
             transactions.setAll(list);
             applyFilters();
             updateSummary();
+            updateCharts();
             statusLabel.setText("Ready");
         })).exceptionally(error -> {
             Platform.runLater(() -> statusLabel.setText("Could not load transactions."));
@@ -179,6 +199,7 @@ public class DashboardController {
                 transactions.add(0, saved);
                 applyFilters();
                 updateSummary();
+                updateCharts();
                 clearForm();
                 addButton.setDisable(false);
                 statusLabel.setText("Transaction added successfully.");
@@ -234,6 +255,7 @@ public class DashboardController {
             transactionRepository.updateTransaction(session, editingTransaction).thenAccept(updated -> Platform.runLater(() -> {
                 transactionTable.refresh();
                 updateSummary();
+                updateCharts();
                 applyFilters();
                 resetFormAndButton();
                 statusLabel.setText("Transaction updated successfully.");
@@ -275,6 +297,7 @@ public class DashboardController {
                     resetFormAndButton();
                 }
                 updateSummary();
+                updateCharts();
                 applyFilters();
                 statusLabel.setText("Transaction deleted successfully.");
             })).exceptionally(error -> {
@@ -282,6 +305,68 @@ public class DashboardController {
                 return null;
             });
         });
+    }
+
+    private void updateSummary() {
+        double income = transactions.stream().filter(t -> t.getType() == Transaction.Type.INCOME)
+                .mapToDouble(Transaction::getAmount).sum();
+        double expense = transactions.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE)
+                .mapToDouble(Transaction::getAmount).sum();
+        balanceLabel.setText(formatMoney(income - expense));
+        incomeLabel.setText(formatMoney(income));
+        expenseLabel.setText(formatMoney(expense));
+    }
+
+    private void updateCharts() {
+        updateMonthlyChart();
+        updateExpenseChart();
+    }
+
+    private void updateMonthlyChart() {
+        int year = LocalDate.now().getYear();
+        Map<YearMonth, double[]> totals = new LinkedHashMap<>();
+        for (int month = 1; month <= 12; month++) {
+            totals.put(YearMonth.of(year, month), new double[]{0.0, 0.0});
+        }
+
+        for (Transaction transaction : transactions) {
+            if (transaction.getDate() == null || transaction.getDate().getYear() != year) continue;
+            double[] values = totals.get(YearMonth.from(transaction.getDate()));
+            if (transaction.getType() == Transaction.Type.INCOME) {
+                values[0] += transaction.getAmount();
+            } else if (transaction.getType() == Transaction.Type.EXPENSE) {
+                values[1] += transaction.getAmount();
+            }
+        }
+
+        XYChart.Series<String, Number> incomeSeries = new XYChart.Series<>();
+        incomeSeries.setName("Income");
+        XYChart.Series<String, Number> expenseSeries = new XYChart.Series<>();
+        expenseSeries.setName("Expense");
+
+        for (Map.Entry<YearMonth, double[]> entry : totals.entrySet()) {
+            String month = entry.getKey().getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+            incomeSeries.getData().add(new XYChart.Data<>(month, entry.getValue()[0]));
+            expenseSeries.getData().add(new XYChart.Data<>(month, entry.getValue()[1]));
+        }
+
+        monthlyChart.getData().setAll(incomeSeries, expenseSeries);
+        monthlyChart.setTitle("Monthly Income vs Expense (" + year + ")");
+    }
+
+    private void updateExpenseChart() {
+        Map<String, Double> categoryTotals = new LinkedHashMap<>();
+        for (Transaction transaction : transactions) {
+            if (transaction.getType() != Transaction.Type.EXPENSE) continue;
+            String category = transaction.getCategory() == null || transaction.getCategory().isBlank()
+                    ? "Other" : transaction.getCategory();
+            categoryTotals.merge(category, transaction.getAmount(), Double::sum);
+        }
+
+        ObservableList<PieChart.Data> data = FXCollections.observableArrayList();
+        categoryTotals.forEach((category, amount) -> data.add(new PieChart.Data(category, amount)));
+        expenseChart.setData(data);
+        expenseChart.setTitle(categoryTotals.isEmpty() ? "Expense by Category" : "Expense by Category");
     }
 
     private void clearForm() {
@@ -302,16 +387,6 @@ public class DashboardController {
         addButton.setText("Add");
         addButton.setOnAction(event -> handleAddTransaction());
         addButton.setDisable(false);
-    }
-
-    private void updateSummary() {
-        double income = transactions.stream().filter(t -> t.getType() == Transaction.Type.INCOME)
-                .mapToDouble(Transaction::getAmount).sum();
-        double expense = transactions.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE)
-                .mapToDouble(Transaction::getAmount).sum();
-        balanceLabel.setText(formatMoney(income - expense));
-        incomeLabel.setText(formatMoney(income));
-        expenseLabel.setText(formatMoney(expense));
     }
 
     private String formatMoney(double value) {
