@@ -98,6 +98,8 @@
                         <PieChart fx:id="reportExpenseChart" title="Selected Month Expense by Category" animated="false" legendVisible="true" prefHeight="220" />
                     </VBox>
 
+                    <fx:include source="Goals.fxml" />
+
                     <VBox spacing="10" styleClass="summary-card budget-card">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <VBox HBox.hgrow="ALWAYS" spacing="3">
