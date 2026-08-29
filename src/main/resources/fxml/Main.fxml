@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
@@ -67,9 +66,16 @@
                 <Button fx:id="addButton" text="Add" onAction="#handleAddTransaction" styleClass="primary-button" GridPane.columnIndex="5" GridPane.rowIndex="1" />
             </GridPane>
 
-            <HBox alignment="CENTER_LEFT">
+            <HBox alignment="CENTER_LEFT" spacing="12">
                 <Label text="Recent Transactions" styleClass="section-title" />
             </HBox>
+
+            <HBox spacing="10" styleClass="filter-bar">
+                <TextField fx:id="searchField" promptText="Search description, category or type..." prefWidth="320" />
+                <ComboBox fx:id="filterTypeCombo" prefWidth="130" />
+                <ComboBox fx:id="filterCategoryCombo" prefWidth="150" />
+            </HBox>
+
             <TableView fx:id="transactionTable" VBox.vgrow="ALWAYS" styleClass="transaction-table">
                 <columns>
                     <TableColumn fx:id="typeColumn" text="Type" prefWidth="120" />
