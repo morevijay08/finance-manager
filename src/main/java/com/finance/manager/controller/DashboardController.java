@@ -7,6 +7,7 @@ import com.finance.manager.service.FirebaseAuthService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -33,6 +34,9 @@ public class DashboardController {
     @FXML private TextField descriptionField;
     @FXML private DatePicker datePicker;
     @FXML private Button addButton;
+    @FXML private TextField searchField;
+    @FXML private ComboBox<String> filterTypeCombo;
+    @FXML private ComboBox<String> filterCategoryCombo;
     @FXML private TableView<Transaction> transactionTable;
     @FXML private TableColumn<Transaction, String> typeColumn;
     @FXML private TableColumn<Transaction, Number> amountColumn;
@@ -44,24 +48,38 @@ public class DashboardController {
     private final FirebaseAuthService authService = new FirebaseAuthService();
     private final FirestoreTransactionRepository transactionRepository = new FirestoreTransactionRepository();
     private final ObservableList<Transaction> transactions = FXCollections.observableArrayList();
+    private FilteredList<Transaction> filteredTransactions;
     private Transaction editingTransaction;
 
     @FXML
     private void initialize() {
+        setupForm();
+        setupTable();
+        setupFilters();
+
         AuthSession session = authService.getCurrentSession();
         if (session == null) {
             welcomeLabel.setText("Session expired");
             emailLabel.setText("Please log in again.");
+            addButton.setDisable(true);
             return;
         }
 
+        emailLabel.setText(session.getEmail());
+        welcomeLabel.setText("Welcome");
+        loadTransactions(session);
+    }
+
+    private void setupForm() {
         typeCombo.setItems(FXCollections.observableArrayList("INCOME", "EXPENSE"));
         typeCombo.setValue("EXPENSE");
         categoryCombo.setItems(FXCollections.observableArrayList(
                 "Food", "Transport", "Shopping", "Bills", "Salary", "Business", "Health", "Education", "Other"));
         categoryCombo.setValue("Other");
         datePicker.setValue(LocalDate.now());
+    }
 
+    private void setupTable() {
         typeColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getType().name()));
         amountColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleDoubleProperty(data.getValue().getAmount()));
         categoryColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getCategory()));
@@ -83,17 +101,52 @@ public class DashboardController {
                 setGraphic(empty ? null : box);
             }
         });
-        transactionTable.setItems(transactions);
 
-        emailLabel.setText(session.getEmail());
-        welcomeLabel.setText("Welcome");
-        loadTransactions(session);
+        filteredTransactions = new FilteredList<>(transactions, transaction -> true);
+        transactionTable.setItems(filteredTransactions);
+    }
+
+    private void setupFilters() {
+        filterTypeCombo.setItems(FXCollections.observableArrayList("ALL", "INCOME", "EXPENSE"));
+        filterTypeCombo.setValue("ALL");
+        filterCategoryCombo.setItems(FXCollections.observableArrayList(
+                "ALL", "Food", "Transport", "Shopping", "Bills", "Salary", "Business", "Health", "Education", "Other"));
+        filterCategoryCombo.setValue("ALL");
+
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> applyFilters());
+        filterTypeCombo.valueProperty().addListener((observable, oldValue, newValue) -> applyFilters());
+        filterCategoryCombo.valueProperty().addListener((observable, oldValue, newValue) -> applyFilters());
+    }
+
+    private void applyFilters() {
+        if (filteredTransactions == null) return;
+
+        String search = searchField.getText() == null ? "" : searchField.getText().trim().toLowerCase();
+        String type = filterTypeCombo.getValue();
+        String category = filterCategoryCombo.getValue();
+
+        filteredTransactions.setPredicate(transaction -> {
+            boolean matchesSearch = search.isEmpty()
+                    || contains(transaction.getDescription(), search)
+                    || contains(transaction.getCategory(), search)
+                    || (transaction.getType() != null && transaction.getType().name().toLowerCase().contains(search));
+            boolean matchesType = type == null || "ALL".equals(type)
+                    || (transaction.getType() != null && transaction.getType().name().equals(type));
+            boolean matchesCategory = category == null || "ALL".equals(category)
+                    || category.equals(transaction.getCategory());
+            return matchesSearch && matchesType && matchesCategory;
+        });
+    }
+
+    private boolean contains(String value, String search) {
+        return value != null && value.toLowerCase().contains(search);
     }
 
     private void loadTransactions(AuthSession session) {
         statusLabel.setText("Loading your finance data...");
         transactionRepository.getTransactions(session).thenAccept(list -> Platform.runLater(() -> {
             transactions.setAll(list);
+            applyFilters();
             updateSummary();
             statusLabel.setText("Ready");
         })).exceptionally(error -> {
@@ -124,6 +177,7 @@ public class DashboardController {
             statusLabel.setText("Saving transaction...");
             transactionRepository.addTransaction(session, transaction).thenAccept(saved -> Platform.runLater(() -> {
                 transactions.add(0, saved);
+                applyFilters();
                 updateSummary();
                 clearForm();
                 addButton.setDisable(false);
@@ -180,6 +234,7 @@ public class DashboardController {
             transactionRepository.updateTransaction(session, editingTransaction).thenAccept(updated -> Platform.runLater(() -> {
                 transactionTable.refresh();
                 updateSummary();
+                applyFilters();
                 resetFormAndButton();
                 statusLabel.setText("Transaction updated successfully.");
             })).exceptionally(error -> {
@@ -220,6 +275,7 @@ public class DashboardController {
                     resetFormAndButton();
                 }
                 updateSummary();
+                applyFilters();
                 statusLabel.setText("Transaction deleted successfully.");
             })).exceptionally(error -> {
                 Platform.runLater(() -> statusLabel.setText("Could not delete transaction."));
