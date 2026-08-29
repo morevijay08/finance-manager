@@ -29,8 +29,8 @@ public class FirestoreTransactionRepository {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    public CompletableFuture<Void> addTransaction(AuthSession session, Transaction transaction) {
-        return CompletableFuture.runAsync(() -> {
+    public CompletableFuture<Transaction> addTransaction(AuthSession session, Transaction transaction) {
+        return CompletableFuture.supplyAsync(() -> {
             validateSession(session);
             JsonObject fields = new JsonObject();
             fields.add("type", stringField(transaction.getType().name()));
@@ -45,7 +45,20 @@ public class FirestoreTransactionRepository {
             HttpRequest request = authorizedRequest(collectionUrl(session), session.getIdToken())
                     .POST(HttpRequest.BodyPublishers.ofString(document.toString()))
                     .build();
-            send(request);
+            HttpResponse<String> response = sendAndReturn(request);
+
+            JsonObject responseJson = JsonParser.parseString(response.body()).getAsJsonObject();
+            String documentName = responseJson.has("name") ? responseJson.get("name").getAsString() : "";
+            String id = documentName.isBlank() ? "" : documentName.substring(documentName.lastIndexOf('/') + 1);
+
+            return new Transaction(
+                    id,
+                    transaction.getType(),
+                    transaction.getAmount(),
+                    transaction.getCategory(),
+                    transaction.getDescription(),
+                    transaction.getDate()
+            );
         });
     }
 
@@ -124,10 +137,6 @@ public class FirestoreTransactionRepository {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Firestore request was interrupted.", e);
         }
-    }
-
-    private void send(HttpRequest request) {
-        sendAndReturn(request);
     }
 
     private HttpRequest.Builder authorizedRequest(String url, String idToken) {
