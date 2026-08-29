@@ -14,6 +14,7 @@ import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -43,8 +44,7 @@ public class NotificationsController {
 
         notificationStatusLabel.setText("Checking alerts...");
         transactionRepository.getTransactions(session)
-                .thenCombine(budgetRepository.getMonthlyBudget(session, YearMonth.now()),
-                        AlertData::new)
+                .thenCombine(budgetRepository.getMonthlyBudget(session, YearMonth.now()), AlertData::new)
                 .thenCombine(recurringRepository.getAll(session), (data, recurring) -> {
                     data.recurring = recurring;
                     return data;
@@ -84,7 +84,7 @@ public class NotificationsController {
                 .filter(item -> item.getNextDate() != null)
                 .sorted(Comparator.comparing(RecurringTransaction::getNextDate))
                 .forEach(item -> {
-                    long days = today.until(item.getNextDate()).getDays();
+                    long days = ChronoUnit.DAYS.between(today, item.getNextDate());
                     String name = item.getDescription() == null || item.getDescription().isBlank()
                             ? item.getCategory() : item.getDescription();
                     if (item.getNextDate().isBefore(today)) {
