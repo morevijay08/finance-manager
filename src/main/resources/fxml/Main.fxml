@@ -65,6 +65,8 @@
                         </VBox>
                     </HBox>
 
+                    <fx:include source="Notifications.fxml" />
+
                     <VBox spacing="12" styleClass="summary-card">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <VBox HBox.hgrow="ALWAYS" spacing="3">
