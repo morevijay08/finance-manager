@@ -95,7 +95,8 @@
                     </GridPane>
 
                     <HBox alignment="CENTER_LEFT" spacing="12">
-                        <Label text="Recent Transactions" styleClass="section-title" />
+                        <Label text="Recent Transactions" styleClass="section-title" HBox.hgrow="ALWAYS" />
+                        <Button text="Export CSV" onAction="#handleExportCsv" styleClass="secondary-button" />
                     </HBox>
 
                     <HBox spacing="10" styleClass="filter-bar">
