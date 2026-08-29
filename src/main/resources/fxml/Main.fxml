@@ -34,10 +34,7 @@
     </top>
 
     <center>
-        <ScrollPane fitToWidth="true"
-                    hbarPolicy="NEVER"
-                    vbarPolicy="AS_NEEDED"
-                    styleClass="dashboard-scroll-pane">
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="dashboard-scroll-pane">
             <content>
                 <VBox spacing="20" styleClass="dashboard-content">
                     <HBox spacing="14" styleClass="summary-row">
@@ -56,22 +53,50 @@
                     </HBox>
 
                     <Label text="Financial Analytics" styleClass="section-title" />
-
                     <HBox spacing="14" styleClass="analytics-row" prefHeight="260">
                         <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
                             <BarChart fx:id="monthlyChart" animated="false" legendVisible="true" VBox.vgrow="ALWAYS">
-                                <xAxis>
-                                    <CategoryAxis label="Month" />
-                                </xAxis>
-                                <yAxis>
-                                    <NumberAxis label="Amount (₹)" />
-                                </yAxis>
+                                <xAxis><CategoryAxis label="Month" /></xAxis>
+                                <yAxis><NumberAxis label="Amount (₹)" /></yAxis>
                             </BarChart>
                         </VBox>
                         <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
                             <PieChart fx:id="expenseChart" animated="false" legendVisible="true" VBox.vgrow="ALWAYS" />
                         </VBox>
                     </HBox>
+
+                    <VBox spacing="12" styleClass="summary-card">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <VBox HBox.hgrow="ALWAYS" spacing="3">
+                                <Label text="Monthly Financial Report" styleClass="section-title" />
+                                <Label text="Review one month at a time" styleClass="subtitle" />
+                            </VBox>
+                            <ComboBox fx:id="reportMonthCombo" prefWidth="160" />
+                        </HBox>
+                        <HBox spacing="12">
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                                <Label text="Income" styleClass="card-title" />
+                                <Label fx:id="reportIncomeLabel" text="₹0.00" styleClass="income-value" />
+                            </VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                                <Label text="Expense" styleClass="card-title" />
+                                <Label fx:id="reportExpenseLabel" text="₹0.00" styleClass="expense-value" />
+                            </VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                                <Label text="Savings" styleClass="card-title" />
+                                <Label fx:id="reportSavingsLabel" text="₹0.00" styleClass="balance-value" />
+                            </VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                                <Label text="Budget" styleClass="card-title" />
+                                <Label fx:id="reportBudgetLabel" text="₹0.00" styleClass="balance-value" />
+                            </VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                                <Label text="Budget Remaining" styleClass="card-title" />
+                                <Label fx:id="reportRemainingLabel" text="₹0.00" styleClass="balance-value" />
+                            </VBox>
+                        </HBox>
+                        <PieChart fx:id="reportExpenseChart" title="Selected Month Expense by Category" animated="false" legendVisible="true" prefHeight="220" />
+                    </VBox>
 
                     <VBox spacing="10" styleClass="summary-card budget-card">
                         <HBox alignment="CENTER_LEFT" spacing="12">
@@ -84,14 +109,8 @@
                         </HBox>
                         <ProgressBar fx:id="budgetProgressBar" progress="0" maxWidth="1.7976931348623157E308" />
                         <HBox spacing="30">
-                            <VBox spacing="2">
-                                <Label text="Spent this month" styleClass="card-title" />
-                                <Label fx:id="budgetSpentLabel" text="₹0.00" styleClass="expense-value" />
-                            </VBox>
-                            <VBox spacing="2">
-                                <Label text="Remaining" styleClass="card-title" />
-                                <Label fx:id="budgetRemainingLabel" text="₹0.00" styleClass="balance-value" />
-                            </VBox>
+                            <VBox spacing="2"><Label text="Spent this month" styleClass="card-title" /><Label fx:id="budgetSpentLabel" text="₹0.00" styleClass="expense-value" /></VBox>
+                            <VBox spacing="2"><Label text="Remaining" styleClass="card-title" /><Label fx:id="budgetRemainingLabel" text="₹0.00" styleClass="balance-value" /></VBox>
                         </HBox>
                     </VBox>
 
@@ -101,14 +120,12 @@
                             <Label text="Record your income and expenses" styleClass="subtitle" />
                         </VBox>
                     </HBox>
-
                     <GridPane hgap="12" vgap="8" styleClass="transaction-form">
                         <Label text="Type" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
                         <Label text="Amount" styleClass="field-label" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                         <Label text="Category" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0" />
                         <Label text="Description" styleClass="field-label" GridPane.columnIndex="3" GridPane.rowIndex="0" />
                         <Label text="Date" styleClass="field-label" GridPane.columnIndex="4" GridPane.rowIndex="0" />
-
                         <ComboBox fx:id="typeCombo" prefWidth="120" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                         <TextField fx:id="amountField" promptText="0.00" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                         <ComboBox fx:id="categoryCombo" prefWidth="130" GridPane.columnIndex="2" GridPane.rowIndex="1" />
@@ -121,13 +138,11 @@
                         <Label text="Recent Transactions" styleClass="section-title" HBox.hgrow="ALWAYS" />
                         <Button text="Export CSV" onAction="#handleExportCsv" styleClass="secondary-button" />
                     </HBox>
-
                     <HBox spacing="10" styleClass="filter-bar">
                         <TextField fx:id="searchField" promptText="Search description, category or type..." prefWidth="320" />
                         <ComboBox fx:id="filterTypeCombo" prefWidth="130" />
                         <ComboBox fx:id="filterCategoryCombo" prefWidth="150" />
                     </HBox>
-
                     <TableView fx:id="transactionTable" prefHeight="300" styleClass="transaction-table">
                         <columns>
                             <TableColumn fx:id="typeColumn" text="Type" prefWidth="120" />
