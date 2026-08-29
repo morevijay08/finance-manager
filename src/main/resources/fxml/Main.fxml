@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
@@ -41,6 +45,24 @@
                 <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
                     <Label text="Total Expense" styleClass="card-title" />
                     <Label fx:id="expenseLabel" text="₹0.00" styleClass="expense-value" />
+                </VBox>
+            </HBox>
+
+            <Label text="Financial Analytics" styleClass="section-title" />
+
+            <HBox spacing="14" styleClass="analytics-row" prefHeight="260">
+                <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                    <BarChart fx:id="monthlyChart" animated="false" legendVisible="true" VBox.vgrow="ALWAYS">
+                        <xAxis>
+                            <CategoryAxis label="Month" />
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Amount (₹)" />
+                        </yAxis>
+                    </BarChart>
+                </VBox>
+                <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                    <PieChart fx:id="expenseChart" animated="false" legendVisible="true" VBox.vgrow="ALWAYS" />
                 </VBox>
             </HBox>
 
