@@ -46,9 +46,7 @@ public class FirestoreUserRepository {
             JsonObject document = new JsonObject();
             document.add("fields", fields);
 
-            String url = userDocumentUrl(session);
-
-            HttpRequest request = authorizedRequest(url)
+            HttpRequest request = authorizedRequest(userDocumentUrl(session), session.getIdToken())
                     .method(
                             "PATCH",
                             HttpRequest.BodyPublishers.ofString(document.toString())
@@ -63,26 +61,27 @@ public class FirestoreUserRepository {
 
                 ensureSuccess(response);
 
-            } catch (IOException | InterruptedException e) {
-                Thread.currentThread().interrupt();
+            } catch (IOException e) {
                 throw new RuntimeException("Unable to connect to Firestore.", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Firestore request was interrupted.", e);
             }
         });
     }
 
     /**
      * Reads the user's profile from users/{Firebase UID}.
-     * The UID comes from Firebase Authentication, so each user can only
-     * retrieve their own profile when Firestore rules are configured correctly.
      */
     public CompletableFuture<String> getUserName(AuthSession session) {
         return CompletableFuture.supplyAsync(() -> {
 
             validateSession(session);
 
-            HttpRequest request = authorizedRequest(userDocumentUrl(session))
-                    .GET()
-                    .build();
+            HttpRequest request = authorizedRequest(
+                    userDocumentUrl(session),
+                    session.getIdToken()
+            ).GET().build();
 
             try {
                 HttpResponse<String> response = httpClient.send(
@@ -95,21 +94,22 @@ public class FirestoreUserRepository {
                 JsonObject document = JsonParser.parseString(response.body())
                         .getAsJsonObject();
 
-                if (!document.has("fields") ||
-                        !document.getAsJsonObject("fields").has("name")) {
+                if (!document.has("fields")) {
                     return "User";
                 }
 
                 JsonObject fields = document.getAsJsonObject("fields");
-                JsonObject nameField = fields.getAsJsonObject("name");
+                if (!fields.has("name")) {
+                    return "User";
+                }
 
-                if (nameField == null ||
-                        !nameField.has("stringValue")) {
+                JsonObject nameField = fields.getAsJsonObject("name");
+                if (nameField == null || !nameField.has("stringValue")) {
                     return "User";
                 }
 
                 String name = nameField.get("stringValue").getAsString();
-                return name == null || name.isBlank() ? "User" : name;
+                return name.isBlank() ? "User" : name;
 
             } catch (IOException e) {
                 throw new RuntimeException("Unable to connect to Firestore.", e);
@@ -143,10 +143,10 @@ public class FirestoreUserRepository {
                 + FirebaseConfig.getWebApiKey();
     }
 
-    private HttpRequest.Builder authorizedRequest(String url) {
+    private HttpRequest.Builder authorizedRequest(String url, String idToken) {
         return HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Authorization", "Bearer " + AuthSessionHolder.currentToken())
+                .header("Authorization", "Bearer " + idToken)
                 .header("Content-Type", "application/json");
     }
 
@@ -158,21 +158,6 @@ public class FirestoreUserRepository {
                             + ": "
                             + response.body()
             );
-        }
-    }
-
-    private static final class AuthSessionHolder {
-        private static final ThreadLocal<String> TOKEN = new ThreadLocal<>();
-
-        private AuthSessionHolder() {
-        }
-
-        static String currentToken() {
-            String token = TOKEN.get();
-            if (token == null || token.isBlank()) {
-                throw new IllegalStateException("Authentication token is missing.");
-            }
-            return token;
         }
     }
 }
