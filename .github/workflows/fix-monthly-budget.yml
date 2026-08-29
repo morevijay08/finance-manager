@@ -1,0 +1,122 @@
+name: Fix monthly budget UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/main/java/com/finance/manager/controller/DashboardController.java'
+      - '.github/workflows/fix-monthly-budget.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-budget:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch budget state handling
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('src/main/java/com/finance/manager/controller/DashboardController.java')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          if 'private long budgetVersion;' not in text:
+              text = text.replace(
+                  '    private double monthlyBudget;\n',
+                  '    private double monthlyBudget;\n    private long budgetVersion;\n',
+                  1
+              )
+
+          load_pattern = r'''    private void loadMonthlyBudget\(AuthSession session\) \{.*?\n    \}\n\n    @FXML\n    private void handleSaveBudget\(\) \{'''
+          load_replacement = '''    private void loadMonthlyBudget(AuthSession session) {
+          YearMonth month = YearMonth.now();
+          long requestVersion = budgetVersion;
+          budgetRepository.getMonthlyBudget(session, month).thenAccept(amount -> Platform.runLater(() -> {
+              if (requestVersion != budgetVersion) return;
+              monthlyBudget = amount;
+              budgetField.setText(amount > 0 ? String.format(Locale.US, "%.2f", amount) : "");
+              updateBudgetProgress();
+          })).exceptionally(error -> {
+              Platform.runLater(() -> statusLabel.setText("Could not load monthly budget."));
+              return null;
+          });
+      }
+
+      @FXML
+      private void handleSaveBudget() {'''
+          text, count = re.subn(load_pattern, load_replacement, text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Could not locate loadMonthlyBudget block')
+
+          save_pattern = r'''    @FXML\n    private void handleSaveBudget\(\) \{.*?\n    \}\n\n    private void updateBudgetProgress\(\) \{'''
+          save_replacement = '''    @FXML
+      private void handleSaveBudget() {
+          AuthSession session = authService.getCurrentSession();
+          if (session == null) {
+              statusLabel.setText("Please log in again.");
+              return;
+          }
+          try {
+              double amount = Double.parseDouble(budgetField.getText().trim());
+              if (amount < 0) throw new NumberFormatException();
+
+              // Update the local dashboard immediately so the numbers never depend
+              // on the timing of the Firestore request.
+              monthlyBudget = amount;
+              budgetVersion++;
+              updateBudgetProgress();
+
+              saveBudgetButton.setDisable(true);
+              statusLabel.setText("Saving monthly budget...");
+              YearMonth month = YearMonth.now();
+              long saveVersion = budgetVersion;
+
+              budgetRepository.saveMonthlyBudget(session, month, amount)
+                      .thenRun(() -> Platform.runLater(() -> {
+                          if (saveVersion != budgetVersion) return;
+                          saveBudgetButton.setDisable(false);
+                          statusLabel.setText("Monthly budget saved successfully.");
+                      }))
+                      .exceptionally(error -> {
+                          Platform.runLater(() -> {
+                              if (saveVersion != budgetVersion) return;
+                              saveBudgetButton.setDisable(false);
+                              Throwable cause = error.getCause() != null ? error.getCause() : error;
+                              String message = cause.getMessage();
+                              statusLabel.setText(message == null || message.isBlank()
+                                      ? "Could not save monthly budget."
+                                      : "Could not save monthly budget: " + message);
+                          });
+                          return null;
+                      });
+          } catch (NumberFormatException e) {
+              statusLabel.setText("Enter a valid budget amount (0 or greater).");
+          }
+      }
+
+      private void updateBudgetProgress() {'''
+          text, count = re.subn(save_pattern, save_replacement, text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Could not locate handleSaveBudget block')
+
+          if text == original:
+              raise SystemExit('No changes were made')
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit patched controller and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/finance/manager/controller/DashboardController.java
+          git rm .github/workflows/fix-monthly-budget.yml
+          git commit -m 'Fix monthly budget UI state update'
+          git push origin HEAD:main
