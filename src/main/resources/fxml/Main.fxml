@@ -15,14 +15,14 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/25"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.finance.manager.controller.MainController"
+            fx:controller="com.finance.manager.controller.DashboardController"
             styleClass="dashboard-root">
     <top>
         <HBox alignment="CENTER_LEFT" spacing="18" styleClass="top-bar">
             <Label text="Khatabook Finance Manager" styleClass="app-title" />
             <VBox HBox.hgrow="ALWAYS" spacing="3">
-                <Label fx:id="profileLabel" text="Loading profile..." styleClass="welcome-label" />
-                <Label fx:id="userLabel" text="Signed in" styleClass="subtitle" />
+                <Label fx:id="welcomeLabel" text="Welcome" styleClass="welcome-label" />
+                <Label fx:id="emailLabel" text="Signed in" styleClass="subtitle" />
             </VBox>
             <Button text="Logout" onAction="#handleLogout" styleClass="secondary-button" />
         </HBox>
@@ -50,7 +50,6 @@
                     <Label text="Add Transaction" styleClass="section-title" />
                     <Label text="Record your income and expenses" styleClass="subtitle" />
                 </VBox>
-                <Label fx:id="transactionCountLabel" text="0 transactions" styleClass="subtitle" />
             </HBox>
 
             <GridPane hgap="12" vgap="8" styleClass="transaction-form">
@@ -60,12 +59,12 @@
                 <Label text="Description" styleClass="field-label" GridPane.columnIndex="3" GridPane.rowIndex="0" />
                 <Label text="Date" styleClass="field-label" GridPane.columnIndex="4" GridPane.rowIndex="0" />
 
-                <ComboBox fx:id="typeComboBox" prefWidth="120" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <ComboBox fx:id="typeCombo" prefWidth="120" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                 <TextField fx:id="amountField" promptText="0.00" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                <ComboBox fx:id="categoryComboBox" prefWidth="130" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                <ComboBox fx:id="categoryCombo" prefWidth="130" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                 <TextField fx:id="descriptionField" promptText="Optional note" prefWidth="190" GridPane.columnIndex="3" GridPane.rowIndex="1" />
                 <DatePicker fx:id="datePicker" prefWidth="140" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                <Button fx:id="addButton" text="Add" onAction="#handleAddTransaction" styleClass="primary-button" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+                <Button text="Add" onAction="#handleAddTransaction" styleClass="primary-button" GridPane.columnIndex="5" GridPane.rowIndex="1" />
             </GridPane>
 
             <HBox alignment="CENTER_LEFT">
@@ -73,11 +72,11 @@
             </HBox>
             <TableView fx:id="transactionTable" VBox.vgrow="ALWAYS" styleClass="transaction-table">
                 <columns>
-                    <TableColumn fx:id="dateColumn" text="Date" prefWidth="130" />
                     <TableColumn fx:id="typeColumn" text="Type" prefWidth="120" />
+                    <TableColumn fx:id="amountColumn" text="Amount" prefWidth="150" />
                     <TableColumn fx:id="categoryColumn" text="Category" prefWidth="140" />
                     <TableColumn fx:id="descriptionColumn" text="Description" prefWidth="300" />
-                    <TableColumn fx:id="amountColumn" text="Amount" prefWidth="150" />
+                    <TableColumn fx:id="dateColumn" text="Date" prefWidth="130" />
                 </columns>
             </TableView>
             <Label fx:id="statusLabel" text="Ready" styleClass="message-label" />
