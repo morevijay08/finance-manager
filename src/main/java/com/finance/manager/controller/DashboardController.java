@@ -18,7 +18,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 
 public class DashboardController {
 
@@ -33,12 +32,14 @@ public class DashboardController {
     @FXML private ComboBox<String> categoryCombo;
     @FXML private TextField descriptionField;
     @FXML private DatePicker datePicker;
+    @FXML private Button addButton;
     @FXML private TableView<Transaction> transactionTable;
     @FXML private TableColumn<Transaction, String> typeColumn;
     @FXML private TableColumn<Transaction, Number> amountColumn;
     @FXML private TableColumn<Transaction, String> categoryColumn;
     @FXML private TableColumn<Transaction, String> descriptionColumn;
     @FXML private TableColumn<Transaction, LocalDate> dateColumn;
+    @FXML private TableColumn<Transaction, Void> actionColumn;
 
     private final FirebaseAuthService authService = new FirebaseAuthService();
     private final FirestoreTransactionRepository transactionRepository = new FirestoreTransactionRepository();
@@ -65,13 +66,30 @@ public class DashboardController {
         categoryColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getCategory()));
         descriptionColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getDescription()));
         dateColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getDate()));
+        actionColumn.setCellFactory(column -> new TableCell<>() {
+            private final Button editButton = new Button("Edit");
+            private final Button deleteButton = new Button("Delete");
+            private final javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(6, editButton, deleteButton);
+
+            {
+                editButton.setOnAction(event -> editTransaction(getTableView().getItems().get(getIndex())));
+                deleteButton.setOnAction(event -> deleteTransaction(getTableView().getItems().get(getIndex())));
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : box);
+            }
+        });
         transactionTable.setItems(transactions);
 
         emailLabel.setText(session.getEmail());
-        loadProfileAndTransactions(session);
+        welcomeLabel.setText("Welcome");
+        loadTransactions(session);
     }
 
-    private void loadProfileAndTransactions(AuthSession session) {
+    private void loadTransactions(AuthSession session) {
         statusLabel.setText("Loading your finance data...");
         transactionRepository.getTransactions(session).thenAccept(list -> Platform.runLater(() -> {
             transactions.setAll(list);
@@ -94,28 +112,133 @@ public class DashboardController {
         try {
             double amount = Double.parseDouble(amountField.getText().trim());
             if (amount <= 0) throw new NumberFormatException();
-            String description = descriptionField.getText().trim();
-            String category = categoryCombo.getValue();
             LocalDate date = datePicker.getValue();
-            Transaction.Type type = Transaction.Type.valueOf(typeCombo.getValue());
+            if (date == null) throw new IllegalArgumentException("Select a date.");
 
-            Transaction transaction = new Transaction(null, type, amount, category, description, date);
+            Transaction transaction = new Transaction(null,
+                    Transaction.Type.valueOf(typeCombo.getValue()), amount,
+                    categoryCombo.getValue(), descriptionField.getText().trim(), date);
+
+            addButton.setDisable(true);
             statusLabel.setText("Saving transaction...");
-
             transactionRepository.addTransaction(session, transaction).thenAccept(saved -> Platform.runLater(() -> {
                 transactions.add(0, saved);
                 updateSummary();
-                amountField.clear();
-                descriptionField.clear();
-                datePicker.setValue(LocalDate.now());
+                clearForm();
+                addButton.setDisable(false);
                 statusLabel.setText("Transaction added successfully.");
             })).exceptionally(error -> {
-                Platform.runLater(() -> statusLabel.setText("Could not save transaction."));
+                Platform.runLater(() -> {
+                    addButton.setDisable(false);
+                    statusLabel.setText("Could not save transaction.");
+                });
                 return null;
             });
         } catch (NumberFormatException e) {
             statusLabel.setText("Enter a valid amount greater than 0.");
+        } catch (IllegalArgumentException e) {
+            statusLabel.setText(e.getMessage());
         }
+    }
+
+    private void editTransaction(Transaction transaction) {
+        typeCombo.setValue(transaction.getType().name());
+        amountField.setText(String.valueOf(transaction.getAmount()));
+        categoryCombo.setValue(transaction.getCategory());
+        descriptionField.setText(transaction.getDescription());
+        datePicker.setValue(transaction.getDate());
+        addButton.setText("Update");
+        addButton.setDisable(false);
+        addButton.setOnAction(event -> handleUpdateTransaction());
+        statusLabel.setText("Editing transaction. Change the fields and click Update.");
+    }
+
+    private void handleUpdateTransaction() {
+        AuthSession session = authService.getCurrentSession();
+        Transaction selected = transactionTable.getSelectionModel().getSelectedItem();
+        if (session == null || selected == null) {
+            statusLabel.setText("Select a transaction to edit.");
+            resetAddButton();
+            return;
+        }
+
+        try {
+            double amount = Double.parseDouble(amountField.getText().trim());
+            if (amount <= 0 || datePicker.getValue() == null) throw new NumberFormatException();
+
+            selected.setType(Transaction.Type.valueOf(typeCombo.getValue()));
+            selected.setAmount(amount);
+            selected.setCategory(categoryCombo.getValue());
+            selected.setDescription(descriptionField.getText().trim());
+            selected.setDate(datePicker.getValue());
+
+            addButton.setDisable(true);
+            statusLabel.setText("Updating transaction...");
+            transactionRepository.updateTransaction(session, selected).thenAccept(updated -> Platform.runLater(() -> {
+                transactionTable.refresh();
+                updateSummary();
+                resetFormAndButton();
+                statusLabel.setText("Transaction updated successfully.");
+            })).exceptionally(error -> {
+                Platform.runLater(() -> {
+                    addButton.setDisable(false);
+                    statusLabel.setText("Could not update transaction.");
+                });
+                return null;
+            });
+        } catch (NumberFormatException e) {
+            statusLabel.setText("Enter a valid amount and date.");
+        }
+    }
+
+    private void deleteTransaction(Transaction transaction) {
+        if (transaction == null || transaction.getId() == null || transaction.getId().isBlank()) {
+            statusLabel.setText("This transaction cannot be deleted.");
+            return;
+        }
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Delete Transaction");
+        confirmation.setHeaderText("Delete this transaction?");
+        confirmation.setContentText(String.format("%s ₹%.2f — %s", transaction.getType(), transaction.getAmount(), transaction.getCategory()));
+
+        confirmation.showAndWait().ifPresent(result -> {
+            if (result != ButtonType.OK) return;
+            AuthSession session = authService.getCurrentSession();
+            if (session == null) {
+                statusLabel.setText("Please log in again.");
+                return;
+            }
+
+            statusLabel.setText("Deleting transaction...");
+            transactionRepository.deleteTransaction(session, transaction.getId()).thenRun(() -> Platform.runLater(() -> {
+                transactions.remove(transaction);
+                updateSummary();
+                statusLabel.setText("Transaction deleted successfully.");
+            })).exceptionally(error -> {
+                Platform.runLater(() -> statusLabel.setText("Could not delete transaction."));
+                return null;
+            });
+        });
+    }
+
+    private void clearForm() {
+        amountField.clear();
+        descriptionField.clear();
+        typeCombo.setValue("EXPENSE");
+        categoryCombo.setValue("Other");
+        datePicker.setValue(LocalDate.now());
+    }
+
+    private void resetFormAndButton() {
+        clearForm();
+        resetAddButton();
+    }
+
+    private void resetAddButton() {
+        addButton.setText("Add");
+        addButton.setOnAction(event -> handleAddTransaction());
+        addButton.setDisable(false);
     }
 
     private void updateSummary() {
@@ -123,11 +246,9 @@ public class DashboardController {
                 .mapToDouble(Transaction::getAmount).sum();
         double expense = transactions.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE)
                 .mapToDouble(Transaction::getAmount).sum();
-        double balance = income - expense;
-
+        balanceLabel.setText(formatMoney(income - expense));
         incomeLabel.setText(formatMoney(income));
         expenseLabel.setText(formatMoney(expense));
-        balanceLabel.setText(formatMoney(balance));
     }
 
     private String formatMoney(double value) {
