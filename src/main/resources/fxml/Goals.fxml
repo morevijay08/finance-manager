@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
@@ -35,4 +38,34 @@
         </content>
     </ScrollPane>
     <Label fx:id="goalStatusLabel" text="Ready" styleClass="message-label" />
+
+    <VBox spacing="8" styleClass="transaction-form">
+        <VBox spacing="3">
+            <Label text="Recurring Transactions" styleClass="section-title" />
+            <Label text="Automatically add repeating income or expenses when their due date arrives." styleClass="subtitle" />
+        </VBox>
+        <GridPane hgap="10" vgap="8">
+            <Label text="Type" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <Label text="Amount" styleClass="field-label" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            <Label text="Category" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+            <Label text="Description" styleClass="field-label" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+            <Label text="Frequency" styleClass="field-label" GridPane.columnIndex="4" GridPane.rowIndex="0" />
+            <Label text="Next date" styleClass="field-label" GridPane.columnIndex="5" GridPane.rowIndex="0" />
+
+            <ComboBox fx:id="recurringTypeCombo" prefWidth="115" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <TextField fx:id="recurringAmountField" promptText="0.00" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <ComboBox fx:id="recurringCategoryCombo" prefWidth="130" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <TextField fx:id="recurringDescriptionField" promptText="e.g. Rent" prefWidth="170" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+            <ComboBox fx:id="recurringFrequencyCombo" prefWidth="120" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+            <DatePicker fx:id="recurringNextDatePicker" prefWidth="140" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+            <Button fx:id="addRecurringButton" text="Add Recurring" onAction="#handleAddRecurring" styleClass="primary-button" GridPane.columnIndex="6" GridPane.rowIndex="1" />
+        </GridPane>
+    </VBox>
+
+    <ScrollPane fitToWidth="true" prefViewportHeight="260" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+        <content>
+            <VBox fx:id="recurringBox" spacing="10" />
+        </content>
+    </ScrollPane>
+    <Label fx:id="recurringStatusLabel" text="Ready" styleClass="message-label" />
 </VBox>
