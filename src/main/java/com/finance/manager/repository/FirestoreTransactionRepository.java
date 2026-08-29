@@ -32,15 +32,7 @@ public class FirestoreTransactionRepository {
     public CompletableFuture<Transaction> addTransaction(AuthSession session, Transaction transaction) {
         return CompletableFuture.supplyAsync(() -> {
             validateSession(session);
-            JsonObject fields = new JsonObject();
-            fields.add("type", stringField(transaction.getType().name()));
-            fields.add("amount", doubleField(transaction.getAmount()));
-            fields.add("category", stringField(transaction.getCategory()));
-            fields.add("description", stringField(transaction.getDescription()));
-            fields.add("date", stringField(transaction.getDate().toString()));
-
-            JsonObject document = new JsonObject();
-            document.add("fields", fields);
+            JsonObject document = transactionDocument(transaction);
 
             HttpRequest request = authorizedRequest(collectionUrl(session), session.getIdToken())
                     .POST(HttpRequest.BodyPublishers.ofString(document.toString()))
@@ -51,14 +43,8 @@ public class FirestoreTransactionRepository {
             String documentName = responseJson.has("name") ? responseJson.get("name").getAsString() : "";
             String id = documentName.isBlank() ? "" : documentName.substring(documentName.lastIndexOf('/') + 1);
 
-            return new Transaction(
-                    id,
-                    transaction.getType(),
-                    transaction.getAmount(),
-                    transaction.getCategory(),
-                    transaction.getDescription(),
-                    transaction.getDate()
-            );
+            return new Transaction(id, transaction.getType(), transaction.getAmount(),
+                    transaction.getCategory(), transaction.getDescription(), transaction.getDate());
         });
     }
 
@@ -94,9 +80,55 @@ public class FirestoreTransactionRepository {
         });
     }
 
+    public CompletableFuture<Transaction> updateTransaction(AuthSession session, Transaction transaction) {
+        return CompletableFuture.supplyAsync(() -> {
+            validateSession(session);
+            validateTransactionId(transaction);
+
+            HttpRequest request = authorizedRequest(documentUrl(session, transaction.getId()), session.getIdToken())
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString(transactionDocument(transaction).toString()))
+                    .build();
+            sendAndReturn(request);
+            return transaction;
+        });
+    }
+
+    public CompletableFuture<Void> deleteTransaction(AuthSession session, String transactionId) {
+        return CompletableFuture.runAsync(() -> {
+            validateSession(session);
+            if (transactionId == null || transactionId.isBlank()) {
+                throw new RuntimeException("Transaction ID is missing.");
+            }
+
+            HttpRequest request = authorizedRequest(documentUrl(session, transactionId), session.getIdToken())
+                    .DELETE()
+                    .build();
+            sendAndReturn(request);
+        });
+    }
+
+    private JsonObject transactionDocument(Transaction transaction) {
+        JsonObject fields = new JsonObject();
+        fields.add("type", stringField(transaction.getType().name()));
+        fields.add("amount", doubleField(transaction.getAmount()));
+        fields.add("category", stringField(transaction.getCategory()));
+        fields.add("description", stringField(transaction.getDescription()));
+        fields.add("date", stringField(transaction.getDate().toString()));
+
+        JsonObject document = new JsonObject();
+        document.add("fields", fields);
+        return document;
+    }
+
     private String collectionUrl(AuthSession session) {
         return COLLECTION_URL + URLEncoder.encode(session.getLocalId(), StandardCharsets.UTF_8)
                 + "/transactions?key=" + FirebaseConfig.getWebApiKey();
+    }
+
+    private String documentUrl(AuthSession session, String transactionId) {
+        return collectionUrl(session).substring(0, collectionUrl(session).indexOf("?key="))
+                + "/" + URLEncoder.encode(transactionId, StandardCharsets.UTF_8)
+                + "?key=" + FirebaseConfig.getWebApiKey();
     }
 
     private JsonObject stringField(String value) {
@@ -153,6 +185,12 @@ public class FirestoreTransactionRepository {
         }
         if (session.getLocalId() == null || session.getLocalId().isBlank()) {
             throw new RuntimeException("Firebase user ID is missing.");
+        }
+    }
+
+    private void validateTransactionId(Transaction transaction) {
+        if (transaction == null || transaction.getId() == null || transaction.getId().isBlank()) {
+            throw new RuntimeException("Transaction ID is missing.");
         }
     }
 
