@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.finance.manager.controller.NotificationsController"
+      spacing="10"
+      styleClass="summary-card">
+    <VBox spacing="3">
+        <Label text="Notifications &amp; Alerts" styleClass="section-title" />
+        <Label text="Important budget and recurring-payment reminders" styleClass="subtitle" />
+    </VBox>
+    <ScrollPane fitToWidth="true" prefViewportHeight="110" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+        <content>
+            <VBox fx:id="notificationsBox" spacing="8" />
+        </content>
+    </ScrollPane>
+    <Label fx:id="notificationStatusLabel" text="Checking alerts..." styleClass="message-label" />
+</VBox>
