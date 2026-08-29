@@ -1,10 +1,10 @@
 package com.finance.manager.controller;
 
 import com.finance.manager.firebase.AuthSession;
-import com.finance.manager.firebase.FirebaseAuthService;
 import com.finance.manager.model.Transaction;
 import com.finance.manager.repository.FirestoreTransactionRepository;
 import com.finance.manager.repository.FirestoreUserRepository;
+import com.finance.manager.service.FirebaseAuthService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,7 +19,6 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Locale;
 
 public class MainController {
