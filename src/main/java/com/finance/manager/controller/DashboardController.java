@@ -18,14 +18,18 @@ import javafx.scene.chart.BarChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
-import java.time.Month;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -307,6 +311,46 @@ public class DashboardController {
         });
     }
 
+    @FXML
+    private void handleExportCsv() {
+        if (filteredTransactions == null || filteredTransactions.isEmpty()) {
+            statusLabel.setText("There are no transactions to export.");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export Transactions as CSV");
+        chooser.setInitialFileName("finance-transactions.csv");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+
+        File file = chooser.showSaveDialog(transactionTable.getScene().getWindow());
+        if (file == null) return;
+
+        try {
+            StringBuilder csv = new StringBuilder();
+            csv.append("Type,Amount,Category,Description,Date\n");
+            for (Transaction transaction : filteredTransactions) {
+                csv.append(csvValue(transaction.getType() == null ? "" : transaction.getType().name())).append(',')
+                        .append(transaction.getAmount()).append(',')
+                        .append(csvValue(transaction.getCategory())).append(',')
+                        .append(csvValue(transaction.getDescription())).append(',')
+                        .append(csvValue(transaction.getDate() == null ? "" : transaction.getDate().toString()))
+                        .append('\n');
+            }
+
+            Files.writeString(file.toPath(), csv.toString(), StandardCharsets.UTF_8);
+            statusLabel.setText("Exported " + filteredTransactions.size() + " transaction(s) successfully.");
+        } catch (IOException e) {
+            statusLabel.setText("Could not export transactions.");
+        }
+    }
+
+    private String csvValue(String value) {
+        if (value == null) return "\"\"";
+        String escaped = value.replace("\"", "\"\"");
+        return "\"" + escaped + "\"";
+    }
+
     private void updateSummary() {
         double income = transactions.stream().filter(t -> t.getType() == Transaction.Type.INCOME)
                 .mapToDouble(Transaction::getAmount).sum();
@@ -332,11 +376,8 @@ public class DashboardController {
         for (Transaction transaction : transactions) {
             if (transaction.getDate() == null || transaction.getDate().getYear() != year) continue;
             double[] values = totals.get(YearMonth.from(transaction.getDate()));
-            if (transaction.getType() == Transaction.Type.INCOME) {
-                values[0] += transaction.getAmount();
-            } else if (transaction.getType() == Transaction.Type.EXPENSE) {
-                values[1] += transaction.getAmount();
-            }
+            if (transaction.getType() == Transaction.Type.INCOME) values[0] += transaction.getAmount();
+            else if (transaction.getType() == Transaction.Type.EXPENSE) values[1] += transaction.getAmount();
         }
 
         XYChart.Series<String, Number> incomeSeries = new XYChart.Series<>();
@@ -358,15 +399,14 @@ public class DashboardController {
         Map<String, Double> categoryTotals = new LinkedHashMap<>();
         for (Transaction transaction : transactions) {
             if (transaction.getType() != Transaction.Type.EXPENSE) continue;
-            String category = transaction.getCategory() == null || transaction.getCategory().isBlank()
-                    ? "Other" : transaction.getCategory();
+            String category = transaction.getCategory() == null || transaction.getCategory().isBlank() ? "Other" : transaction.getCategory();
             categoryTotals.merge(category, transaction.getAmount(), Double::sum);
         }
 
         ObservableList<PieChart.Data> data = FXCollections.observableArrayList();
         categoryTotals.forEach((category, amount) -> data.add(new PieChart.Data(category, amount)));
         expenseChart.setData(data);
-        expenseChart.setTitle(categoryTotals.isEmpty() ? "Expense by Category" : "Expense by Category");
+        expenseChart.setTitle("Expense by Category");
     }
 
     private void clearForm() {
