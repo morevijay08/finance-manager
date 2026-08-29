@@ -1,86 +1,86 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/25"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.finance.manager.controller.DashboardController"
-            styleClass="dashboard-screen">
-
+            fx:controller="com.finance.manager.controller.MainController"
+            styleClass="dashboard-root">
     <top>
         <HBox alignment="CENTER_LEFT" spacing="18" styleClass="top-bar">
-            <padding><Insets top="18" right="28" bottom="18" left="28"/></padding>
-            <VBox HBox.hgrow="ALWAYS">
-                <Label text="Khatabook Finance Manager" styleClass="app-title"/>
-                <Label fx:id="welcomeLabel" text="Welcome" styleClass="subtitle"/>
+            <Label text="Khatabook Finance Manager" styleClass="app-title" />
+            <VBox HBox.hgrow="ALWAYS" spacing="3">
+                <Label fx:id="profileLabel" text="Loading profile..." styleClass="welcome-label" />
+                <Label fx:id="userLabel" text="Signed in" styleClass="subtitle" />
             </VBox>
-            <Label fx:id="emailLabel" text="" styleClass="email-label"/>
-            <Button text="Logout" onAction="#handleLogout" styleClass="secondary-button"/>
+            <Button text="Logout" onAction="#handleLogout" styleClass="secondary-button" />
         </HBox>
     </top>
 
     <center>
-        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
-            <VBox spacing="22">
-                <padding><Insets top="28" right="30" bottom="30" left="30"/></padding>
-
-                <HBox spacing="18">
-                    <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
-                        <Label text="Total Balance" styleClass="card-title"/>
-                        <Label fx:id="balanceLabel" text="₹ 0.00" styleClass="balance-value"/>
-                    </VBox>
-                    <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
-                        <Label text="Total Income" styleClass="card-title"/>
-                        <Label fx:id="incomeLabel" text="₹ 0.00" styleClass="income-value"/>
-                    </VBox>
-                    <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
-                        <Label text="Total Expense" styleClass="card-title"/>
-                        <Label fx:id="expenseLabel" text="₹ 0.00" styleClass="expense-value"/>
-                    </VBox>
-                </HBox>
-
-                <VBox spacing="12" styleClass="panel">
-                    <Label text="Add Transaction" styleClass="screen-title"/>
-                    <GridPane hgap="12" vgap="8">
-                        <columnConstraints>
-                            <ColumnConstraints hgrow="ALWAYS"/>
-                            <ColumnConstraints hgrow="ALWAYS"/>
-                            <ColumnConstraints hgrow="ALWAYS"/>
-                            <ColumnConstraints hgrow="ALWAYS"/>
-                            <ColumnConstraints hgrow="ALWAYS"/>
-                            <ColumnConstraints minWidth="120"/>
-                        </columnConstraints>
-                        <Label text="Type" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                        <Label text="Amount" styleClass="field-label" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-                        <Label text="Category" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-                        <Label text="Description" styleClass="field-label" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-                        <Label text="Date" styleClass="field-label" GridPane.columnIndex="4" GridPane.rowIndex="0"/>
-
-                        <ComboBox fx:id="typeCombo" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                        <TextField fx:id="amountField" promptText="0.00" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-                        <ComboBox fx:id="categoryCombo" maxWidth="Infinity" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
-                        <TextField fx:id="descriptionField" promptText="Optional" maxWidth="Infinity" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
-                        <DatePicker fx:id="datePicker" maxWidth="Infinity" GridPane.columnIndex="4" GridPane.rowIndex="1"/>
-                        <Button text="Add" onAction="#handleAddTransaction" maxWidth="Infinity" styleClass="primary-button" GridPane.columnIndex="5" GridPane.rowIndex="1"/>
-                    </GridPane>
-                    <Label fx:id="statusLabel" text="Ready" styleClass="message-label"/>
+        <VBox spacing="20" styleClass="dashboard-content">
+            <HBox spacing="14" styleClass="summary-row">
+                <VBox HBox.hgrow="ALWAYS" styleClass="summary-card balance-card">
+                    <Label text="Total Balance" styleClass="card-title" />
+                    <Label fx:id="balanceLabel" text="₹0.00" styleClass="balance-value" />
                 </VBox>
-
-                <VBox spacing="12" styleClass="panel">
-                    <Label text="Recent Transactions" styleClass="screen-title"/>
-                    <TableView fx:id="transactionTable" prefHeight="350">
-                        <columns>
-                            <TableColumn fx:id="dateColumn" text="Date" prefWidth="130"/>
-                            <TableColumn fx:id="typeColumn" text="Type" prefWidth="110"/>
-                            <TableColumn fx:id="categoryColumn" text="Category" prefWidth="150"/>
-                            <TableColumn fx:id="descriptionColumn" text="Description" prefWidth="300"/>
-                            <TableColumn fx:id="amountColumn" text="Amount" prefWidth="140"/>
-                        </columns>
-                    </TableView>
+                <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                    <Label text="Total Income" styleClass="card-title" />
+                    <Label fx:id="incomeLabel" text="₹0.00" styleClass="income-value" />
                 </VBox>
-            </VBox>
-        </ScrollPane>
+                <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
+                    <Label text="Total Expense" styleClass="card-title" />
+                    <Label fx:id="expenseLabel" text="₹0.00" styleClass="expense-value" />
+                </VBox>
+            </HBox>
+
+            <HBox alignment="CENTER_LEFT">
+                <VBox spacing="3" HBox.hgrow="ALWAYS">
+                    <Label text="Add Transaction" styleClass="section-title" />
+                    <Label text="Record your income and expenses" styleClass="subtitle" />
+                </VBox>
+                <Label fx:id="transactionCountLabel" text="0 transactions" styleClass="subtitle" />
+            </HBox>
+
+            <GridPane hgap="12" vgap="8" styleClass="transaction-form">
+                <Label text="Type" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <Label text="Amount" styleClass="field-label" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                <Label text="Category" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+                <Label text="Description" styleClass="field-label" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+                <Label text="Date" styleClass="field-label" GridPane.columnIndex="4" GridPane.rowIndex="0" />
+
+                <ComboBox fx:id="typeComboBox" prefWidth="120" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <TextField fx:id="amountField" promptText="0.00" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <ComboBox fx:id="categoryComboBox" prefWidth="130" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                <TextField fx:id="descriptionField" promptText="Optional note" prefWidth="190" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                <DatePicker fx:id="datePicker" prefWidth="140" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+                <Button fx:id="addButton" text="Add" onAction="#handleAddTransaction" styleClass="primary-button" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+            </GridPane>
+
+            <HBox alignment="CENTER_LEFT">
+                <Label text="Recent Transactions" styleClass="section-title" />
+            </HBox>
+            <TableView fx:id="transactionTable" VBox.vgrow="ALWAYS" styleClass="transaction-table">
+                <columns>
+                    <TableColumn fx:id="dateColumn" text="Date" prefWidth="130" />
+                    <TableColumn fx:id="typeColumn" text="Type" prefWidth="120" />
+                    <TableColumn fx:id="categoryColumn" text="Category" prefWidth="140" />
+                    <TableColumn fx:id="descriptionColumn" text="Description" prefWidth="300" />
+                    <TableColumn fx:id="amountColumn" text="Amount" prefWidth="150" />
+                </columns>
+            </TableView>
+            <Label fx:id="statusLabel" text="Ready" styleClass="message-label" />
+        </VBox>
     </center>
 </BorderPane>
