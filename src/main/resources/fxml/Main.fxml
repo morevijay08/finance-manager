@@ -8,6 +8,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -71,6 +72,28 @@
                             <PieChart fx:id="expenseChart" animated="false" legendVisible="true" VBox.vgrow="ALWAYS" />
                         </VBox>
                     </HBox>
+
+                    <VBox spacing="10" styleClass="summary-card budget-card">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <VBox HBox.hgrow="ALWAYS" spacing="3">
+                                <Label text="Monthly Budget" styleClass="section-title" />
+                                <Label fx:id="budgetMonthLabel" text="Current Month" styleClass="subtitle" />
+                            </VBox>
+                            <TextField fx:id="budgetField" promptText="Budget amount" prefWidth="150" />
+                            <Button fx:id="saveBudgetButton" text="Save Budget" onAction="#handleSaveBudget" styleClass="primary-button" />
+                        </HBox>
+                        <ProgressBar fx:id="budgetProgressBar" progress="0" maxWidth="1.7976931348623157E308" />
+                        <HBox spacing="30">
+                            <VBox spacing="2">
+                                <Label text="Spent this month" styleClass="card-title" />
+                                <Label fx:id="budgetSpentLabel" text="₹0.00" styleClass="expense-value" />
+                            </VBox>
+                            <VBox spacing="2">
+                                <Label text="Remaining" styleClass="card-title" />
+                                <Label fx:id="budgetRemainingLabel" text="₹0.00" styleClass="balance-value" />
+                            </VBox>
+                        </HBox>
+                    </VBox>
 
                     <HBox alignment="CENTER_LEFT">
                         <VBox spacing="3" HBox.hgrow="ALWAYS">
