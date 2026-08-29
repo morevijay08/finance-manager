@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 import java.time.YearMonth;
 
 /**
- * Small controller layer that keeps the monthly-budget UI responsive while the
+ * Controller layer that keeps the monthly-budget UI responsive while the
  * Firestore write runs asynchronously. The existing DashboardController keeps
  * the rest of the dashboard implementation unchanged.
  */
@@ -32,14 +32,26 @@ public class BudgetDashboardController extends DashboardController {
     }
 
     @FXML
+    private void handleLogout() {
+        invokeParent("handleLogout");
+    }
+
+    @FXML
+    private void handleAddTransaction() {
+        invokeParent("handleAddTransaction");
+    }
+
+    @FXML
+    private void handleExportCsv() {
+        invokeParent("handleExportCsv");
+    }
+
+    @FXML
     private void handleSaveBudget() {
         try {
             TextField budgetField = field("budgetField", TextField.class);
             Label statusLabel = field("statusLabel", Label.class);
             Button saveButton = field("saveBudgetButton", Button.class);
-            ProgressBar progressBar = field("budgetProgressBar", ProgressBar.class);
-            Label spentLabel = field("budgetSpentLabel", Label.class);
-            Label remainingLabel = field("budgetRemainingLabel", Label.class);
             FirestoreBudgetRepository repository = field("budgetRepository", FirestoreBudgetRepository.class);
             double amount = Double.parseDouble(budgetField.getText().trim());
 
@@ -47,10 +59,10 @@ public class BudgetDashboardController extends DashboardController {
                 throw new NumberFormatException();
             }
 
-            // Update the model/UI immediately. The Firestore operation below is
-            // asynchronous and must not be allowed to leave the dashboard stale.
+            // Update the local model/UI immediately. The Firestore operation is
+            // asynchronous, so the dashboard must not wait for it to refresh.
             setPrivateDouble("monthlyBudget", amount);
-            updateBudgetProgress(progressBar, spentLabel, remainingLabel, amount);
+            invokeParent("updateBudgetProgress");
 
             saveButton.setDisable(true);
             statusLabel.setText("Saving monthly budget...");
@@ -81,18 +93,21 @@ public class BudgetDashboardController extends DashboardController {
             try {
                 field("statusLabel", Label.class).setText("Enter a valid budget amount (0 or greater).");
             } catch (Exception ignored) {
-                // The dashboard is already being initialized; no UI update is possible here.
+                // Ignore UI lookup failure during initialization.
             }
         } catch (Exception e) {
             throw new RuntimeException("Could not save monthly budget.", e);
         }
     }
 
-    private void updateBudgetProgress(ProgressBar progressBar, Label spentLabel,
-                                      Label remainingLabel, double budget) throws Exception {
-        Method update = DashboardController.class.getDeclaredMethod("updateBudgetProgress");
-        update.setAccessible(true);
-        update.invoke(this);
+    private void invokeParent(String methodName) {
+        try {
+            Method method = DashboardController.class.getDeclaredMethod(methodName);
+            method.setAccessible(true);
+            method.invoke(this);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not invoke dashboard action: " + methodName, e);
+        }
     }
 
     @SuppressWarnings("unchecked")
