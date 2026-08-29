@@ -15,6 +15,7 @@
     </padding>
 
     <Label text="Khatabook Finance Manager" />
+    <Label fx:id="profileLabel" text="Loading profile..." />
     <Label fx:id="userLabel" text="Signed in" />
     <Label text="Authentication successful. Dashboard features will be added in later phases." />
     <Button text="Logout" onAction="#handleLogout" />
