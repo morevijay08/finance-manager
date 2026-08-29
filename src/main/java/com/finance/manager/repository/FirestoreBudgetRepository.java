@@ -33,9 +33,11 @@ public class FirestoreBudgetRepository {
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() == 404) return 0.0;
                 ensureSuccess(response);
+
                 JsonObject fields = JsonParser.parseString(response.body()).getAsJsonObject()
                         .getAsJsonObject("fields");
                 if (fields == null || !fields.has("amount")) return 0.0;
+
                 JsonObject amount = fields.getAsJsonObject("amount");
                 if (amount.has("doubleValue")) return amount.get("doubleValue").getAsDouble();
                 if (amount.has("integerValue")) return amount.get("integerValue").getAsDouble();
@@ -49,33 +51,79 @@ public class FirestoreBudgetRepository {
         });
     }
 
+    /**
+     * Saves the monthly budget with an explicit upsert.
+     * If the document exists, PATCH updates it. If it does not exist,
+     * createDocument creates it under users/{uid}/budgets/{yyyy-MM}.
+     */
     public CompletableFuture<Void> saveMonthlyBudget(AuthSession session, YearMonth month, double amount) {
         return CompletableFuture.runAsync(() -> {
             validateSession(session);
             if (amount < 0) throw new RuntimeException("Budget cannot be negative.");
 
-            JsonObject fields = new JsonObject();
-            JsonObject amountField = new JsonObject();
-            amountField.addProperty("doubleValue", amount);
-            fields.add("amount", amountField);
+            String monthId = month.toString();
+            JsonObject document = budgetDocument(month, amount);
 
-            JsonObject monthField = new JsonObject();
-            monthField.addProperty("stringValue", month.toString());
-            fields.add("month", monthField);
+            try {
+                HttpRequest getRequest = authorizedRequest(
+                        documentUrl(session, month), session.getIdToken()).GET().build();
+                HttpResponse<String> getResponse = httpClient.send(
+                        getRequest, HttpResponse.BodyHandlers.ofString());
 
-            JsonObject document = new JsonObject();
-            document.add("fields", fields);
+                if (getResponse.statusCode() == 200) {
+                    HttpRequest updateRequest = authorizedRequest(
+                            documentUrl(session, month), session.getIdToken())
+                            .method("PATCH", HttpRequest.BodyPublishers.ofString(document.toString()))
+                            .build();
+                    sendAndReturn(updateRequest);
+                    return;
+                }
 
-            HttpRequest request = authorizedRequest(documentUrl(session, month), session.getIdToken())
-                    .method("PATCH", HttpRequest.BodyPublishers.ofString(document.toString()))
-                    .build();
-            sendAndReturn(request);
+                if (getResponse.statusCode() != 404) {
+                    ensureSuccess(getResponse);
+                }
+
+                HttpRequest createRequest = authorizedRequest(
+                        budgetsCollectionUrl(session)
+                                + "?documentId=" + encode(monthId)
+                                + "&key=" + FirebaseConfig.getWebApiKey(),
+                        session.getIdToken())
+                        .POST(HttpRequest.BodyPublishers.ofString(document.toString()))
+                        .build();
+                sendAndReturn(createRequest);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to connect to Firestore.", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Budget request was interrupted.", e);
+            }
         });
     }
 
+    private JsonObject budgetDocument(YearMonth month, double amount) {
+        JsonObject fields = new JsonObject();
+
+        JsonObject amountField = new JsonObject();
+        amountField.addProperty("doubleValue", amount);
+        fields.add("amount", amountField);
+
+        JsonObject monthField = new JsonObject();
+        monthField.addProperty("stringValue", month.toString());
+        fields.add("month", monthField);
+
+        JsonObject document = new JsonObject();
+        document.add("fields", fields);
+        return document;
+    }
+
+    private String budgetsCollectionUrl(AuthSession session) {
+        return USERS_URL + encode(session.getLocalId()) + "/budgets";
+    }
+
     private String documentUrl(AuthSession session, YearMonth month) {
-        return USERS_URL + encode(session.getLocalId()) + "/budgets/"
-                + encode(month.toString()) + "?key=" + FirebaseConfig.getWebApiKey();
+        return budgetsCollectionUrl(session) + "/" + encode(month.toString())
+                + "?key=" + FirebaseConfig.getWebApiKey();
     }
 
     private String encode(String value) {
