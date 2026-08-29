@@ -44,6 +44,7 @@ public class DashboardController {
     private final FirebaseAuthService authService = new FirebaseAuthService();
     private final FirestoreTransactionRepository transactionRepository = new FirestoreTransactionRepository();
     private final ObservableList<Transaction> transactions = FXCollections.observableArrayList();
+    private Transaction editingTransaction;
 
     @FXML
     private void initialize() {
@@ -142,6 +143,8 @@ public class DashboardController {
     }
 
     private void editTransaction(Transaction transaction) {
+        editingTransaction = transaction;
+        transactionTable.getSelectionModel().select(transaction);
         typeCombo.setValue(transaction.getType().name());
         amountField.setText(String.valueOf(transaction.getAmount()));
         categoryCombo.setValue(transaction.getCategory());
@@ -155,8 +158,7 @@ public class DashboardController {
 
     private void handleUpdateTransaction() {
         AuthSession session = authService.getCurrentSession();
-        Transaction selected = transactionTable.getSelectionModel().getSelectedItem();
-        if (session == null || selected == null) {
+        if (session == null || editingTransaction == null) {
             statusLabel.setText("Select a transaction to edit.");
             resetAddButton();
             return;
@@ -164,17 +166,18 @@ public class DashboardController {
 
         try {
             double amount = Double.parseDouble(amountField.getText().trim());
-            if (amount <= 0 || datePicker.getValue() == null) throw new NumberFormatException();
+            LocalDate date = datePicker.getValue();
+            if (amount <= 0 || date == null) throw new NumberFormatException();
 
-            selected.setType(Transaction.Type.valueOf(typeCombo.getValue()));
-            selected.setAmount(amount);
-            selected.setCategory(categoryCombo.getValue());
-            selected.setDescription(descriptionField.getText().trim());
-            selected.setDate(datePicker.getValue());
+            editingTransaction.setType(Transaction.Type.valueOf(typeCombo.getValue()));
+            editingTransaction.setAmount(amount);
+            editingTransaction.setCategory(categoryCombo.getValue());
+            editingTransaction.setDescription(descriptionField.getText().trim());
+            editingTransaction.setDate(date);
 
             addButton.setDisable(true);
             statusLabel.setText("Updating transaction...");
-            transactionRepository.updateTransaction(session, selected).thenAccept(updated -> Platform.runLater(() -> {
+            transactionRepository.updateTransaction(session, editingTransaction).thenAccept(updated -> Platform.runLater(() -> {
                 transactionTable.refresh();
                 updateSummary();
                 resetFormAndButton();
@@ -213,6 +216,9 @@ public class DashboardController {
             statusLabel.setText("Deleting transaction...");
             transactionRepository.deleteTransaction(session, transaction.getId()).thenRun(() -> Platform.runLater(() -> {
                 transactions.remove(transaction);
+                if (editingTransaction == transaction) {
+                    resetFormAndButton();
+                }
                 updateSummary();
                 statusLabel.setText("Transaction deleted successfully.");
             })).exceptionally(error -> {
@@ -231,6 +237,7 @@ public class DashboardController {
     }
 
     private void resetFormAndButton() {
+        editingTransaction = null;
         clearForm();
         resetAddButton();
     }
