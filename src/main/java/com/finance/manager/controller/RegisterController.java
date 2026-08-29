@@ -12,6 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import com.finance.manager.repository.FirestoreUserRepository;
 
 import java.io.IOException;
 import java.util.concurrent.CompletionException;
@@ -25,52 +26,66 @@ public class RegisterController {
     public Label errorLabel;
 
     private final FirebaseAuthService authService = new FirebaseAuthService();
+    private final FirestoreUserRepository userRepository =
+        new FirestoreUserRepository();
 
     public void handleRegister(ActionEvent event) {
-        String name = nameField.getText().trim();
-        String email = emailField.getText().trim();
-        String password = passwordField.getText();
-        String confirmPassword = confirmPasswordField.getText();
+    String name = nameField.getText().trim();
+    String email = emailField.getText().trim();
+    String password = passwordField.getText();
+    String confirmPassword = confirmPasswordField.getText();
 
-        if (name.isEmpty()) {
-            showError("Please enter your name.");
-            return;
-        }
-
-        if (email.isEmpty() || !isValidEmail(email)) {
-            showError("Please enter a valid email.");
-            return;
-        }
-
-        if (password.isEmpty()) {
-            showError("Please enter a password.");
-            return;
-        }
-
-        if (password.length() < 6) {
-            showError("Password must contain at least 6 characters.");
-            return;
-        }
-
-        if (!password.equals(confirmPassword)) {
-            showError("Passwords do not match.");
-            return;
-        }
-
-        errorLabel.setText("Creating account...");
-        authService.register(name, email, password)
-                .thenAccept(session -> Platform.runLater(() -> {
-                    try {
-                        switchScene(event, "/fxml/Main.fxml");
-                    } catch (IOException e) {
-                        showError("Account created, but the application could not be opened.");
-                    }
-                }))
-                .exceptionally(throwable -> {
-                    Platform.runLater(() -> showError(authenticationMessage(throwable)));
-                    return null;
-                });
+    if (name.isEmpty()) {
+        showError("Please enter your name.");
+        return;
     }
+
+    if (email.isEmpty() || !isValidEmail(email)) {
+        showError("Please enter a valid email.");
+        return;
+    }
+
+    if (password.isEmpty()) {
+        showError("Please enter a password.");
+        return;
+    }
+
+    if (password.length() < 6) {
+        showError("Password must contain at least 6 characters.");
+        return;
+    }
+
+    if (!password.equals(confirmPassword)) {
+        showError("Passwords do not match.");
+        return;
+    }
+
+    errorLabel.setText("Creating account...");
+
+    authService.register(name, email, password)
+            .thenCompose(session ->
+                    userRepository.createUserProfile(session, name)
+                            .thenApply(ignored -> session)
+            )
+            .thenAccept(session -> Platform.runLater(() -> {
+                try {
+                    switchScene(event, "/fxml/Main.fxml");
+                } catch (IOException e) {
+                    showError(
+                            "Account created, but the application could not be opened."
+                    );
+                }
+            }))
+            .exceptionally(throwable -> {
+    throwable.printStackTrace();
+
+    Platform.runLater(() ->
+            showError(authenticationMessage(throwable))
+    );
+
+    return null;
+});
+}
 
     public void handleLogin(ActionEvent event) throws IOException {
         switchScene(event, "/fxml/Login.fxml");
