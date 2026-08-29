@@ -20,7 +20,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/25"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.finance.manager.controller.DashboardController"
+            fx:controller="com.finance.manager.controller.BudgetDashboardController"
             styleClass="dashboard-root">
     <top>
         <HBox alignment="CENTER_LEFT" spacing="18" styleClass="top-bar">
