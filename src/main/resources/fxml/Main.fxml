@@ -64,7 +64,7 @@
                 <ComboBox fx:id="categoryCombo" prefWidth="130" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                 <TextField fx:id="descriptionField" promptText="Optional note" prefWidth="190" GridPane.columnIndex="3" GridPane.rowIndex="1" />
                 <DatePicker fx:id="datePicker" prefWidth="140" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                <Button text="Add" onAction="#handleAddTransaction" styleClass="primary-button" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+                <Button fx:id="addButton" text="Add" onAction="#handleAddTransaction" styleClass="primary-button" GridPane.columnIndex="5" GridPane.rowIndex="1" />
             </GridPane>
 
             <HBox alignment="CENTER_LEFT">
@@ -77,6 +77,7 @@
                     <TableColumn fx:id="categoryColumn" text="Category" prefWidth="140" />
                     <TableColumn fx:id="descriptionColumn" text="Description" prefWidth="300" />
                     <TableColumn fx:id="dateColumn" text="Date" prefWidth="130" />
+                    <TableColumn fx:id="actionColumn" text="Actions" prefWidth="150" />
                 </columns>
             </TableView>
             <Label fx:id="statusLabel" text="Ready" styleClass="message-label" />
