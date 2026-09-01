@@ -26,22 +26,35 @@ root {
 .navbar-add-button:hover { -fx-background-color: #16a34a; -fx-effect: dropshadow(gaussian, rgba(34,197,94,0.35), 10, 0.2, 0, 2); }
 .navbar-menu-button { -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 7px 11px; -fx-cursor: hand; }
 .navbar-menu-button:hover { -fx-background-color: #334155; -fx-border-color: #60a5fa; }
-.navbar-logout-button { -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px; -fx-text-fill: #fca5a5; -fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 8px 12px; -fx-cursor: hand; }
-.navbar-logout-button:hover { -fx-background-color: #7f1d1d; -fx-text-fill: white; }
 
 .welcome-bar { -fx-background-color: white; -fx-padding: 12px 28px; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1px 0; }
 
-/* Compact profile dropdown: it sizes to the card instead of filling the navbar/window. */
-.profile-layer { -fx-padding: 0 24px 0 0; -fx-min-height: 0; -fx-max-height: 0; -fx-alignment: top-right; -fx-translate-y: 4px; }
-.profile-card { -fx-pref-width: 285px; -fx-min-width: 285px; -fx-max-width: 285px; -fx-pref-height: 230px; -fx-padding: 18px; -fx-background-color: white; -fx-background-radius: 14px; -fx-border-color: #dbe4f0; -fx-border-radius: 14px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.20), 22, 0.2, 0, 8); }
-.profile-avatar { -fx-font-size: 30px; -fx-text-fill: #2563eb; }
-.profile-title { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #111827; }
-.profile-subtitle { -fx-font-size: 11px; -fx-text-fill: #64748b; }
-.profile-details { -fx-padding: 10px; -fx-background-color: #f8fafc; -fx-background-radius: 9px; }
-.profile-label { -fx-font-size: 9px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; }
-.profile-value { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #334155; }
-.profile-active { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #16a34a; }
-.profile-logout { -fx-background-color: #fee2e2; -fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-background-radius: 8px; -fx-cursor: hand; -fx-padding: 9px; }
+/* Compact floating profile popup. Height is content-driven so no empty area appears below Logout. */
+.profile-card {
+    -fx-pref-width: 330px;
+    -fx-min-width: 330px;
+    -fx-max-width: 330px;
+    -fx-min-height: 0;
+    -fx-max-height: 380px;
+    -fx-padding: 20px;
+    -fx-spacing: 12px;
+    -fx-background-color: white;
+    -fx-background-radius: 16px;
+    -fx-border-color: #dbe4f0;
+    -fx-border-radius: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.22), 24, 0.22, 0, 8);
+}
+.profile-card > * { -fx-max-height: infinity; }
+.profile-avatar { -fx-font-size: 28px; -fx-text-fill: #2563eb; }
+.profile-title { -fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: #111827; }
+.profile-subtitle { -fx-font-size: 12px; -fx-text-fill: #64748b; }
+.profile-details { -fx-padding: 13px; -fx-spacing: 7px; -fx-background-color: #f8fafc; -fx-background-radius: 11px; }
+.profile-label { -fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; }
+.profile-value { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1f2937; }
+.profile-active { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #16a34a; }
+.profile-settings { -fx-min-height: 40px; -fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: hand; }
+.profile-settings:hover { -fx-background-color: #f1f5f9; -fx-border-color: #94a3b8; }
+.profile-logout { -fx-min-height: 42px; -fx-background-color: #fee2e2; -fx-border-color: transparent; -fx-text-fill: #b91c1c; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 9px; -fx-cursor: hand; }
 .profile-logout:hover { -fx-background-color: #fecaca; }
 
 .page-container { -fx-background-color: #f4f7fb; }
