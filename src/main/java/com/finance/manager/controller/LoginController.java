@@ -48,8 +48,11 @@ public class LoginController {
                 .thenAccept(session -> Platform.runLater(() -> {
                     try {
                         switchScene(event, "/fxml/Main.fxml");
-                    } catch (IOException e) {
-                        showError("Unable to open the application.");
+                    } catch (Exception e) {
+                        // Do not hide the real FXMLLoader problem behind a generic message.
+                        // The root cause is shown to the user and also printed for debugging.
+                        e.printStackTrace();
+                        showError("Could not open the dashboard: " + rootCauseMessage(e));
                     }
                 }))
                 .exceptionally(throwable -> {
@@ -84,15 +87,42 @@ public class LoginController {
         return "Unable to sign in. Check your Firebase configuration and try again.";
     }
 
+    private String rootCauseMessage(Throwable throwable) {
+        Throwable cause = throwable;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        String message = cause.getMessage();
+        if (message == null || message.isBlank()) {
+            return cause.getClass().getSimpleName();
+        }
+        // Keep the login screen readable even when FXMLLoader produces a very long message.
+        return message.length() > 180 ? message.substring(0, 180) + "..." : message;
+    }
+
     private boolean isValidEmail(String email) {
         return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     }
 
     private void switchScene(ActionEvent event, String resource) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource(resource));
+        java.net.URL resourceUrl = getClass().getResource(resource);
+        if (resourceUrl == null) {
+            throw new IOException("Missing FXML resource: " + resource);
+        }
+
+        FXMLLoader loader = new FXMLLoader(resourceUrl);
         Parent root = loader.load();
+
+        java.net.URL stylesheetUrl = getClass().getResource("/css/application.css");
         Scene scene = new Scene(root, 900, 600);
-        scene.getStylesheets().add(getClass().getResource("/css/application.css").toExternalForm());
+        if (stylesheetUrl != null) {
+            scene.getStylesheets().add(stylesheetUrl.toExternalForm());
+        }
+
+        if (event == null || event.getSource() == null) {
+            throw new IOException("Login window is unavailable.");
+        }
+
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
         stage.show();
