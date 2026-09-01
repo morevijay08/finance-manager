@@ -14,7 +14,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.lang.reflect.Method;
 
-/** Keeps the original full dashboard intact while providing a functional navbar and profile menu. */
+/** Stable shell around the existing dashboard. Navigation scrolls to the original finance sections. */
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private VBox profileCard;
     @FXML private Label profileEmailLabel;
@@ -28,15 +28,18 @@ public class FinanceShellController extends BudgetDashboardController {
             method.invoke(this);
             setupProfile();
             addSettingsToProfileMenu();
-        } catch (Exception e) { throw new RuntimeException("Could not initialize finance dashboard.", e); }
+        } catch (Exception e) {
+            throw new RuntimeException("Could not initialize finance dashboard.", e);
+        }
     }
 
     private void setupProfile() {
         AuthSession session = shellAuthService.getCurrentSession();
-        if (profileEmailLabel != null) profileEmailLabel.setText(session == null || session.getEmail() == null ? "Not signed in" : session.getEmail());
+        if (profileEmailLabel != null) {
+            profileEmailLabel.setText(session == null || session.getEmail() == null ? "Not signed in" : session.getEmail());
+        }
     }
 
-    /** Adds Settings as the last account option before Logout without changing the dashboard layout. */
     private void addSettingsToProfileMenu() {
         if (profileCard == null) return;
         for (javafx.scene.Node node : profileCard.getChildren()) {
@@ -69,7 +72,9 @@ public class FinanceShellController extends BudgetDashboardController {
             Method method = BudgetDashboardController.class.getDeclaredMethod(name);
             method.setAccessible(true);
             method.invoke(this);
-        } catch (Exception e) { throw new RuntimeException("Could not navigate to: " + name, e); }
+        } catch (Exception e) {
+            throw new RuntimeException("Could not navigate to: " + name, e);
+        }
     }
 
     @FXML private void handleDashboardNav(ActionEvent e) { activate(dashboardNav); callInheritedNavigation("handleDashboardNav"); }
@@ -79,7 +84,7 @@ public class FinanceShellController extends BudgetDashboardController {
     @FXML private void handleGoalsNav(ActionEvent e) { activate(goalsNav); callInheritedNavigation("handleGoalsNav"); }
     @FXML private void handleBudgetNav(ActionEvent e) { activate(budgetNav); callInheritedNavigation("handleBudgetNav"); }
     @FXML private void handleTransactionsNav(ActionEvent e) { activate(transactionsNav); callInheritedNavigation("handleTransactionsNav"); }
-    @FXML private void handleAddTransactionNav(ActionEvent e) { closeProfile(); callInheritedNavigation("handleAddTransactionNav"); }
+    @FXML private void handleAddTransactionNav(ActionEvent e) { activate(null); callInheritedNavigation("handleAddTransactionNav"); }
 
     @FXML private void handleProfileMenu() {
         if (profileCard == null) return;
@@ -108,24 +113,36 @@ public class FinanceShellController extends BudgetDashboardController {
         }
     }
 
-    private void closeProfile() { if (profileCard != null) { profileCard.setVisible(false); profileCard.setManaged(false); profileCard.setMouseTransparent(true); } }
+    private void closeProfile() {
+        if (profileCard != null) {
+            profileCard.setVisible(false);
+            profileCard.setManaged(false);
+            profileCard.setMouseTransparent(true);
+        }
+    }
 
-    @FXML private void handleLogout(ActionEvent event) { invokeDashboardAction("handleLogout", event); }
-    @FXML private void handleAddTransaction(ActionEvent event) { invokeDashboardAction("handleAddTransaction", event); }
-    @FXML private void handleExportCsv(ActionEvent event) { invokeDashboardAction("handleExportCsv", event); }
+    @FXML private void handleLogout(ActionEvent event) { invokeDashboardAction("handleLogout"); }
+    @FXML private void handleAddTransaction(ActionEvent event) { invokeDashboardAction("handleAddTransaction"); }
+    @FXML private void handleExportCsv(ActionEvent event) { invokeDashboardAction("handleExportCsv"); }
     @FXML private void handleSaveBudget() { invokeBudgetAction("handleSaveBudget"); }
 
-    private void invokeDashboardAction(String name, ActionEvent event) {
+    private void invokeDashboardAction(String name) {
         try {
-            Method method = DashboardController.class.getDeclaredMethod(name, ActionEvent.class);
-            method.setAccessible(true); method.invoke(this, event);
-        } catch (Exception e) { throw new RuntimeException("Could not execute action: " + name, e); }
+            Method method = DashboardController.class.getDeclaredMethod(name);
+            method.setAccessible(true);
+            method.invoke(this);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not execute action: " + name, e);
+        }
     }
 
     private void invokeBudgetAction(String name) {
         try {
             Method method = BudgetDashboardController.class.getDeclaredMethod(name);
-            method.setAccessible(true); method.invoke(this);
-        } catch (Exception e) { throw new RuntimeException("Could not execute budget action: " + name, e); }
+            method.setAccessible(true);
+            method.invoke(this);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not execute budget action: " + name, e);
+        }
     }
 }
