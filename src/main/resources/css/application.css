@@ -1,7 +1,4 @@
-root {
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
-    -fx-background-color: #f4f7fb;
-}
+root { -fx-font-family: "Segoe UI", Arial, sans-serif; -fx-background-color: #f4f7fb; }
 .auth-screen, .dashboard-root { -fx-background-color: #f4f7fb; }
 .app-title { -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1f2937; }
 .screen-title, .section-title { -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #172033; }
@@ -26,24 +23,9 @@ root {
 .navbar-add-button:hover { -fx-background-color: #16a34a; -fx-effect: dropshadow(gaussian, rgba(34,197,94,0.35), 10, 0.2, 0, 2); }
 .navbar-menu-button { -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 7px 11px; -fx-cursor: hand; }
 .navbar-menu-button:hover { -fx-background-color: #334155; -fx-border-color: #60a5fa; }
-
 .welcome-bar { -fx-background-color: white; -fx-padding: 12px 28px; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1px 0; }
 
-/* Compact floating profile popup. Height is content-driven so no empty area appears below Logout. */
-.profile-card {
-    -fx-pref-width: 330px;
-    -fx-min-width: 330px;
-    -fx-max-width: 330px;
-    -fx-min-height: 0;
-    -fx-max-height: 380px;
-    -fx-padding: 20px;
-    -fx-spacing: 12px;
-    -fx-background-color: white;
-    -fx-background-radius: 16px;
-    -fx-border-color: #dbe4f0;
-    -fx-border-radius: 16px;
-    -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.22), 24, 0.22, 0, 8);
-}
+.profile-card { -fx-pref-width: 330px; -fx-min-width: 330px; -fx-max-width: 330px; -fx-min-height: 0; -fx-max-height: 380px; -fx-padding: 20px; -fx-spacing: 12px; -fx-background-color: white; -fx-background-radius: 16px; -fx-border-color: #dbe4f0; -fx-border-radius: 16px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.22), 24, 0.22, 0, 8); }
 .profile-card > * { -fx-max-height: infinity; }
 .profile-avatar { -fx-font-size: 28px; -fx-text-fill: #2563eb; }
 .profile-title { -fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: #111827; }
@@ -57,23 +39,37 @@ root {
 .profile-logout { -fx-min-height: 42px; -fx-background-color: #fee2e2; -fx-border-color: transparent; -fx-text-fill: #b91c1c; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 9px; -fx-cursor: hand; }
 .profile-logout:hover { -fx-background-color: #fecaca; }
 
-.page-container { -fx-background-color: #f4f7fb; }
-.page-scroll { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; }
-.page-scroll > .viewport { -fx-background-color: transparent; }
-.dashboard-content { -fx-padding: 28px 34px 40px 34px; }
+.dashboard-content { -fx-padding: 30px 34px 42px 34px; }
+.dashboard-page { -fx-padding: 2px 0 10px 0; }
+.dashboard-hero { -fx-padding: 4px 4px 8px 4px; -fx-spacing: 6px; }
+.hero-description { -fx-font-size: 14px; -fx-text-fill: #64748b; -fx-max-width: 720px; }
 .summary-row { -fx-fill-height: true; }
-.summary-card { -fx-background-color: white; -fx-background-radius: 14px; -fx-border-color: #e2e8f0; -fx-border-radius: 14px; -fx-padding: 19px; -fx-spacing: 8px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.06), 12, 0.1, 0, 4); }
-.hero-card { -fx-border-color: #bfdbfe; -fx-background-color: linear-gradient(to bottom right, #eff6ff, white); }
-.income-card { -fx-border-color: #bbf7d0; }
-.expense-card { -fx-border-color: #fecaca; }
-.balance-value, .income-value, .expense-value { -fx-font-size: 25px; -fx-font-weight: bold; }
+.summary-card { -fx-background-color: white; -fx-background-radius: 15px; -fx-border-color: #e2e8f0; -fx-border-radius: 15px; -fx-padding: 20px; -fx-spacing: 8px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.07), 14, 0.12, 0, 4); }
+.summary-card:hover { -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.12), 18, 0.14, 0, 6); }
+.dashboard-balance-card { -fx-background-color: linear-gradient(to bottom right, #eff6ff, white); -fx-border-color: #bfdbfe; }
+.dashboard-income-card { -fx-background-color: linear-gradient(to bottom right, #f0fdf4, white); -fx-border-color: #bbf7d0; }
+.dashboard-expense-card { -fx-background-color: linear-gradient(to bottom right, #fff7f7, white); -fx-border-color: #fecaca; }
+.dashboard-overview-card { -fx-background-color: linear-gradient(to bottom right, white, #f8fafc); }
+.dashboard-budget-card { -fx-background-color: linear-gradient(to bottom right, #fffbeb, white); -fx-border-color: #fde68a; }
+.quick-actions-card { -fx-padding: 18px; }
+.quick-action-button { -fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-text-fill: #334155; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 13px 12px; -fx-cursor: hand; }
+.quick-action-button:hover { -fx-background-color: #eff6ff; -fx-border-color: #93c5fd; -fx-text-fill: #1d4ed8; }
+.text-action-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: #2563eb; -fx-font-size: 11px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 4px; }
+.text-action-button:hover { -fx-text-fill: #1d4ed8; }
+.balance-value, .income-value, .expense-value { -fx-font-size: 27px; -fx-font-weight: bold; }
 .balance-value { -fx-text-fill: #1f2937; }
 .income-value { -fx-text-fill: #15803d; }
 .expense-value { -fx-text-fill: #dc2626; }
-.transaction-form { -fx-background-color: white; -fx-background-radius: 12px; -fx-border-color: #e2e8f0; -fx-border-radius: 12px; -fx-padding: 18px; }
+.balance-small-value { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1f2937; }
+.expense-small-value { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #dc2626; }
+.report-metric { -fx-background-color: #f8fafc; -fx-background-radius: 11px; -fx-padding: 15px; -fx-border-color: #e2e8f0; -fx-border-radius: 11px; }
+.income-metric { -fx-background-color: #f0fdf4; -fx-border-color: #bbf7d0; }
+.expense-metric { -fx-background-color: #fef2f2; -fx-border-color: #fecaca; }
+
+.transaction-form { -fx-background-color: white; -fx-background-radius: 12px; -fx-border-color: #e2e8f0; -fx-border-radius: 12px; -fx-padding: 20px; }
 .text-field, .password-field, .combo-box, .date-picker { -fx-pref-height: 38px; -fx-background-radius: 7px; -fx-border-radius: 7px; -fx-border-color: #d1d5db; -fx-background-color: white; }
-.text-field:focused, .password-field:focused, .combo-box:focused, .date-picker:focused { -fx-border-color: #2563eb; }
-.primary-button { -fx-pref-height: 38px; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 7px; -fx-cursor: hand; -fx-padding: 0 20px; }
+.text-field:focused, .password-field:focused, .combo-box:focused, .date-picker:focused { -fx-border-color: #2563eb; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.12), 5, 0.1, 0, 1); }
+.primary-button { -fx-pref-height: 38px; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 8px; -fx-cursor: hand; -fx-padding: 0 20px; }
 .primary-button:hover { -fx-background-color: #1d4ed8; }
 .secondary-button { -fx-background-color: white; -fx-border-color: #d1d5db; -fx-border-radius: 7px; -fx-background-radius: 7px; -fx-text-fill: #374151; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 8px 16px; }
 .secondary-button:hover { -fx-background-color: #f3f4f6; }
