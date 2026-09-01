@@ -22,22 +22,47 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.finance.manager.controller.BudgetDashboardController"
             styleClass="dashboard-root">
+    <left>
+        <VBox prefWidth="230" styleClass="sidebar">
+            <VBox spacing="4" styleClass="sidebar-header">
+                <Label text="Khatabook" styleClass="sidebar-logo" />
+                <Label text="Finance Manager" styleClass="sidebar-subtitle" />
+            </VBox>
+
+            <VBox spacing="6" styleClass="sidebar-menu">
+                <Button text="⌂  Dashboard" onAction="#handleDashboardNav" styleClass="sidebar-button, sidebar-button-active" maxWidth="Infinity" />
+                <Button text="◈  Analytics" onAction="#handleAnalyticsNav" styleClass="sidebar-button" maxWidth="Infinity" />
+                <Button text="🔔  Notifications" onAction="#handleNotificationsNav" styleClass="sidebar-button" maxWidth="Infinity" />
+                <Button text="▣  Reports" onAction="#handleReportsNav" styleClass="sidebar-button" maxWidth="Infinity" />
+                <Button text="★  Savings Goals" onAction="#handleGoalsNav" styleClass="sidebar-button" maxWidth="Infinity" />
+                <Button text="▤  Monthly Budget" onAction="#handleBudgetNav" styleClass="sidebar-button" maxWidth="Infinity" />
+                <Button text="＋  Add Transaction" onAction="#handleAddTransactionNav" styleClass="sidebar-button" maxWidth="Infinity" />
+                <Button text="☷  Transactions" onAction="#handleTransactionsNav" styleClass="sidebar-button" maxWidth="Infinity" />
+            </VBox>
+
+            <VBox VBox.vgrow="ALWAYS" />
+
+            <VBox spacing="8" styleClass="sidebar-footer">
+                <Button text="⇥  Logout" onAction="#handleLogout" styleClass="sidebar-logout" maxWidth="Infinity" />
+            </VBox>
+        </VBox>
+    </left>
+
     <top>
         <HBox alignment="CENTER_LEFT" spacing="18" styleClass="top-bar">
-            <Label text="Khatabook Finance Manager" styleClass="app-title" />
             <VBox HBox.hgrow="ALWAYS" spacing="3">
                 <Label fx:id="welcomeLabel" text="Welcome" styleClass="welcome-label" />
                 <Label fx:id="emailLabel" text="Signed in" styleClass="subtitle" />
             </VBox>
-            <Button text="Logout" onAction="#handleLogout" styleClass="secondary-button" />
+            <Button text="Export CSV" onAction="#handleExportCsv" styleClass="secondary-button" />
         </HBox>
     </top>
 
     <center>
-        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="dashboard-scroll-pane">
+        <ScrollPane fx:id="dashboardScrollPane" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="dashboard-scroll-pane">
             <content>
                 <VBox spacing="20" styleClass="dashboard-content">
-                    <HBox spacing="14" styleClass="summary-row">
+                    <HBox fx:id="dashboardSection" spacing="14" styleClass="summary-row">
                         <VBox HBox.hgrow="ALWAYS" styleClass="summary-card balance-card">
                             <Label text="Total Balance" styleClass="card-title" />
                             <Label fx:id="balanceLabel" text="₹0.00" styleClass="balance-value" />
@@ -52,7 +77,7 @@
                         </VBox>
                     </HBox>
 
-                    <Label text="Financial Analytics" styleClass="section-title" />
+                    <Label fx:id="analyticsSection" text="Financial Analytics" styleClass="section-title" />
                     <HBox spacing="14" styleClass="analytics-row" prefHeight="260">
                         <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
                             <BarChart fx:id="monthlyChart" animated="false" legendVisible="true" VBox.vgrow="ALWAYS">
@@ -65,9 +90,11 @@
                         </VBox>
                     </HBox>
 
-                    <fx:include source="Notifications.fxml" />
+                    <VBox fx:id="notificationsSection">
+                        <fx:include source="Notifications.fxml" />
+                    </VBox>
 
-                    <VBox spacing="12" styleClass="summary-card">
+                    <VBox fx:id="reportsSection" spacing="12" styleClass="summary-card">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <VBox HBox.hgrow="ALWAYS" spacing="3">
                                 <Label text="Monthly Financial Report" styleClass="section-title" />
@@ -76,33 +103,20 @@
                             <ComboBox fx:id="reportMonthCombo" prefWidth="160" />
                         </HBox>
                         <HBox spacing="12">
-                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
-                                <Label text="Income" styleClass="card-title" />
-                                <Label fx:id="reportIncomeLabel" text="₹0.00" styleClass="income-value" />
-                            </VBox>
-                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
-                                <Label text="Expense" styleClass="card-title" />
-                                <Label fx:id="reportExpenseLabel" text="₹0.00" styleClass="expense-value" />
-                            </VBox>
-                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
-                                <Label text="Savings" styleClass="card-title" />
-                                <Label fx:id="reportSavingsLabel" text="₹0.00" styleClass="balance-value" />
-                            </VBox>
-                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
-                                <Label text="Budget" styleClass="card-title" />
-                                <Label fx:id="reportBudgetLabel" text="₹0.00" styleClass="balance-value" />
-                            </VBox>
-                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card">
-                                <Label text="Budget Remaining" styleClass="card-title" />
-                                <Label fx:id="reportRemainingLabel" text="₹0.00" styleClass="balance-value" />
-                            </VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Income" styleClass="card-title" /><Label fx:id="reportIncomeLabel" text="₹0.00" styleClass="income-value" /></VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Expense" styleClass="card-title" /><Label fx:id="reportExpenseLabel" text="₹0.00" styleClass="expense-value" /></VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Savings" styleClass="card-title" /><Label fx:id="reportSavingsLabel" text="₹0.00" styleClass="balance-value" /></VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Budget" styleClass="card-title" /><Label fx:id="reportBudgetLabel" text="₹0.00" styleClass="balance-value" /></VBox>
+                            <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Budget Remaining" styleClass="card-title" /><Label fx:id="reportRemainingLabel" text="₹0.00" styleClass="balance-value" /></VBox>
                         </HBox>
                         <PieChart fx:id="reportExpenseChart" title="Selected Month Expense by Category" animated="false" legendVisible="true" prefHeight="220" />
                     </VBox>
 
-                    <fx:include source="Goals.fxml" />
+                    <VBox fx:id="goalsSection">
+                        <fx:include source="Goals.fxml" />
+                    </VBox>
 
-                    <VBox spacing="10" styleClass="summary-card budget-card">
+                    <VBox fx:id="budgetSection" spacing="10" styleClass="summary-card budget-card">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <VBox HBox.hgrow="ALWAYS" spacing="3">
                                 <Label text="Monthly Budget" styleClass="section-title" />
@@ -118,7 +132,7 @@
                         </HBox>
                     </VBox>
 
-                    <HBox alignment="CENTER_LEFT">
+                    <HBox fx:id="addTransactionSection" alignment="CENTER_LEFT">
                         <VBox spacing="3" HBox.hgrow="ALWAYS">
                             <Label text="Add Transaction" styleClass="section-title" />
                             <Label text="Record your income and expenses" styleClass="subtitle" />
@@ -138,9 +152,8 @@
                         <Button fx:id="addButton" text="Add" onAction="#handleAddTransaction" styleClass="primary-button" GridPane.columnIndex="5" GridPane.rowIndex="1" />
                     </GridPane>
 
-                    <HBox alignment="CENTER_LEFT" spacing="12">
+                    <HBox fx:id="transactionsSection" alignment="CENTER_LEFT" spacing="12">
                         <Label text="Recent Transactions" styleClass="section-title" HBox.hgrow="ALWAYS" />
-                        <Button text="Export CSV" onAction="#handleExportCsv" styleClass="secondary-button" />
                     </HBox>
                     <HBox spacing="10" styleClass="filter-bar">
                         <TextField fx:id="searchField" promptText="Search description, category or type..." prefWidth="320" />
