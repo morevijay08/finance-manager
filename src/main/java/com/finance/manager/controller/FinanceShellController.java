@@ -13,10 +13,7 @@ import javafx.scene.layout.VBox;
 
 import java.lang.reflect.Method;
 
-/**
- * Application shell: keeps the navbar fixed while showing one finance section at a time.
- * The existing BudgetDashboardController remains responsible for the finance data operations.
- */
+/** Keeps the navbar fixed and displays one finance section at a time. */
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private StackPane pageContainer;
     @FXML private VBox dashboardPage;
@@ -62,12 +59,14 @@ public class FinanceShellController extends BudgetDashboardController {
     private void showPage(Node page, Button activeButton) {
         Node[] pages = {dashboardPage, analyticsPage, notificationsPage, reportsPage, goalsPage, budgetPage, addTransactionPage, transactionsPage};
         for (Node item : pages) {
-            if (item != null) {
-                boolean active = item == page;
-                item.setVisible(active);
-                item.setManaged(active);
-            }
+            if (item == null) continue;
+            Node pageContainerNode = item.getParent();
+            if (pageContainerNode == null) continue;
+            boolean active = item == page;
+            pageContainerNode.setVisible(active);
+            pageContainerNode.setManaged(active);
         }
+
         Button[] buttons = {dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav};
         for (Button button : buttons) {
             if (button != null) button.getStyleClass().remove("nav-button-active");
@@ -75,10 +74,15 @@ public class FinanceShellController extends BudgetDashboardController {
         if (activeButton != null && !activeButton.getStyleClass().contains("nav-button-active")) {
             activeButton.getStyleClass().add("nav-button-active");
         }
-        if (pageContainer != null) pageContainer.setOpacity(0);
-        Platform.runLater(() -> {
-            if (pageContainer != null) pageContainer.setOpacity(1);
-        });
+
+        if (pageContainer != null) {
+            pageContainer.setOpacity(0.96);
+            Platform.runLater(() -> pageContainer.setOpacity(1));
+        }
+        closeProfile();
+    }
+
+    private void closeProfile() {
         if (profileCard != null) {
             profileCard.setVisible(false);
             profileCard.setManaged(false);
