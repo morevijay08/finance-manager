@@ -11,6 +11,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
@@ -27,7 +28,7 @@ public class BudgetDashboardController extends DashboardController {
 
     @FXML
     private void initialize() {
-        super.initialize();
+        invokeParent("initialize");
         buildDashboardOverview();
         connectToLiveTransactions();
         refreshDashboardOverview();
@@ -149,9 +150,7 @@ public class BudgetDashboardController extends DashboardController {
             Label empty = new Label("No transactions yet. Add your first income or expense to see it here.");
             empty.getStyleClass().add("activity-empty");
             recentActivityBox.getChildren().add(empty);
-        } else {
-            recent.forEach(this::addActivityRow);
-        }
+        } else recent.forEach(this::addActivityRow);
     }
 
     private void addActivityRow(Transaction transaction) {
@@ -191,7 +190,21 @@ public class BudgetDashboardController extends DashboardController {
         if (selected != null) selected.toFront();
     }
 
-    @FXML private void handleLogout() { super.handleLogout(null); }
-    @FXML private void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); }
-    @FXML private void handleExportCsv() { super.handleExportCsv(); }
+    @FXML private void handleLogout() { invokeParent("handleLogout", (Object) null); }
+    @FXML private void handleAddTransaction() { invokeParent("handleAddTransaction"); refreshDashboardOverview(); }
+    @FXML private void handleExportCsv() { invokeParent("handleExportCsv"); }
+
+    private void invokeParent(String name, Object... args) {
+        try {
+            Method method = null;
+            for (Method candidate : DashboardController.class.getDeclaredMethods()) {
+                if (candidate.getName().equals(name) && candidate.getParameterCount() == args.length) { method = candidate; break; }
+            }
+            if (method == null) throw new NoSuchMethodException(name);
+            method.setAccessible(true);
+            method.invoke(this, args);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not execute " + name, e);
+        }
+    }
 }
