@@ -21,6 +21,8 @@
 .nav-button { -fx-background-color: transparent; -fx-background-radius: 10px; -fx-border-color: transparent; -fx-text-fill: #cbd5e1; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10px; -fx-cursor: hand; }
 .nav-button:hover { -fx-background-color: rgba(255,255,255,0.09); -fx-text-fill: white; }
 .nav-button-active { -fx-background-color: #2563eb; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.45), 10, 0.2, 0, 2); }
+.analytics-nav-button { -fx-border-color: #334155; -fx-border-width: 1px; -fx-border-radius: 10px; -fx-background-radius: 10px; }
+.analytics-nav-button:hover { -fx-border-color: #60a5fa; -fx-background-color: rgba(37,99,235,0.18); }
 .navbar-actions { -fx-padding: 0 0 0 7px; }
 .navbar-add-button { -fx-background-color: #22c55e; -fx-background-radius: 10px; -fx-border-color: transparent; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10px 15px; -fx-cursor: hand; }
 .navbar-menu-button { -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 7px 11px; -fx-cursor: hand; }
