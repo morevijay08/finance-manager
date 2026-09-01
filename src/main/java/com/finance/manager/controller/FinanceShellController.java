@@ -13,10 +13,7 @@ import javafx.scene.layout.VBox;
 
 import java.lang.reflect.Method;
 
-/**
- * Application shell for the finance manager.
- * Keeps the navbar fixed and switches between the individual finance pages.
- */
+/** Application shell: fixed navbar + one functional finance page at a time. */
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private StackPane pageContainer;
     @FXML private VBox dashboardPage;
@@ -42,14 +39,11 @@ public class FinanceShellController extends BudgetDashboardController {
     @FXML
     private void initialize() {
         try {
-            // Explicitly run the existing dashboard initialization so all existing
-            // Firebase, transaction, chart, budget and table functionality remains active.
             Method method = BudgetDashboardController.class.getDeclaredMethod("initialize");
             method.setAccessible(true);
             method.invoke(this);
-
             setupProfile();
-            showPage(dashboardPage, dashboardNav);
+            Platform.runLater(() -> showPage(dashboardPage, dashboardNav));
         } catch (Exception e) {
             throw new RuntimeException("Could not initialize finance application shell.", e);
         }
@@ -58,51 +52,36 @@ public class FinanceShellController extends BudgetDashboardController {
     private void setupProfile() {
         AuthSession session = shellAuthService.getCurrentSession();
         if (profileEmailLabel != null) {
-            profileEmailLabel.setText(
-                    session == null || session.getEmail() == null
-                            ? "Not signed in"
-                            : session.getEmail()
-            );
+            profileEmailLabel.setText(session == null || session.getEmail() == null ? "Not signed in" : session.getEmail());
         }
     }
 
-    /** Show exactly one page and keep the navbar clickable. */
+    /**
+     * A page VBox is the content of a ScrollPane. We must toggle the ScrollPane,
+     * not the VBox, otherwise the empty ScrollPane remains over the other pages.
+     */
+    private Node pageRoot(Node page) {
+        Node current = page;
+        while (current != null && current.getParent() != pageContainer) {
+            current = current.getParent();
+        }
+        return current;
+    }
+
     private void showPage(Node page, Button activeButton) {
-        Node[] pages = {
-                dashboardPage,
-                analyticsPage,
-                notificationsPage,
-                reportsPage,
-                goalsPage,
-                budgetPage,
-                addTransactionPage,
-                transactionsPage
-        };
+        if (pageContainer == null || page == null) return;
+        Node selectedRoot = pageRoot(page);
+        if (selectedRoot == null) return;
 
-        for (Node item : pages) {
-            if (item == null) continue;
-
-            // Each page is inside a ScrollPane. Hide/show the ScrollPane itself,
-            // not only its content, otherwise an invisible page can intercept clicks.
-            Node scrollPane = item.getParent();
-            if (scrollPane != null) {
-                boolean active = item == page;
-                scrollPane.setVisible(active);
-                scrollPane.setManaged(active);
-                scrollPane.setMouseTransparent(!active);
-            }
+        // Only the selected ScrollPane is visible/clickable.
+        for (Node root : pageContainer.getChildren()) {
+            boolean active = root == selectedRoot;
+            root.setVisible(active);
+            root.setManaged(active);
+            root.setMouseTransparent(!active);
         }
 
-        Button[] buttons = {
-                dashboardNav,
-                analyticsNav,
-                notificationsNav,
-                reportsNav,
-                goalsNav,
-                budgetNav,
-                transactionsNav
-        };
-
+        Button[] buttons = {dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav};
         for (Button button : buttons) {
             if (button != null) {
                 button.getStyleClass().remove("nav-button-active");
@@ -110,20 +89,17 @@ public class FinanceShellController extends BudgetDashboardController {
                 button.setMouseTransparent(false);
             }
         }
-
-        if (activeButton != null) {
-            if (!activeButton.getStyleClass().contains("nav-button-active")) {
-                activeButton.getStyleClass().add("nav-button-active");
-            }
-        }
-
-        if (pageContainer != null) {
-            pageContainer.setMouseTransparent(false);
-            pageContainer.setOpacity(0.96);
-            Platform.runLater(() -> pageContainer.setOpacity(1));
+        if (activeButton != null && !activeButton.getStyleClass().contains("nav-button-active")) {
+            activeButton.getStyleClass().add("nav-button-active");
         }
 
         closeProfile();
+        Platform.runLater(() -> {
+            if (selectedRoot instanceof javafx.scene.control.ScrollPane scroll) {
+                scroll.setVvalue(0);
+            }
+            pageContainer.requestLayout();
+        });
     }
 
     private void closeProfile() {
@@ -134,78 +110,32 @@ public class FinanceShellController extends BudgetDashboardController {
         }
     }
 
-    @FXML private void handleDashboardNav(ActionEvent e) {
-        showPage(dashboardPage, dashboardNav);
-    }
-
-    @FXML private void handleAnalyticsNav(ActionEvent e) {
-        showPage(analyticsPage, analyticsNav);
-    }
-
-    @FXML private void handleNotificationsNav(ActionEvent e) {
-        showPage(notificationsPage, notificationsNav);
-    }
-
-    @FXML private void handleReportsNav(ActionEvent e) {
-        showPage(reportsPage, reportsNav);
-    }
-
-    @FXML private void handleGoalsNav(ActionEvent e) {
-        showPage(goalsPage, goalsNav);
-    }
-
-    @FXML private void handleBudgetNav(ActionEvent e) {
-        showPage(budgetPage, budgetNav);
-    }
-
-    @FXML private void handleTransactionsNav(ActionEvent e) {
-        showPage(transactionsPage, transactionsNav);
-    }
-
-    @FXML private void handleAddTransactionNav(ActionEvent e) {
-        showPage(addTransactionPage, null);
-    }
+    @FXML private void handleDashboardNav(ActionEvent e) { showPage(dashboardPage, dashboardNav); }
+    @FXML private void handleAnalyticsNav(ActionEvent e) { showPage(analyticsPage, analyticsNav); }
+    @FXML private void handleNotificationsNav(ActionEvent e) { showPage(notificationsPage, notificationsNav); }
+    @FXML private void handleReportsNav(ActionEvent e) { showPage(reportsPage, reportsNav); }
+    @FXML private void handleGoalsNav(ActionEvent e) { showPage(goalsPage, goalsNav); }
+    @FXML private void handleBudgetNav(ActionEvent e) { showPage(budgetPage, budgetNav); }
+    @FXML private void handleTransactionsNav(ActionEvent e) { showPage(transactionsPage, transactionsNav); }
+    @FXML private void handleAddTransactionNav(ActionEvent e) { showPage(addTransactionPage, null); }
 
     @FXML
     private void handleProfileMenu() {
         if (profileCard == null) return;
-
         boolean visible = !profileCard.isVisible();
         profileCard.setVisible(visible);
         profileCard.setManaged(visible);
         profileCard.setMouseTransparent(!visible);
-
         if (visible) {
             setupProfile();
             profileCard.toFront();
         }
     }
 
-    /*
-     * These four actions intentionally forward to DashboardController's original
-     * ActionEvent-based methods. The old shell called them without an event, which
-     * caused reflection to look for a no-argument method and made the buttons appear
-     * clickable but do nothing.
-     */
-    @FXML
-    private void handleLogout(ActionEvent event) {
-        invokeDashboardAction("handleLogout", event);
-    }
-
-    @FXML
-    private void handleAddTransaction(ActionEvent event) {
-        invokeDashboardAction("handleAddTransaction", event);
-    }
-
-    @FXML
-    private void handleExportCsv(ActionEvent event) {
-        invokeDashboardAction("handleExportCsv", event);
-    }
-
-    @FXML
-    private void handleSaveBudget() {
-        invokeBudgetAction("handleSaveBudget");
-    }
+    @FXML private void handleLogout(ActionEvent event) { invokeDashboardAction("handleLogout", event); }
+    @FXML private void handleAddTransaction(ActionEvent event) { invokeDashboardAction("handleAddTransaction", event); }
+    @FXML private void handleExportCsv(ActionEvent event) { invokeDashboardAction("handleExportCsv", event); }
+    @FXML private void handleSaveBudget() { invokeBudgetAction("handleSaveBudget"); }
 
     private void invokeDashboardAction(String name, ActionEvent event) {
         try {
