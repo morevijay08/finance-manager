@@ -145,7 +145,8 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private void handleTransactionsNav() { show(transactionsSection); }
     private void show(Node selected) { Node[] pages = {dashboardSection, analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection}; for (Node page : pages) if (page != null) { boolean active = page == selected; page.setVisible(active); page.setManaged(active); page.setMouseTransparent(!active); } if (selected != null) selected.toFront(); }
 
-    @FXML private void handleLogout() { super.handleLogout(null); }
+    // Intentionally not an @FXML handler: FinanceShellController owns the ActionEvent logout handler.
+    private void handleLogout() { super.handleLogout(null); }
     @FXML protected void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); refreshAnalyticsOverview(); }
     @FXML protected void handleExportCsv() { super.handleExportCsv(); }
 }
