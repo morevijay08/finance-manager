@@ -4,12 +4,17 @@ import com.finance.manager.firebase.AuthSession;
 import com.finance.manager.service.FirebaseAuthService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import java.lang.reflect.Method;
 
-/** Keeps the original full dashboard intact while providing a functional navbar. */
+/** Keeps the original full dashboard intact while providing a functional navbar and profile menu. */
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private VBox profileCard;
     @FXML private Label profileEmailLabel;
@@ -22,12 +27,34 @@ public class FinanceShellController extends BudgetDashboardController {
             method.setAccessible(true);
             method.invoke(this);
             setupProfile();
+            addSettingsToProfileMenu();
         } catch (Exception e) { throw new RuntimeException("Could not initialize finance dashboard.", e); }
     }
 
     private void setupProfile() {
         AuthSession session = shellAuthService.getCurrentSession();
         if (profileEmailLabel != null) profileEmailLabel.setText(session == null || session.getEmail() == null ? "Not signed in" : session.getEmail());
+    }
+
+    /** Adds Settings as the last account option before Logout without changing the dashboard layout. */
+    private void addSettingsToProfileMenu() {
+        if (profileCard == null) return;
+        for (javafx.scene.Node node : profileCard.getChildren()) {
+            if (node instanceof Button button && "⚙  Settings".equals(button.getText())) return;
+        }
+        Button settingsButton = new Button("⚙  Settings");
+        settingsButton.setMaxWidth(Double.MAX_VALUE);
+        settingsButton.getStyleClass().add("profile-settings");
+        settingsButton.setOnAction(this::handleSettings);
+        int logoutIndex = -1;
+        for (int i = 0; i < profileCard.getChildren().size(); i++) {
+            if (profileCard.getChildren().get(i) instanceof Button button && "Logout".equals(button.getText())) {
+                logoutIndex = i;
+                break;
+            }
+        }
+        if (logoutIndex >= 0) profileCard.getChildren().add(logoutIndex, settingsButton);
+        else profileCard.getChildren().add(settingsButton);
     }
 
     private void activate(Button active) {
@@ -57,11 +84,31 @@ public class FinanceShellController extends BudgetDashboardController {
     @FXML private void handleProfileMenu() {
         if (profileCard == null) return;
         boolean visible = !profileCard.isVisible();
-        profileCard.setVisible(visible); profileCard.setManaged(visible);
+        profileCard.setVisible(visible);
+        profileCard.setManaged(visible);
+        profileCard.setMouseTransparent(!visible);
         if (visible) { setupProfile(); profileCard.toFront(); }
     }
 
-    private void closeProfile() { if (profileCard != null) { profileCard.setVisible(false); profileCard.setManaged(false); } }
+    @FXML private void handleSettings(ActionEvent event) {
+        closeProfile();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Settings.fxml"));
+            Parent settingsRoot = loader.load();
+            Stage settingsStage = new Stage();
+            settingsStage.setTitle("Settings - Khatabook Finance Manager");
+            settingsStage.initModality(Modality.WINDOW_MODAL);
+            Stage owner = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            settingsStage.initOwner(owner);
+            settingsStage.setScene(new Scene(settingsRoot, 620, 520));
+            settingsStage.setResizable(false);
+            settingsStage.showAndWait();
+        } catch (Exception e) {
+            throw new RuntimeException("Could not open Settings.", e);
+        }
+    }
+
+    private void closeProfile() { if (profileCard != null) { profileCard.setVisible(false); profileCard.setManaged(false); profileCard.setMouseTransparent(true); } }
 
     @FXML private void handleLogout(ActionEvent event) { invokeDashboardAction("handleLogout", event); }
     @FXML private void handleAddTransaction(ActionEvent event) { invokeDashboardAction("handleAddTransaction", event); }
