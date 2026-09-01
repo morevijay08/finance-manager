@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
@@ -14,10 +15,18 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.lang.reflect.Method;
 
-/** Keeps the original full dashboard intact while providing a functional navbar and profile menu. */
+/** Controls navbar navigation so each button displays only its own finance section. */
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private VBox profileCard;
     @FXML private Label profileEmailLabel;
+    @FXML private VBox analyticsContainer;
+    @FXML private VBox dashboardSection;
+    @FXML private VBox notificationsSection;
+    @FXML private VBox reportsSection;
+    @FXML private VBox goalsSection;
+    @FXML private VBox budgetSection;
+    @FXML private VBox addTransactionSection;
+    @FXML private VBox transactionsSection;
     @FXML private Button dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav;
     private final FirebaseAuthService shellAuthService = new FirebaseAuthService();
 
@@ -28,6 +37,7 @@ public class FinanceShellController extends BudgetDashboardController {
             method.invoke(this);
             setupProfile();
             addSettingsToProfileMenu();
+            showOnly(dashboardSection, dashboardNav);
         } catch (Exception e) { throw new RuntimeException("Could not initialize finance dashboard.", e); }
     }
 
@@ -36,57 +46,42 @@ public class FinanceShellController extends BudgetDashboardController {
         if (profileEmailLabel != null) profileEmailLabel.setText(session == null || session.getEmail() == null ? "Not signed in" : session.getEmail());
     }
 
-    /** Adds Settings as the last account option before Logout without changing the dashboard layout. */
     private void addSettingsToProfileMenu() {
         if (profileCard == null) return;
-        for (javafx.scene.Node node : profileCard.getChildren()) {
-            if (node instanceof Button button && "⚙  Settings".equals(button.getText())) return;
-        }
+        for (Node node : profileCard.getChildren()) if (node instanceof Button button && "⚙  Settings".equals(button.getText())) return;
         Button settingsButton = new Button("⚙  Settings");
         settingsButton.setMaxWidth(Double.MAX_VALUE);
         settingsButton.getStyleClass().add("profile-settings");
         settingsButton.setOnAction(this::handleSettings);
         int logoutIndex = -1;
-        for (int i = 0; i < profileCard.getChildren().size(); i++) {
-            if (profileCard.getChildren().get(i) instanceof Button button && "Logout".equals(button.getText())) {
-                logoutIndex = i;
-                break;
-            }
-        }
-        if (logoutIndex >= 0) profileCard.getChildren().add(logoutIndex, settingsButton);
-        else profileCard.getChildren().add(settingsButton);
+        for (int i = 0; i < profileCard.getChildren().size(); i++) if (profileCard.getChildren().get(i) instanceof Button button && "Logout".equals(button.getText())) { logoutIndex = i; break; }
+        if (logoutIndex >= 0) profileCard.getChildren().add(logoutIndex, settingsButton); else profileCard.getChildren().add(settingsButton);
     }
 
-    private void activate(Button active) {
+    /** Makes exactly one content section visible; no other navbar section remains on screen. */
+    private void showOnly(Node selected, Button active) {
+        Node[] sections = {dashboardSection, analyticsContainer, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection};
+        for (Node section : sections) if (section != null) { boolean show = section == selected; section.setVisible(show); section.setManaged(show); }
         Button[] buttons = {dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav};
         for (Button button : buttons) if (button != null) button.getStyleClass().remove("nav-button-active");
         if (active != null && !active.getStyleClass().contains("nav-button-active")) active.getStyleClass().add("nav-button-active");
         closeProfile();
+        if (dashboardScrollPane != null) dashboardScrollPane.setVvalue(0);
     }
 
-    private void callInheritedNavigation(String name) {
-        try {
-            Method method = BudgetDashboardController.class.getDeclaredMethod(name);
-            method.setAccessible(true);
-            method.invoke(this);
-        } catch (Exception e) { throw new RuntimeException("Could not navigate to: " + name, e); }
-    }
-
-    @FXML private void handleDashboardNav(ActionEvent e) { activate(dashboardNav); callInheritedNavigation("handleDashboardNav"); }
-    @FXML private void handleAnalyticsNav(ActionEvent e) { activate(analyticsNav); callInheritedNavigation("handleAnalyticsNav"); }
-    @FXML private void handleNotificationsNav(ActionEvent e) { activate(notificationsNav); callInheritedNavigation("handleNotificationsNav"); }
-    @FXML private void handleReportsNav(ActionEvent e) { activate(reportsNav); callInheritedNavigation("handleReportsNav"); }
-    @FXML private void handleGoalsNav(ActionEvent e) { activate(goalsNav); callInheritedNavigation("handleGoalsNav"); }
-    @FXML private void handleBudgetNav(ActionEvent e) { activate(budgetNav); callInheritedNavigation("handleBudgetNav"); }
-    @FXML private void handleTransactionsNav(ActionEvent e) { activate(transactionsNav); callInheritedNavigation("handleTransactionsNav"); }
-    @FXML private void handleAddTransactionNav(ActionEvent e) { closeProfile(); callInheritedNavigation("handleAddTransactionNav"); }
+    @FXML private void handleDashboardNav(ActionEvent e) { showOnly(dashboardSection, dashboardNav); }
+    @FXML private void handleAnalyticsNav(ActionEvent e) { showOnly(analyticsContainer, analyticsNav); }
+    @FXML private void handleNotificationsNav(ActionEvent e) { showOnly(notificationsSection, notificationsNav); }
+    @FXML private void handleReportsNav(ActionEvent e) { showOnly(reportsSection, reportsNav); }
+    @FXML private void handleGoalsNav(ActionEvent e) { showOnly(goalsSection, goalsNav); }
+    @FXML private void handleBudgetNav(ActionEvent e) { showOnly(budgetSection, budgetNav); }
+    @FXML private void handleTransactionsNav(ActionEvent e) { showOnly(transactionsSection, transactionsNav); }
+    @FXML private void handleAddTransactionNav(ActionEvent e) { showOnly(addTransactionSection, null); }
 
     @FXML private void handleProfileMenu() {
         if (profileCard == null) return;
         boolean visible = !profileCard.isVisible();
-        profileCard.setVisible(visible);
-        profileCard.setManaged(visible);
-        profileCard.setMouseTransparent(!visible);
+        profileCard.setVisible(visible); profileCard.setManaged(visible); profileCard.setMouseTransparent(!visible);
         if (visible) { setupProfile(); profileCard.toFront(); }
     }
 
@@ -98,34 +93,20 @@ public class FinanceShellController extends BudgetDashboardController {
             Stage settingsStage = new Stage();
             settingsStage.setTitle("Settings - Khatabook Finance Manager");
             settingsStage.initModality(Modality.WINDOW_MODAL);
-            Stage owner = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            Stage owner = (Stage) ((Node) event.getSource()).getScene().getWindow();
             settingsStage.initOwner(owner);
             settingsStage.setScene(new Scene(settingsRoot, 620, 520));
             settingsStage.setResizable(false);
             settingsStage.showAndWait();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not open Settings.", e);
-        }
+        } catch (Exception e) { throw new RuntimeException("Could not open Settings.", e); }
     }
 
     private void closeProfile() { if (profileCard != null) { profileCard.setVisible(false); profileCard.setManaged(false); profileCard.setMouseTransparent(true); } }
-
     @FXML private void handleLogout(ActionEvent event) { invokeDashboardAction("handleLogout", event); }
     @FXML private void handleAddTransaction(ActionEvent event) { invokeDashboardAction("handleAddTransaction", event); }
     @FXML private void handleExportCsv(ActionEvent event) { invokeDashboardAction("handleExportCsv", event); }
     @FXML private void handleSaveBudget() { invokeBudgetAction("handleSaveBudget"); }
 
-    private void invokeDashboardAction(String name, ActionEvent event) {
-        try {
-            Method method = DashboardController.class.getDeclaredMethod(name, ActionEvent.class);
-            method.setAccessible(true); method.invoke(this, event);
-        } catch (Exception e) { throw new RuntimeException("Could not execute action: " + name, e); }
-    }
-
-    private void invokeBudgetAction(String name) {
-        try {
-            Method method = BudgetDashboardController.class.getDeclaredMethod(name);
-            method.setAccessible(true); method.invoke(this);
-        } catch (Exception e) { throw new RuntimeException("Could not execute budget action: " + name, e); }
-    }
+    private void invokeDashboardAction(String name, ActionEvent event) { try { Method method = DashboardController.class.getDeclaredMethod(name, ActionEvent.class); method.setAccessible(true); method.invoke(this, event); } catch (Exception e) { throw new RuntimeException("Could not execute action: " + name, e); } }
+    private void invokeBudgetAction(String name) { try { Method method = BudgetDashboardController.class.getDeclaredMethod(name); method.setAccessible(true); method.invoke(this); } catch (Exception e) { throw new RuntimeException("Could not execute budget action: " + name, e); } }
 }
