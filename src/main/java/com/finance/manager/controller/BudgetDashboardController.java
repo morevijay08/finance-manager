@@ -11,12 +11,13 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 
-/** Dashboard-only presentation using the live transaction list loaded by DashboardController. */
+/** Dashboard and analytics presentation using the live transaction list loaded by DashboardController. */
 public class BudgetDashboardController extends DashboardController {
     @FXML private Node dashboardSection;
     @FXML private Node analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection;
@@ -26,12 +27,21 @@ public class BudgetDashboardController extends DashboardController {
     private VBox recentActivityBox;
     private ObservableList<Transaction> liveTransactions;
 
+    private Label analyticsTotalTransactions;
+    private Label analyticsAverageExpense;
+    private Label analyticsHighestCategory;
+    private Label analyticsCashFlow;
+    private Label analyticsInsight;
+    private boolean analyticsBuilt;
+
     @FXML
     private void initialize() {
-        invokeParent("initialize");
+        super.initialize();
         buildDashboardOverview();
+        buildAnalyticsOverview();
         connectToLiveTransactions();
         refreshDashboardOverview();
+        refreshAnalyticsOverview();
         show(dashboardSection);
     }
 
@@ -41,7 +51,10 @@ public class BudgetDashboardController extends DashboardController {
             Field field = DashboardController.class.getDeclaredField("transactions");
             field.setAccessible(true);
             liveTransactions = (ObservableList<Transaction>) field.get(this);
-            liveTransactions.addListener((javafx.collections.ListChangeListener<Transaction>) change -> refreshDashboardOverview());
+            liveTransactions.addListener((javafx.collections.ListChangeListener<Transaction>) change -> {
+                refreshDashboardOverview();
+                refreshAnalyticsOverview();
+            });
         } catch (Exception e) {
             liveTransactions = null;
         }
@@ -51,6 +64,52 @@ public class BudgetDashboardController extends DashboardController {
         if (!(dashboardSection instanceof VBox root)) return;
         root.getChildren().addAll(createMetrics(), createCashFlow(), createRecentActivity());
     }
+
+    private void buildAnalyticsOverview() {
+        if (analyticsBuilt || !(analyticsSection instanceof VBox root)) return;
+        analyticsBuilt = true;
+
+        VBox insightPanel = new VBox(8);
+        insightPanel.getStyleClass().addAll("summary-card", "analytics-insight-card");
+        Label title = new Label("Spending Insights");
+        title.getStyleClass().add("section-title");
+        analyticsInsight = new Label("Add transactions to see personalized spending insights.");
+        analyticsInsight.getStyleClass().add("analytics-insight-text");
+        analyticsInsight.setWrapText(true);
+        insightPanel.getChildren().addAll(title, analyticsInsight);
+
+        HBox kpiRow = new HBox(14);
+        kpiRow.getStyleClass().add("analytics-kpi-row");
+        VBox transactions = analyticsCard("TRANSACTIONS", "0", "Total recorded transactions", "analytics-kpi-blue");
+        VBox average = analyticsCard("AVG. EXPENSE", "₹0.00", "Average expense per transaction", "analytics-kpi-red");
+        VBox category = analyticsCard("TOP EXPENSE CATEGORY", "—", "Category with highest spending", "analytics-kpi-purple");
+        VBox cashFlow = analyticsCard("NET CASH FLOW", "₹0.00", "Income minus expenses", "analytics-kpi-green");
+        analyticsTotalTransactions = analyticsValue(transactions);
+        analyticsAverageExpense = analyticsValue(average);
+        analyticsHighestCategory = analyticsValue(category);
+        analyticsCashFlow = analyticsValue(cashFlow);
+        kpiRow.getChildren().addAll(transactions, average, category, cashFlow);
+        for (Node node : kpiRow.getChildren()) HBox.setHgrow(node, Priority.ALWAYS);
+
+        Label chartHint = new Label("Use the charts below to compare your monthly cash flow and understand where your expenses are going.");
+        chartHint.getStyleClass().add("analytics-chart-hint");
+        chartHint.setWrapText(true);
+
+        root.getChildren().addAll(0, List.of(kpiRow, insightPanel, chartHint));
+    }
+
+    private VBox analyticsCard(String title, String value, String caption, String style) {
+        VBox card = new VBox(6);
+        card.getStyleClass().addAll("summary-card", "analytics-kpi-card", style);
+        Label titleLabel = new Label(title); titleLabel.getStyleClass().add("card-title");
+        Label valueLabel = new Label(value); valueLabel.getStyleClass().add("analytics-kpi-value");
+        Label captionLabel = new Label(caption); captionLabel.getStyleClass().add("card-caption");
+        captionLabel.setWrapText(true);
+        card.getChildren().addAll(titleLabel, valueLabel, captionLabel);
+        return card;
+    }
+
+    private Label analyticsValue(VBox card) { return (Label) card.getChildren().get(1); }
 
     private Node createMetrics() {
         HBox row = new HBox(14);
@@ -122,15 +181,14 @@ public class BudgetDashboardController extends DashboardController {
 
     private void refreshDashboardOverview(List<Transaction> list) {
         if (list == null || dashboardSavingsLabel == null || recentActivityBox == null) return;
-        double income = list.stream().filter(t -> t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum();
-        double expense = list.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum();
+        double income = list.stream().filter(t -> t != null && t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum();
+        double expense = list.stream().filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum();
         double savings = income - expense;
         YearMonth month = YearMonth.now();
         double monthIncome = list.stream().filter(t -> isMonth(t, month) && t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum();
         double monthExpense = list.stream().filter(t -> isMonth(t, month) && t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum();
         double monthSavings = monthIncome - monthExpense;
         double rate = monthIncome > 0 ? monthSavings / monthIncome * 100 : 0;
-
         dashboardSavingsLabel.setText(formatMoney(savings));
         dashboardSavingsRateLabel.setText(String.format(Locale.US, "%.1f%%", rate));
         dashboardMonthlyIncomeLabel.setText(formatMoney(monthIncome));
@@ -145,12 +203,45 @@ public class BudgetDashboardController extends DashboardController {
             if (b.getDate() == null) return -1;
             return b.getDate().compareTo(a.getDate());
         }).limit(5).toList();
-
         if (recent.isEmpty()) {
             Label empty = new Label("No transactions yet. Add your first income or expense to see it here.");
             empty.getStyleClass().add("activity-empty");
             recentActivityBox.getChildren().add(empty);
         } else recent.forEach(this::addActivityRow);
+    }
+
+    private void refreshAnalyticsOverview() {
+        if (liveTransactions == null || analyticsTotalTransactions == null) return;
+        List<Transaction> list = liveTransactions.stream().filter(t -> t != null).toList();
+        long expenseCount = list.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).count();
+        double totalExpense = list.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum();
+        double totalIncome = list.stream().filter(t -> t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum();
+        double averageExpense = expenseCount > 0 ? totalExpense / expenseCount : 0;
+        Map<String, Double> categories = new HashMap<>();
+        list.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).forEach(t -> {
+            String category = t.getCategory() == null || t.getCategory().isBlank() ? "Other" : t.getCategory();
+            categories.merge(category, t.getAmount(), Double::sum);
+        });
+        String topCategory = "—";
+        double topAmount = 0;
+        for (Map.Entry<String, Double> entry : categories.entrySet()) if (entry.getValue() > topAmount) { topCategory = entry.getKey(); topAmount = entry.getValue(); }
+        double cashFlow = totalIncome - totalExpense;
+
+        analyticsTotalTransactions.setText(String.valueOf(list.size()));
+        analyticsAverageExpense.setText(formatMoney(averageExpense));
+        analyticsHighestCategory.setText(topCategory);
+        analyticsCashFlow.setText(formatMoney(cashFlow));
+
+        if (list.isEmpty()) {
+            analyticsInsight.setText("No transactions yet. Add a few income and expense entries to unlock useful spending insights.");
+        } else if (cashFlow > 0 && totalIncome > 0) {
+            double savingsRate = cashFlow / totalIncome * 100;
+            analyticsInsight.setText(String.format(Locale.US, "You are currently cash-flow positive. You kept %.1f%% of recorded income after expenses. Your highest spending category is %s (%s).", savingsRate, topCategory, formatMoney(topAmount)));
+        } else if (cashFlow < 0) {
+            analyticsInsight.setText(String.format(Locale.US, "Expenses are currently higher than income by %s. Review the category '%s' first because it has the highest recorded spending.", formatMoney(Math.abs(cashFlow)), topCategory));
+        } else {
+            analyticsInsight.setText("Income and expenses are currently balanced. Keep recording transactions to build a clearer spending pattern.");
+        }
     }
 
     private void addActivityRow(Transaction transaction) {
@@ -176,7 +267,7 @@ public class BudgetDashboardController extends DashboardController {
     private String formatMoney(double amount) { return String.format(Locale.US, "₹%,.2f", amount); }
 
     @FXML private void handleDashboardNav() { show(dashboardSection); refreshDashboardOverview(); }
-    @FXML private void handleAnalyticsNav() { show(analyticsSection); }
+    @FXML private void handleAnalyticsNav() { show(analyticsSection); refreshAnalyticsOverview(); }
     @FXML private void handleNotificationsNav() { show(notificationsSection); }
     @FXML private void handleReportsNav() { show(reportsSection); }
     @FXML private void handleGoalsNav() { show(goalsSection); }
@@ -190,21 +281,7 @@ public class BudgetDashboardController extends DashboardController {
         if (selected != null) selected.toFront();
     }
 
-    @FXML private void handleLogout() { invokeParent("handleLogout", (Object) null); }
-    @FXML private void handleAddTransaction() { invokeParent("handleAddTransaction"); refreshDashboardOverview(); }
-    @FXML private void handleExportCsv() { invokeParent("handleExportCsv"); }
-
-    private void invokeParent(String name, Object... args) {
-        try {
-            Method method = null;
-            for (Method candidate : DashboardController.class.getDeclaredMethods()) {
-                if (candidate.getName().equals(name) && candidate.getParameterCount() == args.length) { method = candidate; break; }
-            }
-            if (method == null) throw new NoSuchMethodException(name);
-            method.setAccessible(true);
-            method.invoke(this, args);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not execute " + name, e);
-        }
-    }
+    @FXML private void handleLogout() { super.handleLogout(null); }
+    @FXML private void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); refreshAnalyticsOverview(); }
+    @FXML private void handleExportCsv() { super.handleExportCsv(); }
 }
