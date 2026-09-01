@@ -21,13 +21,11 @@ import java.lang.reflect.Method;
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private VBox profileCard;
     @FXML private Label profileEmailLabel;
-    @FXML private Button dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav;
+    @FXML private Button dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav, addTransactionNav;
     private final FirebaseAuthService shellAuthService = new FirebaseAuthService();
 
     @FXML
     protected void initialize() {
-        // Use normal Java inheritance here instead of reflective invocation.
-        // This lets FXMLLoader initialize the dashboard controller reliably.
         super.initialize();
         setupProfile();
         addSettingsToProfileMenu();
@@ -76,8 +74,7 @@ public class FinanceShellController extends BudgetDashboardController {
                 if (text.contains("Add Transaction")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
-                        activate(null);
-                        showSection("addTransactionSection");
+                        handleAddTransactionNav(e);
                     });
                 } else if (text.contains("Recent Activity") || text.contains("View all")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
@@ -127,6 +124,7 @@ public class FinanceShellController extends BudgetDashboardController {
         for (Button button : buttons) {
             if (button != null) button.getStyleClass().remove("nav-button-active");
         }
+        if (addTransactionNav != null) addTransactionNav.getStyleClass().remove("navbar-add-button-active");
         if (active != null && !active.getStyleClass().contains("nav-button-active")) {
             active.getStyleClass().add("nav-button-active");
         }
@@ -168,7 +166,11 @@ public class FinanceShellController extends BudgetDashboardController {
     @FXML private void handleGoalsNav(ActionEvent event) { activate(goalsNav); showSection("goalsSection"); }
     @FXML private void handleBudgetNav(ActionEvent event) { activate(budgetNav); showSection("budgetSection"); }
     @FXML private void handleTransactionsNav(ActionEvent event) { activate(transactionsNav); showSection("transactionsSection"); }
-    @FXML private void handleAddTransactionNav(ActionEvent event) { activate(null); showSection("addTransactionSection"); }
+    @FXML private void handleAddTransactionNav(ActionEvent event) {
+        activate(null);
+        if (addTransactionNav != null) addTransactionNav.getStyleClass().add("navbar-add-button-active");
+        showSection("addTransactionSection");
+    }
 
     @FXML private void handleProfileMenu() {
         if (profileCard == null) return;
