@@ -121,7 +121,7 @@ public class FinanceShellController extends BudgetDashboardController {
         }
     }
 
-    @FXML private void handleLogout(ActionEvent event) { invokeDashboardAction("handleLogout"); }
+    @FXML private void handleLogout(ActionEvent event) { invokeDashboardActionWithEvent("handleLogout", event); }
     @FXML private void handleAddTransaction(ActionEvent event) { invokeDashboardAction("handleAddTransaction"); }
     @FXML private void handleExportCsv(ActionEvent event) { invokeDashboardAction("handleExportCsv"); }
     @FXML private void handleSaveBudget() { invokeBudgetAction("handleSaveBudget"); }
@@ -131,6 +131,16 @@ public class FinanceShellController extends BudgetDashboardController {
             Method method = DashboardController.class.getDeclaredMethod(name);
             method.setAccessible(true);
             method.invoke(this);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not execute action: " + name, e);
+        }
+    }
+
+    private void invokeDashboardActionWithEvent(String name, ActionEvent event) {
+        try {
+            Method method = DashboardController.class.getDeclaredMethod(name, ActionEvent.class);
+            method.setAccessible(true);
+            method.invoke(this, event);
         } catch (Exception e) {
             throw new RuntimeException("Could not execute action: " + name, e);
         }
