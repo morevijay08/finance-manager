@@ -12,47 +12,28 @@ root {
 .card-caption { -fx-font-size: 12px; -fx-text-fill: #94a3b8; }
 
 .navbar-wrapper { -fx-background-color: #f4f7fb; }
-.navbar {
-    -fx-background-color: linear-gradient(to right, #0f172a, #172554);
-    -fx-padding: 12px 22px;
-    -fx-min-height: 72px;
-    -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.25), 18, 0.18, 0, 5);
-}
+.navbar { -fx-background-color: linear-gradient(to right, #0f172a, #172554); -fx-padding: 12px 22px; -fx-min-height: 72px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.25), 18, 0.18, 0, 5); }
 .brand-block { -fx-padding: 0 17px 0 2px; -fx-border-color: #334155; -fx-border-width: 0 1px 0 0; }
 .navbar-brand { -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white; }
 .navbar-tagline { -fx-font-size: 9px; -fx-font-weight: bold; -fx-text-fill: #93c5fd; }
 .nav-menu { -fx-padding: 0 5px; }
-.nav-button {
-    -fx-background-color: transparent; -fx-background-radius: 10px; -fx-border-color: transparent;
-    -fx-text-fill: #cbd5e1; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10px 10px; -fx-cursor: hand;
-}
+.nav-button { -fx-background-color: transparent; -fx-background-radius: 10px; -fx-border-color: transparent; -fx-text-fill: #cbd5e1; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10px 10px; -fx-cursor: hand; }
 .nav-button:hover { -fx-background-color: rgba(255,255,255,0.09); -fx-text-fill: white; }
 .nav-button-active { -fx-background-color: #2563eb; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.45), 10, 0.2, 0, 2); }
 .nav-button-active:hover { -fx-background-color: #3b82f6; }
 .navbar-actions { -fx-padding: 0 0 0 7px; }
-.navbar-add-button {
-    -fx-background-color: #22c55e; -fx-background-radius: 10px; -fx-border-color: transparent;
-    -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10px 15px; -fx-cursor: hand;
-}
+.navbar-add-button { -fx-background-color: #22c55e; -fx-background-radius: 10px; -fx-border-color: transparent; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10px 15px; -fx-cursor: hand; }
 .navbar-add-button:hover { -fx-background-color: #16a34a; -fx-effect: dropshadow(gaussian, rgba(34,197,94,0.35), 10, 0.2, 0, 2); }
-.navbar-menu-button {
-    -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px;
-    -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 7px 11px; -fx-cursor: hand;
-}
+.navbar-menu-button { -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 7px 11px; -fx-cursor: hand; }
 .navbar-menu-button:hover { -fx-background-color: #334155; -fx-border-color: #60a5fa; }
-.navbar-logout-button {
-    -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px;
-    -fx-text-fill: #fca5a5; -fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 8px 12px; -fx-cursor: hand;
-}
+.navbar-logout-button { -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px; -fx-text-fill: #fca5a5; -fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 8px 12px; -fx-cursor: hand; }
 .navbar-logout-button:hover { -fx-background-color: #7f1d1d; -fx-text-fill: white; }
 
 .welcome-bar { -fx-background-color: white; -fx-padding: 12px 28px; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1px 0; }
-.profile-layer { -fx-padding: 0 25px 0 0; -fx-translate-y: 4px; }
-.profile-card {
-    -fx-min-width: 285px; -fx-max-width: 285px; -fx-padding: 18px; -fx-background-color: white;
-    -fx-background-radius: 14px; -fx-border-color: #dbe4f0; -fx-border-radius: 14px;
-    -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.20), 22, 0.2, 0, 8);
-}
+
+/* Compact profile dropdown: it sizes to the card instead of filling the navbar/window. */
+.profile-layer { -fx-padding: 0 24px 0 0; -fx-min-height: 0; -fx-max-height: 0; -fx-alignment: top-right; -fx-translate-y: 4px; }
+.profile-card { -fx-pref-width: 285px; -fx-min-width: 285px; -fx-max-width: 285px; -fx-pref-height: 230px; -fx-padding: 18px; -fx-background-color: white; -fx-background-radius: 14px; -fx-border-color: #dbe4f0; -fx-border-radius: 14px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.20), 22, 0.2, 0, 8); }
 .profile-avatar { -fx-font-size: 30px; -fx-text-fill: #2563eb; }
 .profile-title { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #111827; }
 .profile-subtitle { -fx-font-size: 11px; -fx-text-fill: #64748b; }
@@ -67,12 +48,8 @@ root {
 .page-scroll { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; }
 .page-scroll > .viewport { -fx-background-color: transparent; }
 .dashboard-content { -fx-padding: 28px 34px 40px 34px; }
-
 .summary-row { -fx-fill-height: true; }
-.summary-card {
-    -fx-background-color: white; -fx-background-radius: 14px; -fx-border-color: #e2e8f0; -fx-border-radius: 14px;
-    -fx-padding: 19px; -fx-spacing: 8px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.06), 12, 0.1, 0, 4);
-}
+.summary-card { -fx-background-color: white; -fx-background-radius: 14px; -fx-border-color: #e2e8f0; -fx-border-radius: 14px; -fx-padding: 19px; -fx-spacing: 8px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.06), 12, 0.1, 0, 4); }
 .hero-card { -fx-border-color: #bfdbfe; -fx-background-color: linear-gradient(to bottom right, #eff6ff, white); }
 .income-card { -fx-border-color: #bbf7d0; }
 .expense-card { -fx-border-color: #fecaca; }
@@ -80,7 +57,6 @@ root {
 .balance-value { -fx-text-fill: #1f2937; }
 .income-value { -fx-text-fill: #15803d; }
 .expense-value { -fx-text-fill: #dc2626; }
-
 .transaction-form { -fx-background-color: white; -fx-background-radius: 12px; -fx-border-color: #e2e8f0; -fx-border-radius: 12px; -fx-padding: 18px; }
 .text-field, .password-field, .combo-box, .date-picker { -fx-pref-height: 38px; -fx-background-radius: 7px; -fx-border-radius: 7px; -fx-border-color: #d1d5db; -fx-background-color: white; }
 .text-field:focused, .password-field:focused, .combo-box:focused, .date-picker:focused { -fx-border-color: #2563eb; }
@@ -88,7 +64,6 @@ root {
 .primary-button:hover { -fx-background-color: #1d4ed8; }
 .secondary-button { -fx-background-color: white; -fx-border-color: #d1d5db; -fx-border-radius: 7px; -fx-background-radius: 7px; -fx-text-fill: #374151; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 8px 16px; }
 .secondary-button:hover { -fx-background-color: #f3f4f6; }
-
 .transaction-table { -fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 10px; -fx-background-radius: 10px; }
 .transaction-table .column-header-background { -fx-background-color: #f8fafc; }
 .transaction-table .column-header .label { -fx-font-weight: bold; -fx-text-fill: #374151; }
