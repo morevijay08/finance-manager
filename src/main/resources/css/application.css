@@ -11,9 +11,7 @@
 .field-label, .card-title { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #374151; }
 .card-caption { -fx-font-size: 12px; -fx-text-fill: #94a3b8; }
 
-/* =========================
-   Navigation
-   ========================= */
+/* Navigation */
 .navbar-wrapper { -fx-background-color: #f4f7fb; }
 .navbar { -fx-background-color: linear-gradient(to right, #0f172a, #172554); -fx-padding: 12px 22px; -fx-min-height: 72px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.25), 18, 0.18, 0, 5); }
 .brand-block { -fx-padding: 0 17px 0 2px; -fx-border-color: #334155; -fx-border-width: 0 1px 0 0; }
@@ -28,9 +26,7 @@
 .navbar-menu-button { -fx-background-color: #1e293b; -fx-background-radius: 10px; -fx-border-color: #475569; -fx-border-radius: 10px; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 7px 11px; -fx-cursor: hand; }
 .welcome-bar { -fx-background-color: white; -fx-padding: 12px 28px; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1px 0; }
 
-/* =========================
-   Profile
-   ========================= */
+/* Profile */
 .profile-card { -fx-pref-width: 330px; -fx-min-width: 330px; -fx-max-width: 330px; -fx-min-height: 0; -fx-max-height: 380px; -fx-padding: 20px; -fx-background-color: white; -fx-background-radius: 16px; -fx-border-color: #dbe4f0; -fx-border-radius: 16px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.22), 24, 0.22, 0, 8); }
 .profile-avatar { -fx-font-size: 28px; -fx-text-fill: #2563eb; }
 .profile-title { -fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: #111827; }
@@ -42,9 +38,7 @@
 .profile-settings { -fx-min-height: 40px; -fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: hand; }
 .profile-logout { -fx-min-height: 42px; -fx-background-color: #fee2e2; -fx-border-color: transparent; -fx-text-fill: #b91c1c; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 9px; -fx-cursor: hand; }
 
-/* =========================
-   Dashboard cards
-   ========================= */
+/* Dashboard */
 .dashboard-content { -fx-padding: 30px 34px 42px 34px; }
 .dashboard-page { -fx-padding: 2px 0 10px 0; }
 .dashboard-hero { -fx-padding: 4px; -fx-spacing: 6px; }
@@ -65,16 +59,15 @@
 .dashboard-income-text, .income-value-small { -fx-text-fill: #15803d; -fx-font-weight: bold; }
 .dashboard-expense-text, .expense-value-small { -fx-text-fill: #dc2626; -fx-font-weight: bold; }
 
-/* =========================
-   Analytics - modern finance UI
-   ========================= */
-.analytics-kpi-row { -fx-spacing: 14px; -fx-padding: 4px 0 2px 0; }
+/* Analytics */
+.analytics-header { -fx-padding: 4px 0 2px 0; }
+.analytics-explainer { -fx-background-color: linear-gradient(to right, #f8fafc, #ffffff); -fx-background-radius: 12px; -fx-border-color: #e2e8f0; -fx-border-radius: 12px; -fx-padding: 13px 16px; }
+.analytics-explainer-title { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1e3a8a; }
+.analytics-explainer-text { -fx-font-size: 11px; -fx-text-fill: #64748b; -fx-line-spacing: 3px; }
+.analytics-kpi-row { -fx-spacing: 14px; -fx-padding: 2px 0 2px 0; }
 .analytics-kpi-card { -fx-min-height: 128px; -fx-pref-height: 128px; -fx-padding: 18px 19px; -fx-background-radius: 16px; -fx-border-radius: 16px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 16, 0.14, 0, 5); }
 .analytics-kpi-card:hover { -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.15), 20, 0.16, 0, 7); -fx-translate-y: -2px; }
 .analytics-kpi-red { -fx-background-color: linear-gradient(to bottom right, #fff1f2, #ffffff); -fx-border-color: #fecdd3; }
-.analytics-kpi-blue { -fx-background-color: linear-gradient(to bottom right, #eff6ff, #ffffff); -fx-border-color: #bfdbfe; }
-.analytics-kpi-purple { -fx-background-color: linear-gradient(to bottom right, #f5f3ff, #ffffff); -fx-border-color: #ddd6fe; }
-.analytics-kpi-green { -fx-background-color: linear-gradient(to bottom right, #ecfdf5, #ffffff); -fx-border-color: #a7f3d0; }
 .analytics-kpi-card .card-title { -fx-font-size: 11px; -fx-letter-spacing: 0.6px; -fx-text-fill: #64748b; }
 .analytics-kpi-value { -fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #172033; }
 .analytics-kpi-blue .analytics-kpi-value { -fx-text-fill: #2563eb; }
@@ -86,15 +79,16 @@
 .analytics-insight-card .section-title { -fx-font-size: 16px; -fx-text-fill: #1e3a8a; }
 .analytics-insight-icon { -fx-font-size: 18px; }
 .analytics-insight-text { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #334155; -fx-line-spacing: 4px; }
-.analytics-chart-hint { -fx-padding: 2px 5px 0 5px; -fx-font-size: 12px; -fx-text-fill: #64748b; }
-.analytics-section-label { -fx-padding: 5px 4px 0 4px; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #334155; }
+.analytics-section-label { -fx-padding: 3px 4px 0 4px; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #334155; }
+.analytics-section-heading { -fx-padding: 3px 0 0 0; }
+.analytics-chart-hint { -fx-padding: 2px 5px 0 5px; -fx-font-size: 11px; -fx-text-fill: #64748b; }
+.analytics-chart-badge { -fx-background-color: #f1f5f9; -fx-background-radius: 7px; -fx-padding: 5px 8px; -fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b; }
+.analytics-chart-row { -fx-fill-height: true; }
 .analytics-chart-card { -fx-background-color: #ffffff; -fx-background-radius: 16px; -fx-border-color: #e2e8f0; -fx-border-radius: 16px; -fx-padding: 18px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 16, 0.12, 0, 5); }
 .analytics-chart-card:hover { -fx-border-color: #cbd5e1; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.12), 20, 0.14, 0, 7); }
 .analytics-chart-card .section-title { -fx-font-size: 16px; -fx-text-fill: #172033; }
 .analytics-chart-card .subtitle { -fx-font-size: 11px; }
-
-/* JavaFX charts */
-.analytics-chart-card .chart { -fx-padding: 10px 4px 4px 0; -fx-background-color: transparent; }
+.analytics-chart-card .chart { -fx-padding: 8px 4px 2px 0; -fx-background-color: transparent; }
 .analytics-chart-card .chart-plot-background { -fx-background-color: #fbfdff; -fx-background-radius: 10px; }
 .analytics-chart-card .chart-vertical-grid-lines, .analytics-chart-card .chart-horizontal-grid-lines { -fx-stroke: #e8eef6; -fx-stroke-width: 1px; }
 .analytics-chart-card .axis { -fx-tick-label-fill: #64748b; -fx-tick-label-font-size: 10px; }
@@ -104,10 +98,11 @@
 .analytics-chart-card .chart-pie-label { -fx-fill: #475569; -fx-font-size: 10px; }
 .analytics-chart-card .chart-pie-label-line { -fx-stroke: #94a3b8; }
 .analytics-chart-card .chart-title { -fx-text-fill: #172033; -fx-font-size: 15px; -fx-font-weight: bold; }
+.analytics-tip-card { -fx-background-color: #fffdf2; -fx-background-radius: 12px; -fx-border-color: #fde68a; -fx-border-radius: 12px; -fx-padding: 13px 16px; }
+.analytics-tip-title { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #92400e; }
+.analytics-tip-text { -fx-font-size: 11px; -fx-text-fill: #78350f; -fx-line-spacing: 3px; }
 
-/* =========================
-   Other dashboard UI
-   ========================= */
+/* Other dashboard UI */
 .quick-actions-card { -fx-padding: 18px; }
 .quick-action-button { -fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-text-fill: #334155; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 13px 12px; -fx-cursor: hand; }
 .quick-action-button:hover { -fx-background-color: #eff6ff; -fx-border-color: #93c5fd; -fx-text-fill: #1d4ed8; }
