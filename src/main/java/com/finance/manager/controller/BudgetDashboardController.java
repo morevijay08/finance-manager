@@ -1,6 +1,7 @@
 package com.finance.manager.controller;
 
 import com.finance.manager.model.Transaction;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -9,29 +10,40 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.lang.reflect.Field;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
 
-/** Dashboard-only presentation. Uses the same live transaction list as the main finance controller. */
+/** Dashboard-only presentation using the live transaction list loaded by DashboardController. */
 public class BudgetDashboardController extends DashboardController {
     @FXML private Node dashboardSection;
     @FXML private Node analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection;
 
-    private Label dashboardSavingsLabel;
-    private Label dashboardSavingsRateLabel;
-    private Label dashboardHealthLabel;
-    private Label dashboardMonthlyIncomeLabel;
-    private Label dashboardMonthlyExpenseLabel;
-    private Label dashboardMonthlySavingsLabel;
+    private Label dashboardSavingsLabel, dashboardSavingsRateLabel, dashboardHealthLabel;
+    private Label dashboardMonthlyIncomeLabel, dashboardMonthlyExpenseLabel, dashboardMonthlySavingsLabel;
     private VBox recentActivityBox;
+    private ObservableList<Transaction> liveTransactions;
 
     @FXML
     private void initialize() {
         super.initialize();
         buildDashboardOverview();
+        connectToLiveTransactions();
         refreshDashboardOverview();
         show(dashboardSection);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void connectToLiveTransactions() {
+        try {
+            Field field = DashboardController.class.getDeclaredField("transactions");
+            field.setAccessible(true);
+            liveTransactions = (ObservableList<Transaction>) field.get(this);
+            liveTransactions.addListener((javafx.collections.ListChangeListener<Transaction>) change -> refreshDashboardOverview());
+        } catch (Exception e) {
+            liveTransactions = null;
+        }
     }
 
     private void buildDashboardOverview() {
@@ -102,14 +114,9 @@ public class BudgetDashboardController extends DashboardController {
         recentActivityBox = new VBox(5); card.getChildren().addAll(header, recentActivityBox); return card;
     }
 
-    /** Called by DashboardController after Firestore data arrives and changes. */
-    @Override
-    protected void onTransactionsLoaded(List<Transaction> loadedTransactions) {
-        refreshDashboardOverview(loadedTransactions);
-    }
-
     private void refreshDashboardOverview() {
-        refreshDashboardOverview(getTransactionsSnapshot());
+        if (liveTransactions == null) return;
+        refreshDashboardOverview(List.copyOf(liveTransactions));
     }
 
     private void refreshDashboardOverview(List<Transaction> list) {
@@ -131,14 +138,12 @@ public class BudgetDashboardController extends DashboardController {
         dashboardHealthLabel.setText(monthIncome == 0 && monthExpense == 0 ? "● Ready" : monthSavings >= 0 ? "● Good" : "● Review");
 
         recentActivityBox.getChildren().clear();
-        List<Transaction> recent = list.stream()
-                .filter(t -> t != null)
-                .sorted((a, b) -> {
-                    if (a.getDate() == null && b.getDate() == null) return 0;
-                    if (a.getDate() == null) return 1;
-                    if (b.getDate() == null) return -1;
-                    return b.getDate().compareTo(a.getDate());
-                }).limit(5).toList();
+        List<Transaction> recent = list.stream().filter(t -> t != null).sorted((a, b) -> {
+            if (a.getDate() == null && b.getDate() == null) return 0;
+            if (a.getDate() == null) return 1;
+            if (b.getDate() == null) return -1;
+            return b.getDate().compareTo(a.getDate());
+        }).limit(5).toList();
 
         if (recent.isEmpty()) {
             Label empty = new Label("No transactions yet. Add your first income or expense to see it here.");
@@ -186,9 +191,7 @@ public class BudgetDashboardController extends DashboardController {
         if (selected != null) selected.toFront();
     }
 
-    @FXML private void handleLogout() { super.handleLogout(); }
+    @FXML private void handleLogout() { super.handleLogout(null); }
     @FXML private void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); }
     @FXML private void handleExportCsv() { super.handleExportCsv(); }
-
-    protected List<Transaction> getTransactionsSnapshot() { return List.copyOf(getTransactions()); }
 }
