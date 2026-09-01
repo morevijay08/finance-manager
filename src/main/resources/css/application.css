@@ -33,14 +33,14 @@ root { -fx-font-family: "Segoe UI", Arial, sans-serif; -fx-background-color: #f4
 .dashboard-content { -fx-padding: 30px 34px 42px 34px; }
 .dashboard-page { -fx-padding: 2px 0 10px 0; }
 .dashboard-hero { -fx-padding: 4px; -fx-spacing: 6px; }
-.summary-row, .dashboard-extra-row { -fx-fill-height: true; }
+.summary-row, .dashboard-extra-row, .analytics-kpi-row { -fx-fill-height: true; }
 .summary-card { -fx-background-color: white; -fx-background-radius: 15px; -fx-border-color: #e2e8f0; -fx-border-radius: 15px; -fx-padding: 20px; -fx-spacing: 8px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.07), 14, 0.12, 0, 4); }
 .summary-card:hover { -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.12), 18, 0.14, 0, 6); }
-.balance-card, .dashboard-savings-card { -fx-background-color: linear-gradient(to bottom right, #eff6ff, white); -fx-border-color: #bfdbfe; }
-.dashboard-income-card, .dashboard-income-text { -fx-background-color: linear-gradient(to bottom right, #f0fdf4, white); -fx-border-color: #bbf7d0; }
+.balance-card, .dashboard-savings-card, .analytics-kpi-blue { -fx-background-color: linear-gradient(to bottom right, #eff6ff, white); -fx-border-color: #bfdbfe; }
+.dashboard-income-card { -fx-background-color: linear-gradient(to bottom right, #f0fdf4, white); -fx-border-color: #bbf7d0; }
 .dashboard-expense-card { -fx-background-color: linear-gradient(to bottom right, #fff7f7, white); -fx-border-color: #fecaca; }
-.dashboard-rate-card { -fx-background-color: linear-gradient(to bottom right, #f5f3ff, white); -fx-border-color: #ddd6fe; }
-.dashboard-health-card { -fx-background-color: linear-gradient(to bottom right, #ecfdf5, white); -fx-border-color: #a7f3d0; }
+.dashboard-rate-card, .analytics-kpi-purple { -fx-background-color: linear-gradient(to bottom right, #f5f3ff, white); -fx-border-color: #ddd6fe; }
+.dashboard-health-card, .analytics-kpi-green { -fx-background-color: linear-gradient(to bottom right, #ecfdf5, white); -fx-border-color: #a7f3d0; }
 .dashboard-cashflow-card { -fx-background-color: linear-gradient(to bottom right, white, #f8fafc); }
 .dashboard-health-panel { -fx-background-color: linear-gradient(to bottom right, #eff6ff, white); -fx-border-color: #bfdbfe; }
 .dashboard-extra-value { -fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #172033; }
@@ -49,6 +49,16 @@ root { -fx-font-family: "Segoe UI", Arial, sans-serif; -fx-background-color: #f4
 .dashboard-health-card .dashboard-extra-value { -fx-text-fill: #15803d; }
 .dashboard-income-text, .income-value-small { -fx-text-fill: #15803d; -fx-font-weight: bold; }
 .dashboard-expense-text, .expense-value-small { -fx-text-fill: #dc2626; -fx-font-weight: bold; }
+.analytics-kpi-card { -fx-min-height: 112px; -fx-padding: 17px; }
+.analytics-kpi-red { -fx-background-color: linear-gradient(to bottom right, #fff1f2, white); -fx-border-color: #fecdd3; }
+.analytics-kpi-value { -fx-font-size: 23px; -fx-font-weight: bold; -fx-text-fill: #172033; }
+.analytics-kpi-blue .analytics-kpi-value { -fx-text-fill: #2563eb; }
+.analytics-kpi-red .analytics-kpi-value { -fx-text-fill: #dc2626; }
+.analytics-kpi-purple .analytics-kpi-value { -fx-text-fill: #7c3aed; }
+.analytics-kpi-green .analytics-kpi-value { -fx-text-fill: #15803d; }
+.analytics-insight-card { -fx-background-color: linear-gradient(to right, #eef6ff, white); -fx-border-color: #bfdbfe; -fx-padding: 17px 20px; }
+.analytics-insight-text { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #334155; -fx-line-spacing: 3px; }
+.analytics-chart-hint { -fx-padding: 2px 4px; -fx-font-size: 12px; -fx-text-fill: #64748b; }
 .quick-actions-card { -fx-padding: 18px; }
 .quick-action-button { -fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-text-fill: #334155; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 13px 12px; -fx-cursor: hand; }
 .quick-action-button:hover { -fx-background-color: #eff6ff; -fx-border-color: #93c5fd; -fx-text-fill: #1d4ed8; }
@@ -59,6 +69,8 @@ root { -fx-font-family: "Segoe UI", Arial, sans-serif; -fx-background-color: #f4
 .dashboard-income-icon { -fx-text-fill: #16a34a; }
 .dashboard-expense-icon { -fx-text-fill: #dc2626; }
 .activity-title { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #334155; }
+.activity-meta { -fx-font-size: 11px; -fx-text-fill: #94a3b8; }
+.activity-empty { -fx-padding: 15px 4px; -fx-font-size: 12px; -fx-text-fill: #94a3b8; }
 .balance-value, .income-value, .expense-value { -fx-font-size: 27px; -fx-font-weight: bold; }
 .balance-value { -fx-text-fill: #1f2937; }
 .income-value { -fx-text-fill: #15803d; }
