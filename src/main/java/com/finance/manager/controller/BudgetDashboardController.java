@@ -9,11 +9,14 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -22,10 +25,9 @@ import java.time.format.TextStyle;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
- * Dashboard controller extension for the monthly-budget UI and monthly report.
+ * Dashboard controller extension for the monthly-budget UI, monthly report and sidebar navigation.
  */
 public class BudgetDashboardController extends DashboardController {
 
@@ -36,6 +38,16 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private Label reportBudgetLabel;
     @FXML private Label reportRemainingLabel;
     @FXML private PieChart reportExpenseChart;
+
+    @FXML private ScrollPane dashboardScrollPane;
+    @FXML private Node dashboardSection;
+    @FXML private Node analyticsSection;
+    @FXML private Node notificationsSection;
+    @FXML private Node reportsSection;
+    @FXML private Node goalsSection;
+    @FXML private Node budgetSection;
+    @FXML private Node addTransactionSection;
+    @FXML private Node transactionsSection;
 
     private final FirebaseAuthService reportAuthService = new FirebaseAuthService();
     private final FirestoreTransactionRepository reportTransactionRepository = new FirestoreTransactionRepository();
@@ -152,6 +164,71 @@ public class BudgetDashboardController extends DashboardController {
             field("statusLabel", Label.class).setText(message);
         } catch (Exception ignored) {
         }
+    }
+
+    // ---------- Sidebar navigation ----------
+
+    @FXML
+    private void handleDashboardNav() {
+        scrollTo(dashboardSection);
+    }
+
+    @FXML
+    private void handleAnalyticsNav() {
+        scrollTo(analyticsSection);
+    }
+
+    @FXML
+    private void handleNotificationsNav() {
+        scrollTo(notificationsSection);
+    }
+
+    @FXML
+    private void handleReportsNav() {
+        scrollTo(reportsSection);
+    }
+
+    @FXML
+    private void handleGoalsNav() {
+        scrollTo(goalsSection);
+    }
+
+    @FXML
+    private void handleBudgetNav() {
+        scrollTo(budgetSection);
+    }
+
+    @FXML
+    private void handleAddTransactionNav() {
+        scrollTo(addTransactionSection);
+    }
+
+    @FXML
+    private void handleTransactionsNav() {
+        scrollTo(transactionsSection);
+    }
+
+    private void scrollTo(Node target) {
+        if (dashboardScrollPane == null || target == null) return;
+
+        Platform.runLater(() -> {
+            Node content = dashboardScrollPane.getContent();
+            if (content == null) return;
+
+            double contentHeight = content.getBoundsInLocal().getHeight();
+            double viewportHeight = dashboardScrollPane.getViewportBounds().getHeight();
+            double maxScroll = contentHeight - viewportHeight;
+
+            if (maxScroll <= 0) {
+                dashboardScrollPane.setVvalue(0);
+                return;
+            }
+
+            double targetY = target.localToScene(target.getBoundsInLocal()).getMinY();
+            double contentY = content.localToScene(content.getBoundsInLocal()).getMinY();
+            double relativeY = Math.max(0, targetY - contentY - 12);
+            dashboardScrollPane.setVvalue(Math.min(1, relativeY / maxScroll));
+        });
     }
 
     @FXML
