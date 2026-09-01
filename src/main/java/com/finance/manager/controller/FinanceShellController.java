@@ -19,14 +19,14 @@ import java.lang.reflect.Method;
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private VBox profileCard;
     @FXML private Label profileEmailLabel;
-    @FXML private VBox analyticsContainer;
-    @FXML private VBox dashboardSection;
-    @FXML private VBox notificationsSection;
-    @FXML private VBox reportsSection;
-    @FXML private VBox goalsSection;
-    @FXML private VBox budgetSection;
-    @FXML private VBox addTransactionSection;
-    @FXML private VBox transactionsSection;
+    @FXML private Node analyticsContainer;
+    @FXML private Node dashboardSection;
+    @FXML private Node notificationsSection;
+    @FXML private Node reportsSection;
+    @FXML private Node goalsSection;
+    @FXML private Node budgetSection;
+    @FXML private Node addTransactionSection;
+    @FXML private Node transactionsSection;
     @FXML private Button dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav;
     private final FirebaseAuthService shellAuthService = new FirebaseAuthService();
 
@@ -58,7 +58,7 @@ public class FinanceShellController extends BudgetDashboardController {
         if (logoutIndex >= 0) profileCard.getChildren().add(logoutIndex, settingsButton); else profileCard.getChildren().add(settingsButton);
     }
 
-    /** Makes exactly one content section visible; no other navbar section remains on screen. */
+    /** Makes exactly one content section visible; all other navbar sections are removed from layout. */
     private void showOnly(Node selected, Button active) {
         Node[] sections = {dashboardSection, analyticsContainer, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection};
         for (Node section : sections) if (section != null) { boolean show = section == selected; section.setVisible(show); section.setManaged(show); }
@@ -66,7 +66,6 @@ public class FinanceShellController extends BudgetDashboardController {
         for (Button button : buttons) if (button != null) button.getStyleClass().remove("nav-button-active");
         if (active != null && !active.getStyleClass().contains("nav-button-active")) active.getStyleClass().add("nav-button-active");
         closeProfile();
-        if (dashboardScrollPane != null) dashboardScrollPane.setVvalue(0);
     }
 
     @FXML private void handleDashboardNav(ActionEvent e) { showOnly(dashboardSection, dashboardNav); }
