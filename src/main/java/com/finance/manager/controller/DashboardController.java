@@ -24,6 +24,8 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDate;
@@ -137,8 +139,42 @@ public class DashboardController {
         try { double amount = Double.parseDouble(amountField.getText().trim()); if (amount <= 0) throw new NumberFormatException(); LocalDate date = datePicker.getValue(); if (date == null) throw new IllegalArgumentException("Select a date."); Transaction transaction = new Transaction(null, Transaction.Type.valueOf(typeCombo.getValue()), amount, categoryCombo.getValue(), descriptionField.getText().trim(), date); addButton.setDisable(true); statusLabel.setText("Saving transaction..."); transactionRepository.addTransaction(session, transaction).thenAccept(saved -> Platform.runLater(() -> { transactions.add(0, saved); applyFilters(); updateSummary(); updateCharts(); updateBudgetProgress(); clearForm(); addButton.setDisable(false); statusLabel.setText("Transaction added successfully."); })).exceptionally(error -> { Platform.runLater(() -> { addButton.setDisable(false); statusLabel.setText("Could not save transaction."); }); return null; }); } catch (NumberFormatException e) { statusLabel.setText("Enter a valid amount greater than 0."); } catch (IllegalArgumentException e) { statusLabel.setText(e.getMessage()); }
     }
     private void editTransaction(Transaction transaction) { editingTransaction = transaction; transactionTable.getSelectionModel().select(transaction); typeCombo.setValue(transaction.getType().name()); amountField.setText(String.valueOf(transaction.getAmount())); categoryCombo.setValue(transaction.getCategory()); descriptionField.setText(transaction.getDescription()); datePicker.setValue(transaction.getDate()); addButton.setText("Update"); addButton.setDisable(false); addButton.setOnAction(event -> handleUpdateTransaction()); statusLabel.setText("Editing transaction. Change the fields and click Update."); onTransactionEdit(transaction); }
-    /** Hook for the application shell to reveal the transaction editor after Edit is clicked. */
-    protected void onTransactionEdit(Transaction transaction) { }
+    /** Reveals the editor when a subclass provides an application-specific editor section. */
+    protected void onTransactionEdit(Transaction transaction) {
+        try {
+            Field editorField = findField(getClass(), "addTransactionSection");
+            if (editorField == null) return;
+            editorField.setAccessible(true);
+            Object editorObject = editorField.get(this);
+            if (!(editorObject instanceof Node editor)) return;
+
+            String[] pageNames = {"dashboardSection", "analyticsSection", "notificationsSection", "reportsSection", "goalsSection", "budgetSection", "addTransactionSection", "transactionsSection"};
+            for (String pageName : pageNames) {
+                Field pageField = findField(getClass(), pageName);
+                if (pageField == null) continue;
+                pageField.setAccessible(true);
+                Object pageObject = pageField.get(this);
+                if (pageObject instanceof Node page) {
+                    boolean active = page == editor;
+                    page.setVisible(active);
+                    page.setManaged(active);
+                    page.setMouseTransparent(!active);
+                }
+            }
+            editor.toFront();
+            editor.requestFocus();
+        } catch (Exception e) {
+            statusLabel.setText("Could not open transaction editor.");
+        }
+    }
+    private Field findField(Class<?> type, String name) {
+        Class<?> current = type;
+        while (current != null) {
+            try { return current.getDeclaredField(name); }
+            catch (NoSuchFieldException ignored) { current = current.getSuperclass(); }
+        }
+        return null;
+    }
     private void handleUpdateTransaction() { AuthSession session = authService.getCurrentSession(); if (session == null || editingTransaction == null) { statusLabel.setText("Select a transaction to edit."); resetAddButton(); return; } try { double amount = Double.parseDouble(amountField.getText().trim()); LocalDate date = datePicker.getValue(); if (amount <= 0 || date == null) throw new NumberFormatException(); editingTransaction.setType(Transaction.Type.valueOf(typeCombo.getValue())); editingTransaction.setAmount(amount); editingTransaction.setCategory(categoryCombo.getValue()); editingTransaction.setDescription(descriptionField.getText().trim()); editingTransaction.setDate(date); addButton.setDisable(true); statusLabel.setText("Updating transaction..."); transactionRepository.updateTransaction(session, editingTransaction).thenAccept(updated -> Platform.runLater(() -> { transactionTable.refresh(); updateSummary(); updateCharts(); updateBudgetProgress(); applyFilters(); resetFormAndButton(); statusLabel.setText("Transaction updated successfully."); })).exceptionally(error -> { Platform.runLater(() -> { addButton.setDisable(false); statusLabel.setText("Could not update transaction."); }); return null; }); } catch (Exception e) { statusLabel.setText("Enter valid transaction details."); } }
     private void deleteTransaction(Transaction transaction) { AuthSession session = authService.getCurrentSession(); if (session == null) { statusLabel.setText("Please log in again."); return; } Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete this transaction?", ButtonType.YES, ButtonType.NO); confirm.setTitle("Delete Transaction"); confirm.setHeaderText(null); confirm.showAndWait().ifPresent(button -> { if (button == ButtonType.YES) transactionRepository.deleteTransaction(session, transaction.getId()).thenRun(() -> Platform.runLater(() -> { transactions.remove(transaction); applyFilters(); updateSummary(); updateCharts(); updateBudgetProgress(); statusLabel.setText("Transaction deleted successfully."); })).exceptionally(error -> { Platform.runLater(() -> statusLabel.setText("Could not delete transaction.")); return null; }); }); }
     private void resetAddButton() { addButton.setText("Add Transaction"); addButton.setOnAction(event -> handleAddTransaction()); }
