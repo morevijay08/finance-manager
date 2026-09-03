@@ -13,6 +13,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -137,7 +138,7 @@ public class GoalsController {
     }
 
     private VBox createGoalCard(FinancialGoal goal) {
-        VBox card = new VBox(7);
+        VBox card = new VBox(8);
         card.getStyleClass().add("summary-card");
 
         HBox header = new HBox(10);
@@ -150,14 +151,143 @@ public class GoalsController {
 
         ProgressBar progress = new ProgressBar(goal.getProgress());
         progress.setMaxWidth(Double.MAX_VALUE);
+
         Label details = new Label(String.format(Locale.US, "Saved %s  •  Remaining %s  •  %.1f%%",
                 formatMoney(goal.getSavedAmount()), formatMoney(goal.getRemainingAmount()), goal.getProgress() * 100));
         details.getStyleClass().add("subtitle");
+
+        Button addAmount = new Button("Add Amount");
+        addAmount.getStyleClass().add("primary-button");
+        addAmount.setOnAction(event -> addAmountToGoal(goal));
+
+        Button edit = new Button("Edit Goal");
+        edit.getStyleClass().add("secondary-button");
+        edit.setOnAction(event -> editGoal(goal));
+
         Button delete = new Button("Delete");
         delete.getStyleClass().add("secondary-button");
         delete.setOnAction(event -> deleteGoal(goal));
-        card.getChildren().addAll(header, progress, details, delete);
+
+        HBox actions = new HBox(8, addAmount, edit, delete);
+        card.getChildren().addAll(header, progress, details, actions);
         return card;
+    }
+
+    private void addAmountToGoal(FinancialGoal goal) {
+        AuthSession session = authService.getCurrentSession();
+        if (session == null) {
+            goalStatusLabel.setText("Please log in again.");
+            return;
+        }
+
+        if (goal.getRemainingAmount() <= 0) {
+            goalStatusLabel.setText("This goal is already complete.");
+            return;
+        }
+
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Add Savings");
+        dialog.setHeaderText("Add money to: " + goal.getName());
+        dialog.setContentText("Amount to add:");
+        dialog.getEditor().setPromptText("e.g. 1000");
+
+        dialog.showAndWait().ifPresent(value -> {
+            try {
+                double amount = Double.parseDouble(value.trim());
+                if (amount <= 0) throw new NumberFormatException();
+                if (amount > goal.getRemainingAmount()) {
+                    goalStatusLabel.setText("Amount cannot exceed the remaining " + formatMoney(goal.getRemainingAmount()) + ".");
+                    return;
+                }
+
+                double newSaved = goal.getSavedAmount() + amount;
+                goal.setSavedAmount(newSaved);
+                goalStatusLabel.setText("Updating savings...");
+                goalRepository.updateGoal(session, goal)
+                        .thenRun(() -> Platform.runLater(() -> {
+                            renderGoals();
+                            goalStatusLabel.setText(newSaved >= goal.getTargetAmount()
+                                    ? "Goal completed successfully!"
+                                    : "Savings added. Progress updated automatically.");
+                        }))
+                        .exceptionally(error -> {
+                            goal.setSavedAmount(newSaved - amount);
+                            Platform.runLater(() -> goalStatusLabel.setText("Could not update goal savings."));
+                            return null;
+                        });
+            } catch (NumberFormatException e) {
+                goalStatusLabel.setText("Enter a valid positive amount.");
+            }
+        });
+    }
+
+    private void editGoal(FinancialGoal goal) {
+        AuthSession session = authService.getCurrentSession();
+        if (session == null) {
+            goalStatusLabel.setText("Please log in again.");
+            return;
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Edit Financial Goal");
+        dialog.setHeaderText("Update goal details");
+        ButtonType saveButton = new ButtonType("Save Changes", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);
+
+        TextField nameField = new TextField(goal.getName());
+        TextField targetField = new TextField(String.valueOf(goal.getTargetAmount()));
+        TextField savedField = new TextField(String.valueOf(goal.getSavedAmount()));
+        nameField.setPromptText("Goal name");
+        targetField.setPromptText("Target amount");
+        savedField.setPromptText("Saved amount");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.add(new Label("Goal name"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Target amount"), 0, 1);
+        grid.add(targetField, 1, 1);
+        grid.add(new Label("Saved amount"), 0, 2);
+        grid.add(savedField, 1, 2);
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.showAndWait().ifPresent(result -> {
+            if (result != saveButton) return;
+            String name = nameField.getText().trim();
+            try {
+                double target = Double.parseDouble(targetField.getText().trim());
+                double saved = Double.parseDouble(savedField.getText().trim());
+                if (name.isEmpty() || target <= 0 || saved < 0) throw new NumberFormatException();
+                if (saved > target) {
+                    goalStatusLabel.setText("Saved amount cannot exceed the target.");
+                    return;
+                }
+
+                String oldName = goal.getName();
+                double oldTarget = goal.getTargetAmount();
+                double oldSaved = goal.getSavedAmount();
+                goal.setName(name);
+                goal.setTargetAmount(target);
+                goal.setSavedAmount(saved);
+                goalStatusLabel.setText("Updating goal...");
+
+                goalRepository.updateGoal(session, goal)
+                        .thenRun(() -> Platform.runLater(() -> {
+                            renderGoals();
+                            goalStatusLabel.setText("Goal updated. Saved, remaining and percentage recalculated.");
+                        }))
+                        .exceptionally(error -> {
+                            goal.setName(oldName);
+                            goal.setTargetAmount(oldTarget);
+                            goal.setSavedAmount(oldSaved);
+                            Platform.runLater(() -> goalStatusLabel.setText("Could not update financial goal."));
+                            return null;
+                        });
+            } catch (NumberFormatException e) {
+                goalStatusLabel.setText("Enter valid goal name, target and saved amounts.");
+            }
+        });
     }
 
     private void deleteGoal(FinancialGoal goal) {
