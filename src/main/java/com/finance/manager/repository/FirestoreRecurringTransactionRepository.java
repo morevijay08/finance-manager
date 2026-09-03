@@ -17,6 +17,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +42,7 @@ public class FirestoreRecurringTransactionRepository {
             String name = json.has("name") ? json.get("name").getAsString() : "";
             String id = name.isBlank() ? "" : name.substring(name.lastIndexOf('/') + 1);
             return new RecurringTransaction(id, item.getType(), item.getAmount(), item.getCategory(),
-                    item.getDescription(), item.getFrequency(), item.getNextDate(), item.isActive());
+                    item.getDescription(), item.getFrequency(), item.getNextDate(), item.getNextTime(), item.isActive());
         });
     }
 
@@ -67,10 +68,15 @@ public class FirestoreRecurringTransactionRepository {
                         stringValue(fields, "description", ""),
                         RecurringTransaction.Frequency.valueOf(stringValue(fields, "frequency", "MONTHLY")),
                         LocalDate.parse(stringValue(fields, "nextDate", LocalDate.now().toString())),
+                        parseTime(stringValue(fields, "nextTime", "09:00")),
                         booleanValue(fields, "active", true)
                 ));
             }
-            result.sort((a, b) -> a.getNextDate().compareTo(b.getNextDate()));
+            result.sort((a, b) -> {
+                int dateCompare = a.getNextDate().compareTo(b.getNextDate());
+                if (dateCompare != 0) return dateCompare;
+                return a.getNextTime().compareTo(b.getNextTime());
+            });
             return result;
         });
     }
@@ -103,6 +109,7 @@ public class FirestoreRecurringTransactionRepository {
         fields.add("description", stringField(item.getDescription()));
         fields.add("frequency", stringField(item.getFrequency().name()));
         fields.add("nextDate", stringField(item.getNextDate().toString()));
+        fields.add("nextTime", stringField(item.getNextTime() == null ? "09:00" : item.getNextTime().toString()));
         fields.add("active", booleanField(item.isActive()));
         JsonObject document = new JsonObject();
         document.add("fields", fields);
@@ -142,6 +149,14 @@ public class FirestoreRecurringTransactionRepository {
     private String stringValue(JsonObject fields, String name, String fallback) {
         if (!fields.has(name) || !fields.getAsJsonObject(name).has("stringValue")) return fallback;
         return fields.getAsJsonObject(name).get("stringValue").getAsString();
+    }
+
+    private LocalTime parseTime(String value) {
+        try {
+            return LocalTime.parse(value);
+        } catch (Exception e) {
+            return LocalTime.of(9, 0);
+        }
     }
 
     private double doubleValue(JsonObject fields, String name) {
