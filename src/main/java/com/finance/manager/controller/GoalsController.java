@@ -18,6 +18,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Locale;
 
 public class GoalsController {
@@ -34,6 +36,7 @@ public class GoalsController {
     @FXML private TextField recurringDescriptionField;
     @FXML private ComboBox<String> recurringFrequencyCombo;
     @FXML private DatePicker recurringNextDatePicker;
+    @FXML private TextField recurringTimeField;
     @FXML private Button addRecurringButton;
     @FXML private VBox recurringBox;
     @FXML private Label recurringStatusLabel;
@@ -69,6 +72,7 @@ public class GoalsController {
         recurringFrequencyCombo.setItems(FXCollections.observableArrayList("DAILY", "WEEKLY", "MONTHLY", "YEARLY"));
         recurringFrequencyCombo.setValue("MONTHLY");
         recurringNextDatePicker.setValue(LocalDate.now());
+        recurringTimeField.setText("09:00");
     }
 
     @FXML
@@ -78,13 +82,11 @@ public class GoalsController {
             goalStatusLabel.setText("Please log in again.");
             return;
         }
-
         String name = goalNameField.getText().trim();
         if (name.isEmpty()) {
             goalStatusLabel.setText("Enter a goal name.");
             return;
         }
-
         try {
             double target = Double.parseDouble(targetField.getText().trim());
             double saved = savedField.getText().trim().isEmpty() ? 0 : Double.parseDouble(savedField.getText().trim());
@@ -93,16 +95,13 @@ public class GoalsController {
                 goalStatusLabel.setText("Saved amount cannot exceed the target.");
                 return;
             }
-
             addGoalButton.setDisable(true);
             goalStatusLabel.setText("Saving goal...");
             goalRepository.addGoal(session, new FinancialGoal(null, name, target, saved))
                     .thenAccept(goal -> Platform.runLater(() -> {
                         goals.add(0, goal);
                         renderGoals();
-                        goalNameField.clear();
-                        targetField.clear();
-                        savedField.clear();
+                        goalNameField.clear(); targetField.clear(); savedField.clear();
                         addGoalButton.setDisable(false);
                         goalStatusLabel.setText("Financial goal added successfully.");
                     }))
@@ -122,14 +121,10 @@ public class GoalsController {
         goalStatusLabel.setText("Loading goals...");
         goalRepository.getGoals(session)
                 .thenAccept(result -> Platform.runLater(() -> {
-                    goals.setAll(result);
-                    renderGoals();
+                    goals.setAll(result); renderGoals();
                     goalStatusLabel.setText(result.isEmpty() ? "No financial goals yet." : "Ready");
                 }))
-                .exceptionally(error -> {
-                    Platform.runLater(() -> goalStatusLabel.setText("Could not load financial goals."));
-                    return null;
-                });
+                .exceptionally(error -> { Platform.runLater(() -> goalStatusLabel.setText("Could not load financial goals.")); return null; });
     }
 
     private void renderGoals() {
@@ -138,36 +133,16 @@ public class GoalsController {
     }
 
     private VBox createGoalCard(FinancialGoal goal) {
-        VBox card = new VBox(8);
-        card.getStyleClass().add("summary-card");
-
+        VBox card = new VBox(8); card.getStyleClass().add("summary-card");
         HBox header = new HBox(10);
-        Label name = new Label(goal.getName());
-        name.getStyleClass().add("card-title");
-        Label target = new Label(formatMoney(goal.getTargetAmount()));
-        target.getStyleClass().add("balance-value");
-        HBox.setHgrow(name, javafx.scene.layout.Priority.ALWAYS);
-        header.getChildren().addAll(name, target);
-
-        ProgressBar progress = new ProgressBar(goal.getProgress());
-        progress.setMaxWidth(Double.MAX_VALUE);
-
-        Label details = new Label(String.format(Locale.US, "Saved %s  •  Remaining %s  •  %.1f%%",
-                formatMoney(goal.getSavedAmount()), formatMoney(goal.getRemainingAmount()), goal.getProgress() * 100));
-        details.getStyleClass().add("subtitle");
-
-        Button addAmount = new Button("Add Amount");
-        addAmount.getStyleClass().add("primary-button");
-        addAmount.setOnAction(event -> addAmountToGoal(goal));
-
-        Button edit = new Button("Edit Goal");
-        edit.getStyleClass().add("secondary-button");
-        edit.setOnAction(event -> editGoal(goal));
-
-        Button delete = new Button("Delete");
-        delete.getStyleClass().add("secondary-button");
-        delete.setOnAction(event -> deleteGoal(goal));
-
+        Label name = new Label(goal.getName()); name.getStyleClass().add("card-title");
+        Label target = new Label(formatMoney(goal.getTargetAmount())); target.getStyleClass().add("balance-value");
+        HBox.setHgrow(name, javafx.scene.layout.Priority.ALWAYS); header.getChildren().addAll(name, target);
+        ProgressBar progress = new ProgressBar(goal.getProgress()); progress.setMaxWidth(Double.MAX_VALUE);
+        Label details = new Label(String.format(Locale.US, "Saved %s  •  Remaining %s  •  %.1f%%", formatMoney(goal.getSavedAmount()), formatMoney(goal.getRemainingAmount()), goal.getProgress() * 100)); details.getStyleClass().add("subtitle");
+        Button addAmount = new Button("Add Amount"); addAmount.getStyleClass().add("primary-button"); addAmount.setOnAction(event -> addAmountToGoal(goal));
+        Button edit = new Button("Edit Goal"); edit.getStyleClass().add("secondary-button"); edit.setOnAction(event -> editGoal(goal));
+        Button delete = new Button("Delete"); delete.getStyleClass().add("secondary-button"); delete.setOnAction(event -> deleteGoal(goal));
         HBox actions = new HBox(8, addAmount, edit, delete);
         card.getChildren().addAll(header, progress, details, actions);
         return card;
@@ -175,323 +150,143 @@ public class GoalsController {
 
     private void addAmountToGoal(FinancialGoal goal) {
         AuthSession session = authService.getCurrentSession();
-        if (session == null) {
-            goalStatusLabel.setText("Please log in again.");
-            return;
-        }
-
-        if (goal.getRemainingAmount() <= 0) {
-            goalStatusLabel.setText("This goal is already complete.");
-            return;
-        }
-
+        if (session == null) { goalStatusLabel.setText("Please log in again."); return; }
+        if (goal.getRemainingAmount() <= 0) { goalStatusLabel.setText("This goal is already complete."); return; }
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Add Savings");
-        dialog.setHeaderText("Add money to: " + goal.getName());
-        dialog.setContentText("Amount to add:");
-        dialog.getEditor().setPromptText("e.g. 1000");
-
+        dialog.setTitle("Add Savings"); dialog.setHeaderText("Add money to: " + goal.getName()); dialog.setContentText("Amount to add:"); dialog.getEditor().setPromptText("e.g. 1000");
         dialog.showAndWait().ifPresent(value -> {
             try {
                 double amount = Double.parseDouble(value.trim());
                 if (amount <= 0) throw new NumberFormatException();
-                if (amount > goal.getRemainingAmount()) {
-                    goalStatusLabel.setText("Amount cannot exceed the remaining " + formatMoney(goal.getRemainingAmount()) + ".");
-                    return;
-                }
-
-                double newSaved = goal.getSavedAmount() + amount;
-                goal.setSavedAmount(newSaved);
-                goalStatusLabel.setText("Updating savings...");
-                goalRepository.updateGoal(session, goal)
-                        .thenRun(() -> Platform.runLater(() -> {
-                            renderGoals();
-                            goalStatusLabel.setText(newSaved >= goal.getTargetAmount()
-                                    ? "Goal completed successfully!"
-                                    : "Savings added. Progress updated automatically.");
-                        }))
-                        .exceptionally(error -> {
-                            goal.setSavedAmount(newSaved - amount);
-                            Platform.runLater(() -> goalStatusLabel.setText("Could not update goal savings."));
-                            return null;
-                        });
-            } catch (NumberFormatException e) {
-                goalStatusLabel.setText("Enter a valid positive amount.");
-            }
+                if (amount > goal.getRemainingAmount()) { goalStatusLabel.setText("Amount cannot exceed the remaining " + formatMoney(goal.getRemainingAmount()) + "."); return; }
+                double newSaved = goal.getSavedAmount() + amount; goal.setSavedAmount(newSaved); goalStatusLabel.setText("Updating savings...");
+                goalRepository.updateGoal(session, goal).thenRun(() -> Platform.runLater(() -> {
+                    renderGoals(); goalStatusLabel.setText(newSaved >= goal.getTargetAmount() ? "Goal completed successfully!" : "Savings added. Progress updated automatically.");
+                })).exceptionally(error -> { goal.setSavedAmount(newSaved - amount); Platform.runLater(() -> goalStatusLabel.setText("Could not update goal savings.")); return null; });
+            } catch (NumberFormatException e) { goalStatusLabel.setText("Enter a valid positive amount."); }
         });
     }
 
     private void editGoal(FinancialGoal goal) {
         AuthSession session = authService.getCurrentSession();
-        if (session == null) {
-            goalStatusLabel.setText("Please log in again.");
-            return;
-        }
-
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Edit Financial Goal");
-        dialog.setHeaderText("Update goal details");
-        ButtonType saveButton = new ButtonType("Save Changes", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);
-
-        TextField nameField = new TextField(goal.getName());
-        TextField targetField = new TextField(String.valueOf(goal.getTargetAmount()));
-        TextField savedField = new TextField(String.valueOf(goal.getSavedAmount()));
-        nameField.setPromptText("Goal name");
-        targetField.setPromptText("Target amount");
-        savedField.setPromptText("Saved amount");
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.add(new Label("Goal name"), 0, 0);
-        grid.add(nameField, 1, 0);
-        grid.add(new Label("Target amount"), 0, 1);
-        grid.add(targetField, 1, 1);
-        grid.add(new Label("Saved amount"), 0, 2);
-        grid.add(savedField, 1, 2);
+        if (session == null) { goalStatusLabel.setText("Please log in again."); return; }
+        Dialog<ButtonType> dialog = new Dialog<>(); dialog.setTitle("Edit Financial Goal"); dialog.setHeaderText("Update goal details");
+        ButtonType saveButton = new ButtonType("Save Changes", ButtonBar.ButtonData.OK_DONE); dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);
+        TextField nameField = new TextField(goal.getName()); TextField targetField = new TextField(String.valueOf(goal.getTargetAmount())); TextField savedField = new TextField(String.valueOf(goal.getSavedAmount()));
+        nameField.setPromptText("Goal name"); targetField.setPromptText("Target amount"); savedField.setPromptText("Saved amount");
+        GridPane grid = new GridPane(); grid.setHgap(10); grid.setVgap(10);
+        grid.add(new Label("Goal name"), 0, 0); grid.add(nameField, 1, 0); grid.add(new Label("Target amount"), 0, 1); grid.add(targetField, 1, 1); grid.add(new Label("Saved amount"), 0, 2); grid.add(savedField, 1, 2);
         dialog.getDialogPane().setContent(grid);
-
         dialog.showAndWait().ifPresent(result -> {
             if (result != saveButton) return;
             String name = nameField.getText().trim();
             try {
-                double target = Double.parseDouble(targetField.getText().trim());
-                double saved = Double.parseDouble(savedField.getText().trim());
+                double target = Double.parseDouble(targetField.getText().trim()); double saved = Double.parseDouble(savedField.getText().trim());
                 if (name.isEmpty() || target <= 0 || saved < 0) throw new NumberFormatException();
-                if (saved > target) {
-                    goalStatusLabel.setText("Saved amount cannot exceed the target.");
-                    return;
-                }
-
-                String oldName = goal.getName();
-                double oldTarget = goal.getTargetAmount();
-                double oldSaved = goal.getSavedAmount();
-                goal.setName(name);
-                goal.setTargetAmount(target);
-                goal.setSavedAmount(saved);
-                goalStatusLabel.setText("Updating goal...");
-
-                goalRepository.updateGoal(session, goal)
-                        .thenRun(() -> Platform.runLater(() -> {
-                            renderGoals();
-                            goalStatusLabel.setText("Goal updated. Saved, remaining and percentage recalculated.");
-                        }))
-                        .exceptionally(error -> {
-                            goal.setName(oldName);
-                            goal.setTargetAmount(oldTarget);
-                            goal.setSavedAmount(oldSaved);
-                            Platform.runLater(() -> goalStatusLabel.setText("Could not update financial goal."));
-                            return null;
-                        });
-            } catch (NumberFormatException e) {
-                goalStatusLabel.setText("Enter valid goal name, target and saved amounts.");
-            }
+                if (saved > target) { goalStatusLabel.setText("Saved amount cannot exceed the target."); return; }
+                String oldName = goal.getName(); double oldTarget = goal.getTargetAmount(); double oldSaved = goal.getSavedAmount();
+                goal.setName(name); goal.setTargetAmount(target); goal.setSavedAmount(saved); goalStatusLabel.setText("Updating goal...");
+                goalRepository.updateGoal(session, goal).thenRun(() -> Platform.runLater(() -> { renderGoals(); goalStatusLabel.setText("Goal updated. Saved, remaining and percentage recalculated."); })).exceptionally(error -> { goal.setName(oldName); goal.setTargetAmount(oldTarget); goal.setSavedAmount(oldSaved); Platform.runLater(() -> goalStatusLabel.setText("Could not update financial goal.")); return null; });
+            } catch (NumberFormatException e) { goalStatusLabel.setText("Enter valid goal name, target and saved amounts."); }
         });
     }
 
     private void deleteGoal(FinancialGoal goal) {
         AuthSession session = authService.getCurrentSession();
-        if (session == null) {
-            goalStatusLabel.setText("Please log in again.");
-            return;
-        }
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Delete Financial Goal");
-        alert.setHeaderText("Delete this goal?");
-        alert.setContentText(goal.getName());
-        alert.showAndWait().ifPresent(result -> {
-            if (result != ButtonType.OK) return;
-            goalStatusLabel.setText("Deleting goal...");
-            goalRepository.deleteGoal(session, goal.getId()).thenRun(() -> Platform.runLater(() -> {
-                goals.remove(goal);
-                renderGoals();
-                goalStatusLabel.setText("Financial goal deleted successfully.");
-            })).exceptionally(error -> {
-                Platform.runLater(() -> goalStatusLabel.setText("Could not delete financial goal."));
-                return null;
-            });
-        });
+        if (session == null) { goalStatusLabel.setText("Please log in again."); return; }
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION); alert.setTitle("Delete Financial Goal"); alert.setHeaderText("Delete this goal?"); alert.setContentText(goal.getName());
+        alert.showAndWait().ifPresent(result -> { if (result != ButtonType.OK) return; goalStatusLabel.setText("Deleting goal..."); goalRepository.deleteGoal(session, goal.getId()).thenRun(() -> Platform.runLater(() -> { goals.remove(goal); renderGoals(); goalStatusLabel.setText("Financial goal deleted successfully."); })).exceptionally(error -> { Platform.runLater(() -> goalStatusLabel.setText("Could not delete financial goal.")); return null; }); });
     }
 
     @FXML
     private void handleAddRecurring() {
         AuthSession session = authService.getCurrentSession();
-        if (session == null) {
-            recurringStatusLabel.setText("Please log in again.");
-            return;
-        }
+        if (session == null) { recurringStatusLabel.setText("Please log in again."); return; }
         try {
             double amount = Double.parseDouble(recurringAmountField.getText().trim());
-            if (amount <= 0 || recurringNextDatePicker.getValue() == null) throw new NumberFormatException();
-
-            RecurringTransaction item = new RecurringTransaction(
-                    null, Transaction.Type.valueOf(recurringTypeCombo.getValue()), amount,
+            LocalDate date = recurringNextDatePicker.getValue();
+            LocalTime time = parseTime(recurringTimeField.getText());
+            if (amount <= 0 || date == null || time == null) throw new IllegalArgumentException();
+            RecurringTransaction item = new RecurringTransaction(null, Transaction.Type.valueOf(recurringTypeCombo.getValue()), amount,
                     recurringCategoryCombo.getValue(), recurringDescriptionField.getText().trim(),
-                    RecurringTransaction.Frequency.valueOf(recurringFrequencyCombo.getValue()),
-                    recurringNextDatePicker.getValue(), true);
-
-            addRecurringButton.setDisable(true);
-            recurringStatusLabel.setText("Saving recurring transaction...");
-            recurringRepository.add(session, item)
-                    .thenAccept(saved -> Platform.runLater(() -> {
-                        recurringTransactions.add(saved);
-                        renderRecurringTransactions();
-                        clearRecurringForm();
-                        addRecurringButton.setDisable(false);
-                        recurringStatusLabel.setText("Recurring transaction added successfully.");
-                    }))
-                    .exceptionally(error -> {
-                        Platform.runLater(() -> {
-                            addRecurringButton.setDisable(false);
-                            recurringStatusLabel.setText("Could not save recurring transaction.");
-                        });
-                        return null;
-                    });
-        } catch (IllegalArgumentException e) {
-            recurringStatusLabel.setText("Enter a valid amount and next date.");
-        }
+                    RecurringTransaction.Frequency.valueOf(recurringFrequencyCombo.getValue()), date, time, true);
+            addRecurringButton.setDisable(true); recurringStatusLabel.setText("Saving recurring transaction...");
+            recurringRepository.add(session, item).thenAccept(saved -> Platform.runLater(() -> {
+                recurringTransactions.add(saved); renderRecurringTransactions(); clearRecurringForm(); addRecurringButton.setDisable(false); recurringStatusLabel.setText("Recurring transaction added successfully.");
+            })).exceptionally(error -> { Platform.runLater(() -> { addRecurringButton.setDisable(false); recurringStatusLabel.setText("Could not save recurring transaction."); }); return null; });
+        } catch (IllegalArgumentException e) { recurringStatusLabel.setText("Enter a valid amount, date and time (HH:mm)."); }
     }
 
     private void loadRecurringTransactions(AuthSession session) {
         recurringStatusLabel.setText("Loading recurring transactions...");
-        recurringRepository.getAll(session)
-                .thenCompose(items -> processDueTransactions(session, items).thenApply(v -> items))
-                .thenAccept(items -> Platform.runLater(() -> {
-                    recurringTransactions.setAll(items);
-                    renderRecurringTransactions();
-                    recurringStatusLabel.setText(items.isEmpty()
-                            ? "No recurring transactions yet."
-                            : "Ready. Due recurring transactions are added automatically when the app opens.");
-                }))
-                .exceptionally(error -> {
-                    Platform.runLater(() -> recurringStatusLabel.setText("Could not load recurring transactions."));
-                    return null;
-                });
+        recurringRepository.getAll(session).thenCompose(items -> processDueTransactions(session, items).thenApply(v -> items)).thenAccept(items -> Platform.runLater(() -> {
+            recurringTransactions.setAll(items); renderRecurringTransactions(); recurringStatusLabel.setText(items.isEmpty() ? "No recurring transactions yet." : "Ready. Due recurring transactions are added automatically when their date and time arrive.");
+        })).exceptionally(error -> { Platform.runLater(() -> recurringStatusLabel.setText("Could not load recurring transactions.")); return null; });
     }
 
-    private java.util.concurrent.CompletableFuture<Void> processDueTransactions(AuthSession session,
-                                                                                 java.util.List<RecurringTransaction> items) {
+    private java.util.concurrent.CompletableFuture<Void> processDueTransactions(AuthSession session, java.util.List<RecurringTransaction> items) {
         java.util.concurrent.CompletableFuture<Void> chain = java.util.concurrent.CompletableFuture.completedFuture(null);
-        LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now();
         for (RecurringTransaction item : items) {
-            if (!item.isActive() || item.getNextDate() == null || item.getNextDate().isAfter(today)) continue;
-            chain = chain.thenCompose(v -> processOneDueItem(session, item, today));
+            if (!item.isActive() || item.getNextDate() == null || item.getNextTime() == null) continue;
+            if (LocalDateTime.of(item.getNextDate(), item.getNextTime()).isAfter(now)) continue;
+            chain = chain.thenCompose(v -> processOneDueItem(session, item, now));
         }
         return chain;
     }
 
-    private java.util.concurrent.CompletableFuture<Void> processOneDueItem(AuthSession session,
-                                                                            RecurringTransaction item,
-                                                                            LocalDate today) {
+    private java.util.concurrent.CompletableFuture<Void> processOneDueItem(AuthSession session, RecurringTransaction item, LocalDateTime now) {
         java.util.concurrent.CompletableFuture<Void> chain = java.util.concurrent.CompletableFuture.completedFuture(null);
-        LocalDate next = item.getNextDate();
-        while (!next.isAfter(today)) {
-            LocalDate transactionDate = next;
-            Transaction transaction = new Transaction(
-                    null, item.getType(), item.getAmount(), item.getCategory(),
-                    item.getDescription() == null || item.getDescription().isBlank()
-                            ? "Recurring transaction" : item.getDescription(), transactionDate);
+        LocalDate nextDate = item.getNextDate(); LocalTime time = item.getNextTime() == null ? LocalTime.of(9, 0) : item.getNextTime();
+        while (!LocalDateTime.of(nextDate, time).isAfter(now)) {
+            LocalDate transactionDate = nextDate;
+            Transaction transaction = new Transaction(null, item.getType(), item.getAmount(), item.getCategory(),
+                    item.getDescription() == null || item.getDescription().isBlank() ? "Recurring transaction" : item.getDescription(), transactionDate);
             chain = chain.thenCompose(v -> transactionRepository.addTransaction(session, transaction).thenApply(saved -> null));
-            next = nextDate(next, item.getFrequency());
+            nextDate = nextDate(nextDate, item.getFrequency());
         }
-        item.setNextDate(next);
+        item.setNextDate(nextDate);
+        item.setNextTime(time);
         return chain.thenCompose(v -> recurringRepository.update(session, item));
     }
 
     private LocalDate nextDate(LocalDate date, RecurringTransaction.Frequency frequency) {
-        return switch (frequency) {
-            case DAILY -> date.plusDays(1);
-            case WEEKLY -> date.plusWeeks(1);
-            case MONTHLY -> date.plusMonths(1);
-            case YEARLY -> date.plusYears(1);
-        };
+        return switch (frequency) { case DAILY -> date.plusDays(1); case WEEKLY -> date.plusWeeks(1); case MONTHLY -> date.plusMonths(1); case YEARLY -> date.plusYears(1); };
     }
 
-    private void renderRecurringTransactions() {
-        recurringBox.getChildren().clear();
-        for (RecurringTransaction item : recurringTransactions) recurringBox.getChildren().add(createRecurringCard(item));
-    }
+    private void renderRecurringTransactions() { recurringBox.getChildren().clear(); for (RecurringTransaction item : recurringTransactions) recurringBox.getChildren().add(createRecurringCard(item)); }
 
     private VBox createRecurringCard(RecurringTransaction item) {
-        VBox card = new VBox(7);
-        card.getStyleClass().add("summary-card");
+        VBox card = new VBox(7); card.getStyleClass().add("summary-card");
         HBox header = new HBox(10);
-        Label title = new Label(String.format("%s • %s", item.getType(), formatMoney(item.getAmount())));
-        title.getStyleClass().add("card-title");
-        Label frequency = new Label(item.getFrequency().name());
-        frequency.getStyleClass().add("subtitle");
-        HBox.setHgrow(title, javafx.scene.layout.Priority.ALWAYS);
-        header.getChildren().addAll(title, frequency);
-
-        String description = item.getDescription() == null || item.getDescription().isBlank()
-                ? item.getCategory() : item.getCategory() + " • " + item.getDescription();
-        Label details = new Label(String.format("%s  •  Next: %s  •  %s",
-                description, item.getNextDate(), item.isActive() ? "Active" : "Paused"));
-        details.getStyleClass().add("subtitle");
-
-        Button toggle = new Button(item.isActive() ? "Pause" : "Resume");
-        toggle.getStyleClass().add("secondary-button");
-        toggle.setOnAction(event -> toggleRecurring(item));
-        Button delete = new Button("Delete");
-        delete.getStyleClass().add("secondary-button");
-        delete.setOnAction(event -> deleteRecurring(item));
-        card.getChildren().addAll(header, details, new HBox(8, toggle, delete));
-        return card;
+        Label title = new Label(String.format("%s • %s", item.getType(), formatMoney(item.getAmount()))); title.getStyleClass().add("card-title");
+        Label frequency = new Label(item.getFrequency().name()); frequency.getStyleClass().add("subtitle"); HBox.setHgrow(title, javafx.scene.layout.Priority.ALWAYS); header.getChildren().addAll(title, frequency);
+        String description = item.getDescription() == null || item.getDescription().isBlank() ? item.getCategory() : item.getCategory() + " • " + item.getDescription();
+        String time = item.getNextTime() == null ? "09:00" : item.getNextTime().toString();
+        Label details = new Label(String.format("%s  •  Next: %s at %s  •  %s", description, item.getNextDate(), time, item.isActive() ? "Active" : "Paused")); details.getStyleClass().add("subtitle");
+        Button toggle = new Button(item.isActive() ? "Pause" : "Resume"); toggle.getStyleClass().add("secondary-button"); toggle.setOnAction(event -> toggleRecurring(item));
+        Button delete = new Button("Delete"); delete.getStyleClass().add("secondary-button"); delete.setOnAction(event -> deleteRecurring(item));
+        card.getChildren().addAll(header, details, new HBox(8, toggle, delete)); return card;
     }
 
     private void toggleRecurring(RecurringTransaction item) {
-        AuthSession session = authService.getCurrentSession();
-        if (session == null) {
-            recurringStatusLabel.setText("Please log in again.");
-            return;
-        }
-        item.setActive(!item.isActive());
-        recurringStatusLabel.setText("Updating recurring transaction...");
-        recurringRepository.update(session, item).thenRun(() -> Platform.runLater(() -> {
-            renderRecurringTransactions();
-            recurringStatusLabel.setText(item.isActive() ? "Recurring transaction resumed." : "Recurring transaction paused.");
-        })).exceptionally(error -> {
-            item.setActive(!item.isActive());
-            Platform.runLater(() -> recurringStatusLabel.setText("Could not update recurring transaction."));
-            return null;
-        });
+        AuthSession session = authService.getCurrentSession(); if (session == null) { recurringStatusLabel.setText("Please log in again."); return; }
+        item.setActive(!item.isActive()); recurringStatusLabel.setText("Updating recurring transaction...");
+        recurringRepository.update(session, item).thenRun(() -> Platform.runLater(() -> { renderRecurringTransactions(); recurringStatusLabel.setText(item.isActive() ? "Recurring transaction resumed." : "Recurring transaction paused."); })).exceptionally(error -> { item.setActive(!item.isActive()); Platform.runLater(() -> recurringStatusLabel.setText("Could not update recurring transaction.")); return null; });
     }
 
     private void deleteRecurring(RecurringTransaction item) {
-        AuthSession session = authService.getCurrentSession();
-        if (session == null) {
-            recurringStatusLabel.setText("Please log in again.");
-            return;
-        }
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Delete Recurring Transaction");
-        alert.setHeaderText("Delete this recurring transaction?");
-        alert.setContentText(String.format("%s ₹%.2f (%s)", item.getType(), item.getAmount(), item.getFrequency()));
-        alert.showAndWait().ifPresent(result -> {
-            if (result != ButtonType.OK) return;
-            recurringStatusLabel.setText("Deleting recurring transaction...");
-            recurringRepository.delete(session, item.getId()).thenRun(() -> Platform.runLater(() -> {
-                recurringTransactions.remove(item);
-                renderRecurringTransactions();
-                recurringStatusLabel.setText("Recurring transaction deleted successfully.");
-            })).exceptionally(error -> {
-                Platform.runLater(() -> recurringStatusLabel.setText("Could not delete recurring transaction."));
-                return null;
-            });
-        });
+        AuthSession session = authService.getCurrentSession(); if (session == null) { recurringStatusLabel.setText("Please log in again."); return; }
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION); alert.setTitle("Delete Recurring Transaction"); alert.setHeaderText("Delete this recurring transaction?"); alert.setContentText(String.format("%s ₹%.2f (%s)", item.getType(), item.getAmount(), item.getFrequency()));
+        alert.showAndWait().ifPresent(result -> { if (result != ButtonType.OK) return; recurringStatusLabel.setText("Deleting recurring transaction..."); recurringRepository.delete(session, item.getId()).thenRun(() -> Platform.runLater(() -> { recurringTransactions.remove(item); renderRecurringTransactions(); recurringStatusLabel.setText("Recurring transaction deleted successfully."); })).exceptionally(error -> { Platform.runLater(() -> recurringStatusLabel.setText("Could not delete recurring transaction.")); return null; }); });
     }
 
-    private void clearRecurringForm() {
-        recurringAmountField.clear();
-        recurringDescriptionField.clear();
-        recurringTypeCombo.setValue("EXPENSE");
-        recurringCategoryCombo.setValue("Bills");
-        recurringFrequencyCombo.setValue("MONTHLY");
-        recurringNextDatePicker.setValue(LocalDate.now());
+    private void clearRecurringForm() { recurringAmountField.clear(); recurringDescriptionField.clear(); recurringTypeCombo.setValue("EXPENSE"); recurringCategoryCombo.setValue("Bills"); recurringFrequencyCombo.setValue("MONTHLY"); recurringNextDatePicker.setValue(LocalDate.now()); recurringTimeField.setText("09:00"); }
+
+    private LocalTime parseTime(String value) {
+        if (value == null || value.isBlank()) return null;
+        try { return LocalTime.parse(value.trim()); } catch (Exception e) { return null; }
     }
 
-    private String formatMoney(double value) {
-        return String.format(Locale.US, "₹ %.2f", value);
-    }
+    private String formatMoney(double value) { return String.format(Locale.US, "₹ %.2f", value); }
 }
