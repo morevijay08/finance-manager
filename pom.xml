@@ -7,7 +7,7 @@
     <groupId>com.finance</groupId>
     <artifactId>finance-manager</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>Khatabook Finance Manager</name>
+    <name>Hisaabi Finance Manager</name>
     <description>Desktop finance-management application built with JavaFX.</description>
 
     <properties>
