@@ -22,6 +22,10 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private Node dashboardSection;
     @FXML private Node analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection;
 
+    @FXML private Label budgetPercentageLabel;
+    @FXML private Label budgetSavedLabel;
+    @FXML private Button editBudgetButton;
+
     private Label dashboardSavingsLabel, dashboardSavingsRateLabel;
     private Label dashboardMonthlyIncomeLabel, dashboardMonthlyExpenseLabel, dashboardMonthlySavingsLabel;
     private VBox recentActivityBox;
@@ -38,6 +42,7 @@ public class BudgetDashboardController extends DashboardController {
         super.initialize();
         buildDashboardOverview();
         connectToLiveTransactions();
+        setupBudgetEditing();
         refreshDashboardOverview();
         refreshAnalyticsOverview();
         show(dashboardSection);
@@ -52,9 +57,56 @@ public class BudgetDashboardController extends DashboardController {
             liveTransactions.addListener((javafx.collections.ListChangeListener<Transaction>) change -> {
                 refreshDashboardOverview();
                 refreshAnalyticsOverview();
+                refreshBudgetStats();
             });
         } catch (Exception e) {
             liveTransactions = null;
+        }
+    }
+
+    private void setupBudgetEditing() {
+        if (editBudgetButton != null) {
+            editBudgetButton.setOnAction(event -> {
+                if (budgetField != null) {
+                    budgetField.setEditable(true);
+                    budgetField.requestFocus();
+                    budgetField.selectAll();
+                }
+                if (saveBudgetButton != null) saveBudgetButton.setDisable(false);
+                if (statusLabel != null) statusLabel.setText("Edit the monthly budget and click Save Budget.");
+            });
+        }
+        if (budgetField != null) {
+            budgetField.textProperty().addListener((observable, oldValue, newValue) -> refreshBudgetStats());
+        }
+        refreshBudgetStats();
+    }
+
+    private void refreshBudgetStats() {
+        if (budgetField == null) return;
+        double budget = parseAmount(budgetField.getText());
+        double spent = liveTransactions == null ? 0 : liveTransactions.stream()
+                .filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE)
+                .filter(t -> isMonth(t, YearMonth.now()))
+                .mapToDouble(Transaction::getAmount).sum();
+        double remaining = budget - spent;
+        double usedPercentage = budget > 0 ? (spent / budget) * 100.0 : 0;
+        double saved = Math.max(remaining, 0);
+
+        if (budgetSpentLabel != null) budgetSpentLabel.setText(formatMoney(spent));
+        if (budgetRemainingLabel != null) budgetRemainingLabel.setText(formatMoney(remaining));
+        if (budgetSavedLabel != null) budgetSavedLabel.setText(formatMoney(saved));
+        if (budgetPercentageLabel != null) budgetPercentageLabel.setText(String.format(Locale.US, "%.1f%% used", Math.max(0, usedPercentage)));
+        if (budgetProgressBar != null) budgetProgressBar.setProgress(budget <= 0 ? 0 : Math.min(spent / budget, 1.0));
+    }
+
+    private double parseAmount(String value) {
+        if (value == null || value.isBlank()) return 0;
+        try {
+            double amount = Double.parseDouble(value.trim());
+            return amount >= 0 ? amount : 0;
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 
@@ -128,12 +180,12 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private void handleNotificationsNav() { show(notificationsSection); }
     @FXML private void handleReportsNav() { show(reportsSection); }
     @FXML private void handleGoalsNav() { show(goalsSection); }
-    @FXML private void handleBudgetNav() { show(budgetSection); }
+    @FXML private void handleBudgetNav() { show(budgetSection); refreshBudgetStats(); }
     @FXML private void handleAddTransactionNav() { show(addTransactionSection); }
     @FXML private void handleTransactionsNav() { show(transactionsSection); }
     private void show(Node selected) { Node[] pages = {dashboardSection, analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection}; for (Node page : pages) if (page != null) { boolean active = page == selected; page.setVisible(active); page.setManaged(active); page.setMouseTransparent(!active); } if (selected != null) selected.toFront(); }
 
     @FXML private void handleLogout() { super.handleLogout(null); }
-    @FXML protected void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); refreshAnalyticsOverview(); }
+    @FXML protected void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); refreshAnalyticsOverview(); refreshBudgetStats(); }
     @FXML protected void handleExportCsv() { super.handleExportCsv(); }
 }
