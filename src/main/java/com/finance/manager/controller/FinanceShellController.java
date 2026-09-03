@@ -10,9 +10,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -23,10 +20,10 @@ import java.lang.reflect.Method;
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private VBox profileCard;
     @FXML private Label profileEmailLabel;
+    @FXML private VBox sidebar;
+    @FXML private Button menuToggle;
     @FXML private Button dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav, addTransactionNav;
     private final FirebaseAuthService shellAuthService = new FirebaseAuthService();
-    private VBox sidebar;
-    private Button menuToggle;
 
     @FXML
     protected void initialize() {
@@ -41,93 +38,11 @@ public class FinanceShellController extends BudgetDashboardController {
     }
 
     private void setupSidebar() {
-        if (dashboardNav == null) return;
-        if (!(dashboardNav.getParent() instanceof HBox navMenu)) return;
-        if (!(navMenu.getParent() instanceof HBox navbar)) return;
-        if (!(navbar.getParent() instanceof VBox navbarWrapper)) return;
-        if (!(navbarWrapper.getParent() instanceof Pane borderPane)) return;
-        if (!(borderPane.getParent() instanceof Pane root)) return;
-
-        navMenu.setVisible(false);
-        navMenu.setManaged(false);
-
-        menuToggle = new Button("☰");
-        menuToggle.getStyleClass().add("navbar-menu-button");
-        menuToggle.setOnAction(e -> handleSidebarToggle());
-        menuToggle.setTooltip(new javafx.scene.control.Tooltip("Open navigation menu"));
-        navbar.getChildren().add(0, menuToggle);
-
-        for (Node node : navbar.getChildren()) {
-            if (node instanceof HBox actions && actions.getStyleClass().contains("navbar-actions")) {
-                for (Node actionNode : actions.getChildren()) {
-                    if (actionNode instanceof Button button && "☰".equals(button.getText())) {
-                        button.setText("👤");
-                        button.setTooltip(new javafx.scene.control.Tooltip("Profile"));
-                    }
-                }
-            }
-        }
-
-        sidebar = new VBox(7);
-        sidebar.setPrefWidth(270);
-        sidebar.setMinWidth(270);
-        sidebar.setMaxWidth(270);
-        sidebar.setMaxHeight(Double.MAX_VALUE);
-        sidebar.setTranslateY(74);
+        if (sidebar == null) return;
         sidebar.setVisible(false);
         sidebar.setManaged(false);
         sidebar.setMouseTransparent(true);
-        sidebar.setStyle("-fx-background-color: linear-gradient(to bottom, #0f172a, #172554, #312e81);" +
-                "-fx-padding: 18px 14px 22px 14px;" +
-                "-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.38), 24, 0.20, 5, 0);");
-
-        HBox sideHeader = new HBox(10);
-        sideHeader.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        sideHeader.setStyle("-fx-padding: 0 4px 16px 4px; -fx-border-color: transparent transparent #334155 transparent; -fx-border-width: 0 0 1px 0;");
-        VBox sideBrand = new VBox(0);
-        sideBrand.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(sideBrand, javafx.scene.layout.Priority.ALWAYS);
-        Label brand = new Label("Khatabook");
-        brand.getStyleClass().add("navbar-brand");
-        Label tagline = new Label("FINANCE MANAGER");
-        tagline.getStyleClass().add("navbar-tagline");
-        sideBrand.getChildren().addAll(brand, tagline);
-        Label menuLabel = new Label("MENU");
-        menuLabel.setStyle("-fx-font-size: 9px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
-        sideHeader.getChildren().addAll(sideBrand, menuLabel);
-
-        Label navigationLabel = new Label("NAVIGATION");
-        navigationLabel.setStyle("-fx-font-size: 9px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-padding: 10px 10px 3px 10px;");
-        sidebar.getChildren().addAll(sideHeader, navigationLabel);
-
-        Button[] navButtons = {dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav};
-        for (Button button : navButtons) {
-            if (button == null) continue;
-            button.setMaxWidth(Double.MAX_VALUE);
-            button.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            button.setStyle("-fx-padding: 11px 14px;");
-            sidebar.getChildren().add(button);
-        }
-
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
-        sidebar.getChildren().add(spacer);
-
-        Label quickActionLabel = new Label("QUICK ACTION");
-        quickActionLabel.setStyle("-fx-font-size: 9px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-padding: 10px 10px 3px 10px;");
-        sidebar.getChildren().add(quickActionLabel);
-        if (addTransactionNav != null) {
-            addTransactionNav.setMaxWidth(Double.MAX_VALUE);
-            addTransactionNav.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            addTransactionNav.setStyle("-fx-padding: 11px 14px;");
-            sidebar.getChildren().add(addTransactionNav);
-        }
-
-        Label closeHint = new Label("Click ☰ to close the menu");
-        closeHint.setWrapText(true);
-        closeHint.setStyle("-fx-font-size: 10px; -fx-text-fill: #94a3b8; -fx-padding: 8px 10px 0 10px;");
-        sidebar.getChildren().add(closeHint);
-        root.getChildren().add(sidebar);
+        sidebar.toFront();
     }
 
     private void setupProfile() {
@@ -159,10 +74,10 @@ public class FinanceShellController extends BudgetDashboardController {
 
     private void setupDashboardActions() {
         Node dashboard = getSection("dashboardSection");
-        if (dashboard instanceof Pane pane) installDashboardButtonHandlers(pane);
+        if (dashboard instanceof javafx.scene.layout.Pane pane) installDashboardButtonHandlers(pane);
     }
 
-    private void installDashboardButtonHandlers(Pane parent) {
+    private void installDashboardButtonHandlers(javafx.scene.layout.Pane parent) {
         for (Node node : parent.getChildren()) {
             if (node instanceof Button button) {
                 String text = button.getText();
@@ -215,7 +130,7 @@ public class FinanceShellController extends BudgetDashboardController {
                         closeSidebar();
                     });
                 }
-            } else if (node instanceof Pane child) {
+            } else if (node instanceof javafx.scene.layout.Pane child) {
                 installDashboardButtonHandlers(child);
             }
         }
@@ -261,7 +176,8 @@ public class FinanceShellController extends BudgetDashboardController {
         }
     }
 
-    @FXML private void handleSidebarToggle() {
+    @FXML
+    private void handleSidebarToggle() {
         if (sidebar == null) return;
         boolean show = !sidebar.isVisible();
         sidebar.setVisible(show);
