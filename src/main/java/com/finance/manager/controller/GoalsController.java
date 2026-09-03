@@ -66,8 +66,7 @@ public class GoalsController {
     private void setupRecurringForm() {
         recurringTypeCombo.setItems(FXCollections.observableArrayList("EXPENSE", "INCOME"));
         recurringTypeCombo.setValue("EXPENSE");
-        recurringCategoryCombo.setItems(FXCollections.observableArrayList(
-                "Food", "Transport", "Shopping", "Bills", "Salary", "Business", "Health", "Education", "Other"));
+        recurringCategoryCombo.setItems(FXCollections.observableArrayList("Food", "Transport", "Shopping", "Bills", "Salary", "Business", "Health", "Education", "Other"));
         recurringCategoryCombo.setValue("Bills");
         recurringFrequencyCombo.setItems(FXCollections.observableArrayList("DAILY", "WEEKLY", "MONTHLY", "YEARLY"));
         recurringFrequencyCombo.setValue("MONTHLY");
@@ -78,53 +77,28 @@ public class GoalsController {
     @FXML
     private void handleAddGoal() {
         AuthSession session = authService.getCurrentSession();
-        if (session == null) {
-            goalStatusLabel.setText("Please log in again.");
-            return;
-        }
+        if (session == null) { goalStatusLabel.setText("Please log in again."); return; }
         String name = goalNameField.getText().trim();
-        if (name.isEmpty()) {
-            goalStatusLabel.setText("Enter a goal name.");
-            return;
-        }
+        if (name.isEmpty()) { goalStatusLabel.setText("Enter a goal name."); return; }
         try {
             double target = Double.parseDouble(targetField.getText().trim());
             double saved = savedField.getText().trim().isEmpty() ? 0 : Double.parseDouble(savedField.getText().trim());
             if (target <= 0 || saved < 0) throw new NumberFormatException();
-            if (saved > target) {
-                goalStatusLabel.setText("Saved amount cannot exceed the target.");
-                return;
-            }
+            if (saved > target) { goalStatusLabel.setText("Saved amount cannot exceed the target."); return; }
             addGoalButton.setDisable(true);
             goalStatusLabel.setText("Saving goal...");
-            goalRepository.addGoal(session, new FinancialGoal(null, name, target, saved))
-                    .thenAccept(goal -> Platform.runLater(() -> {
-                        goals.add(0, goal);
-                        renderGoals();
-                        goalNameField.clear(); targetField.clear(); savedField.clear();
-                        addGoalButton.setDisable(false);
-                        goalStatusLabel.setText("Financial goal added successfully.");
-                    }))
-                    .exceptionally(error -> {
-                        Platform.runLater(() -> {
-                            addGoalButton.setDisable(false);
-                            goalStatusLabel.setText("Could not save financial goal.");
-                        });
-                        return null;
-                    });
-        } catch (NumberFormatException e) {
-            goalStatusLabel.setText("Enter valid target and saved amounts.");
-        }
+            goalRepository.addGoal(session, new FinancialGoal(null, name, target, saved)).thenAccept(goal -> Platform.runLater(() -> {
+                goals.add(0, goal); renderGoals(); goalNameField.clear(); targetField.clear(); savedField.clear();
+                addGoalButton.setDisable(false); goalStatusLabel.setText("Financial goal added successfully.");
+            })).exceptionally(error -> { Platform.runLater(() -> { addGoalButton.setDisable(false); goalStatusLabel.setText("Could not save financial goal."); }); return null; });
+        } catch (NumberFormatException e) { goalStatusLabel.setText("Enter valid target and saved amounts."); }
     }
 
     private void loadGoals(AuthSession session) {
         goalStatusLabel.setText("Loading goals...");
-        goalRepository.getGoals(session)
-                .thenAccept(result -> Platform.runLater(() -> {
-                    goals.setAll(result); renderGoals();
-                    goalStatusLabel.setText(result.isEmpty() ? "No financial goals yet." : "Ready");
-                }))
-                .exceptionally(error -> { Platform.runLater(() -> goalStatusLabel.setText("Could not load financial goals.")); return null; });
+        goalRepository.getGoals(session).thenAccept(result -> Platform.runLater(() -> {
+            goals.setAll(result); renderGoals(); goalStatusLabel.setText(result.isEmpty() ? "No financial goals yet." : "Ready");
+        })).exceptionally(error -> { Platform.runLater(() -> goalStatusLabel.setText("Could not load financial goals.")); return null; });
     }
 
     private void renderGoals() {
@@ -144,8 +118,7 @@ public class GoalsController {
         Button edit = new Button("Edit Goal"); edit.getStyleClass().add("secondary-button"); edit.setOnAction(event -> editGoal(goal));
         Button delete = new Button("Delete"); delete.getStyleClass().add("secondary-button"); delete.setOnAction(event -> deleteGoal(goal));
         HBox actions = new HBox(8, addAmount, edit, delete);
-        card.getChildren().addAll(header, progress, details, actions);
-        return card;
+        card.getChildren().addAll(header, progress, details, actions); return card;
     }
 
     private void addAmountToGoal(FinancialGoal goal) {
@@ -203,56 +176,32 @@ public class GoalsController {
         AuthSession session = authService.getCurrentSession();
         if (session == null) { recurringStatusLabel.setText("Please log in again."); return; }
         try {
-            double amount = Double.parseDouble(recurringAmountField.getText().trim());
-            LocalDate date = recurringNextDatePicker.getValue();
-            LocalTime time = parseTime(recurringTimeField.getText());
+            double amount = Double.parseDouble(recurringAmountField.getText().trim()); LocalDate date = recurringNextDatePicker.getValue(); LocalTime time = parseTime(recurringTimeField.getText());
             if (amount <= 0 || date == null || time == null) throw new IllegalArgumentException();
-            RecurringTransaction item = new RecurringTransaction(null, Transaction.Type.valueOf(recurringTypeCombo.getValue()), amount,
-                    recurringCategoryCombo.getValue(), recurringDescriptionField.getText().trim(),
-                    RecurringTransaction.Frequency.valueOf(recurringFrequencyCombo.getValue()), date, time, true);
+            RecurringTransaction item = new RecurringTransaction(null, Transaction.Type.valueOf(recurringTypeCombo.getValue()), amount, recurringCategoryCombo.getValue(), recurringDescriptionField.getText().trim(), RecurringTransaction.Frequency.valueOf(recurringFrequencyCombo.getValue()), date, time, true);
             addRecurringButton.setDisable(true); recurringStatusLabel.setText("Saving recurring transaction...");
-            recurringRepository.add(session, item).thenAccept(saved -> Platform.runLater(() -> {
-                recurringTransactions.add(saved); renderRecurringTransactions(); clearRecurringForm(); addRecurringButton.setDisable(false); recurringStatusLabel.setText("Recurring transaction added successfully.");
-            })).exceptionally(error -> { Platform.runLater(() -> { addRecurringButton.setDisable(false); recurringStatusLabel.setText("Could not save recurring transaction."); }); return null; });
+            recurringRepository.add(session, item).thenAccept(saved -> Platform.runLater(() -> { recurringTransactions.add(saved); renderRecurringTransactions(); clearRecurringForm(); addRecurringButton.setDisable(false); recurringStatusLabel.setText("Recurring transaction added successfully."); })).exceptionally(error -> { Platform.runLater(() -> { addRecurringButton.setDisable(false); recurringStatusLabel.setText("Could not save recurring transaction."); }); return null; });
         } catch (IllegalArgumentException e) { recurringStatusLabel.setText("Enter a valid amount, date and time (HH:mm)."); }
     }
 
     private void loadRecurringTransactions(AuthSession session) {
         recurringStatusLabel.setText("Loading recurring transactions...");
-        recurringRepository.getAll(session).thenCompose(items -> processDueTransactions(session, items).thenApply(v -> items)).thenAccept(items -> Platform.runLater(() -> {
-            recurringTransactions.setAll(items); renderRecurringTransactions(); recurringStatusLabel.setText(items.isEmpty() ? "No recurring transactions yet." : "Ready. Due recurring transactions are added automatically when their date and time arrive.");
-        })).exceptionally(error -> { Platform.runLater(() -> recurringStatusLabel.setText("Could not load recurring transactions.")); return null; });
+        recurringRepository.getAll(session).thenCompose(items -> processDueTransactions(session, items).thenApply(v -> items)).thenAccept(items -> Platform.runLater(() -> { recurringTransactions.setAll(items); renderRecurringTransactions(); recurringStatusLabel.setText(items.isEmpty() ? "No recurring transactions yet." : "Ready. Due recurring transactions are added automatically when their date and time arrive."); })).exceptionally(error -> { Platform.runLater(() -> recurringStatusLabel.setText("Could not load recurring transactions.")); return null; });
     }
 
     private java.util.concurrent.CompletableFuture<Void> processDueTransactions(AuthSession session, java.util.List<RecurringTransaction> items) {
-        java.util.concurrent.CompletableFuture<Void> chain = java.util.concurrent.CompletableFuture.completedFuture(null);
-        LocalDateTime now = LocalDateTime.now();
-        for (RecurringTransaction item : items) {
-            if (!item.isActive() || item.getNextDate() == null || item.getNextTime() == null) continue;
-            if (LocalDateTime.of(item.getNextDate(), item.getNextTime()).isAfter(now)) continue;
-            chain = chain.thenCompose(v -> processOneDueItem(session, item, now));
-        }
+        java.util.concurrent.CompletableFuture<Void> chain = java.util.concurrent.CompletableFuture.completedFuture(null); LocalDateTime now = LocalDateTime.now();
+        for (RecurringTransaction item : items) { if (!item.isActive() || item.getNextDate() == null || item.getNextTime() == null) continue; if (LocalDateTime.of(item.getNextDate(), item.getNextTime()).isAfter(now)) continue; chain = chain.thenCompose(v -> processOneDueItem(session, item, now)); }
         return chain;
     }
 
     private java.util.concurrent.CompletableFuture<Void> processOneDueItem(AuthSession session, RecurringTransaction item, LocalDateTime now) {
-        java.util.concurrent.CompletableFuture<Void> chain = java.util.concurrent.CompletableFuture.completedFuture(null);
-        LocalDate nextDate = item.getNextDate(); LocalTime time = item.getNextTime() == null ? LocalTime.of(9, 0) : item.getNextTime();
-        while (!LocalDateTime.of(nextDate, time).isAfter(now)) {
-            LocalDate transactionDate = nextDate;
-            Transaction transaction = new Transaction(null, item.getType(), item.getAmount(), item.getCategory(),
-                    item.getDescription() == null || item.getDescription().isBlank() ? "Recurring transaction" : item.getDescription(), transactionDate);
-            chain = chain.thenCompose(v -> transactionRepository.addTransaction(session, transaction).thenApply(saved -> null));
-            nextDate = nextDate(nextDate, item.getFrequency());
-        }
-        item.setNextDate(nextDate);
-        item.setNextTime(time);
-        return chain.thenCompose(v -> recurringRepository.update(session, item));
+        java.util.concurrent.CompletableFuture<Void> chain = java.util.concurrent.CompletableFuture.completedFuture(null); LocalDate nextDate = item.getNextDate(); LocalTime time = item.getNextTime() == null ? LocalTime.of(9, 0) : item.getNextTime();
+        while (!LocalDateTime.of(nextDate, time).isAfter(now)) { LocalDate transactionDate = nextDate; Transaction transaction = new Transaction(null, item.getType(), item.getAmount(), item.getCategory(), item.getDescription() == null || item.getDescription().isBlank() ? "Recurring transaction" : item.getDescription(), transactionDate); chain = chain.thenCompose(v -> transactionRepository.addTransaction(session, transaction).thenApply(saved -> null)); nextDate = nextDate(nextDate, item.getFrequency()); }
+        item.setNextDate(nextDate); item.setNextTime(time); return chain.thenCompose(v -> recurringRepository.update(session, item));
     }
 
-    private LocalDate nextDate(LocalDate date, RecurringTransaction.Frequency frequency) {
-        return switch (frequency) { case DAILY -> date.plusDays(1); case WEEKLY -> date.plusWeeks(1); case MONTHLY -> date.plusMonths(1); case YEARLY -> date.plusYears(1); };
-    }
+    private LocalDate nextDate(LocalDate date, RecurringTransaction.Frequency frequency) { return switch (frequency) { case DAILY -> date.plusDays(1); case WEEKLY -> date.plusWeeks(1); case MONTHLY -> date.plusMonths(1); case YEARLY -> date.plusYears(1); }; }
 
     private void renderRecurringTransactions() { recurringBox.getChildren().clear(); for (RecurringTransaction item : recurringTransactions) recurringBox.getChildren().add(createRecurringCard(item)); }
 
@@ -265,14 +214,62 @@ public class GoalsController {
         String time = item.getNextTime() == null ? "09:00" : item.getNextTime().toString();
         Label details = new Label(String.format("%s  •  Next: %s at %s  •  %s", description, item.getNextDate(), time, item.isActive() ? "Active" : "Paused")); details.getStyleClass().add("subtitle");
         Button toggle = new Button(item.isActive() ? "Pause" : "Resume"); toggle.getStyleClass().add("secondary-button"); toggle.setOnAction(event -> toggleRecurring(item));
+        Button edit = new Button("Edit"); edit.getStyleClass().add("secondary-button"); edit.setOnAction(event -> editRecurring(item));
         Button delete = new Button("Delete"); delete.getStyleClass().add("secondary-button"); delete.setOnAction(event -> deleteRecurring(item));
-        card.getChildren().addAll(header, details, new HBox(8, toggle, delete)); return card;
+        card.getChildren().addAll(header, details, new HBox(8, toggle, edit, delete)); return card;
+    }
+
+    private void editRecurring(RecurringTransaction item) {
+        AuthSession session = authService.getCurrentSession();
+        if (session == null) { recurringStatusLabel.setText("Please log in again."); return; }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Edit Recurring Transaction");
+        dialog.setHeaderText("Update recurring transaction details");
+        ButtonType saveButton = new ButtonType("Save Changes", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);
+
+        ComboBox<String> type = new ComboBox<>(FXCollections.observableArrayList("EXPENSE", "INCOME"));
+        type.setValue(item.getType() == null ? "EXPENSE" : item.getType().name());
+        TextField amount = new TextField(String.valueOf(item.getAmount()));
+        ComboBox<String> category = new ComboBox<>(FXCollections.observableArrayList("Food", "Transport", "Shopping", "Bills", "Salary", "Business", "Health", "Education", "Other"));
+        category.setValue(item.getCategory());
+        TextField description = new TextField(item.getDescription() == null ? "" : item.getDescription());
+        ComboBox<String> frequency = new ComboBox<>(FXCollections.observableArrayList("DAILY", "WEEKLY", "MONTHLY", "YEARLY"));
+        frequency.setValue(item.getFrequency() == null ? "MONTHLY" : item.getFrequency().name());
+        DatePicker date = new DatePicker(item.getNextDate());
+        TextField time = new TextField(item.getNextTime() == null ? "09:00" : item.getNextTime().toString());
+        time.setPromptText("HH:mm");
+
+        GridPane grid = new GridPane(); grid.setHgap(10); grid.setVgap(10);
+        grid.add(new Label("Type"), 0, 0); grid.add(type, 1, 0);
+        grid.add(new Label("Amount"), 0, 1); grid.add(amount, 1, 1);
+        grid.add(new Label("Category"), 0, 2); grid.add(category, 1, 2);
+        grid.add(new Label("Description"), 0, 3); grid.add(description, 1, 3);
+        grid.add(new Label("Frequency"), 0, 4); grid.add(frequency, 1, 4);
+        grid.add(new Label("Next date"), 0, 5); grid.add(date, 1, 5);
+        grid.add(new Label("Time (HH:mm)"), 0, 6); grid.add(time, 1, 6);
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.showAndWait().ifPresent(result -> {
+            if (result != saveButton) return;
+            try {
+                double newAmount = Double.parseDouble(amount.getText().trim());
+                LocalDate newDate = date.getValue(); LocalTime newTime = parseTime(time.getText());
+                if (newAmount <= 0 || newDate == null || newTime == null || type.getValue() == null || category.getValue() == null || frequency.getValue() == null) throw new IllegalArgumentException();
+
+                Transaction.Type oldType = item.getType(); double oldAmount = item.getAmount(); String oldCategory = item.getCategory(); String oldDescription = item.getDescription(); RecurringTransaction.Frequency oldFrequency = item.getFrequency(); LocalDate oldDate = item.getNextDate(); LocalTime oldTime = item.getNextTime();
+                item.setType(Transaction.Type.valueOf(type.getValue())); item.setAmount(newAmount); item.setCategory(category.getValue()); item.setDescription(description.getText().trim()); item.setFrequency(RecurringTransaction.Frequency.valueOf(frequency.getValue())); item.setNextDate(newDate); item.setNextTime(newTime);
+                recurringStatusLabel.setText("Updating recurring transaction...");
+                recurringRepository.update(session, item).thenRun(() -> Platform.runLater(() -> { renderRecurringTransactions(); recurringStatusLabel.setText("Recurring transaction updated successfully."); })).exceptionally(error -> { item.setType(oldType); item.setAmount(oldAmount); item.setCategory(oldCategory); item.setDescription(oldDescription); item.setFrequency(oldFrequency); item.setNextDate(oldDate); item.setNextTime(oldTime); Platform.runLater(() -> recurringStatusLabel.setText("Could not update recurring transaction.")); return null; });
+            } catch (IllegalArgumentException e) { recurringStatusLabel.setText("Enter valid recurring transaction details and time (HH:mm)."); }
+        });
     }
 
     private void toggleRecurring(RecurringTransaction item) {
         AuthSession session = authService.getCurrentSession(); if (session == null) { recurringStatusLabel.setText("Please log in again."); return; }
-        item.setActive(!item.isActive()); recurringStatusLabel.setText("Updating recurring transaction...");
-        recurringRepository.update(session, item).thenRun(() -> Platform.runLater(() -> { renderRecurringTransactions(); recurringStatusLabel.setText(item.isActive() ? "Recurring transaction resumed." : "Recurring transaction paused."); })).exceptionally(error -> { item.setActive(!item.isActive()); Platform.runLater(() -> recurringStatusLabel.setText("Could not update recurring transaction.")); return null; });
+        boolean oldActive = item.isActive(); item.setActive(!oldActive); recurringStatusLabel.setText("Updating recurring transaction...");
+        recurringRepository.update(session, item).thenRun(() -> Platform.runLater(() -> { renderRecurringTransactions(); recurringStatusLabel.setText(item.isActive() ? "Recurring transaction resumed." : "Recurring transaction paused."); })).exceptionally(error -> { item.setActive(oldActive); Platform.runLater(() -> recurringStatusLabel.setText("Could not update recurring transaction.")); return null; });
     }
 
     private void deleteRecurring(RecurringTransaction item) {
@@ -282,11 +279,6 @@ public class GoalsController {
     }
 
     private void clearRecurringForm() { recurringAmountField.clear(); recurringDescriptionField.clear(); recurringTypeCombo.setValue("EXPENSE"); recurringCategoryCombo.setValue("Bills"); recurringFrequencyCombo.setValue("MONTHLY"); recurringNextDatePicker.setValue(LocalDate.now()); recurringTimeField.setText("09:00"); }
-
-    private LocalTime parseTime(String value) {
-        if (value == null || value.isBlank()) return null;
-        try { return LocalTime.parse(value.trim()); } catch (Exception e) { return null; }
-    }
-
+    private LocalTime parseTime(String value) { if (value == null || value.isBlank()) return null; try { return LocalTime.parse(value.trim()); } catch (Exception e) { return null; } }
     private String formatMoney(double value) { return String.format(Locale.US, "₹ %.2f", value); }
 }
