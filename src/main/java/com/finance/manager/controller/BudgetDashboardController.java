@@ -22,7 +22,7 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private Node dashboardSection;
     @FXML private Node analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection;
 
-    private Label dashboardSavingsLabel, dashboardSavingsRateLabel, dashboardHealthLabel;
+    private Label dashboardSavingsLabel, dashboardSavingsRateLabel;
     private Label dashboardMonthlyIncomeLabel, dashboardMonthlyExpenseLabel, dashboardMonthlySavingsLabel;
     private VBox recentActivityBox;
     private ObservableList<Transaction> liveTransactions;
@@ -67,9 +67,8 @@ public class BudgetDashboardController extends DashboardController {
         HBox row = new HBox(14); row.getStyleClass().add("dashboard-extra-row");
         VBox savings = metricCard("NET SAVINGS", "₹0.00", "Total income minus total expense", "dashboard-savings-card");
         VBox rate = metricCard("SAVINGS RATE", "0.0%", "This month's saving efficiency", "dashboard-rate-card");
-        VBox health = metricCard("FINANCIAL HEALTH", "● Ready", "Based on your current cash flow", "dashboard-health-card");
-        dashboardSavingsLabel = valueLabel(savings); dashboardSavingsRateLabel = valueLabel(rate); dashboardHealthLabel = valueLabel(health);
-        row.getChildren().addAll(savings, rate, health); for (Node node : row.getChildren()) HBox.setHgrow(node, Priority.ALWAYS); return row;
+        dashboardSavingsLabel = valueLabel(savings); dashboardSavingsRateLabel = valueLabel(rate);
+        row.getChildren().addAll(savings, rate); for (Node node : row.getChildren()) HBox.setHgrow(node, Priority.ALWAYS); return row;
     }
     private VBox metricCard(String title, String value, String caption, String style) { VBox card = new VBox(6); card.getStyleClass().addAll("summary-card", style); Label titleLabel = new Label(title); titleLabel.getStyleClass().add("card-title"); Label valueLabel = new Label(value); valueLabel.getStyleClass().add("dashboard-extra-value"); Label captionLabel = new Label(caption); captionLabel.getStyleClass().add("card-caption"); card.getChildren().addAll(titleLabel, valueLabel, captionLabel); return card; }
     private Label valueLabel(VBox card) { return (Label) card.getChildren().get(1); }
@@ -95,7 +94,7 @@ public class BudgetDashboardController extends DashboardController {
         if (list == null || dashboardSavingsLabel == null || recentActivityBox == null) return;
         double income = list.stream().filter(t -> t != null && t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum(); double expense = list.stream().filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum(); double savings = income - expense;
         YearMonth month = YearMonth.now(); double monthIncome = list.stream().filter(t -> isMonth(t, month) && t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum(); double monthExpense = list.stream().filter(t -> isMonth(t, month) && t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum(); double monthSavings = monthIncome - monthExpense; double rate = monthIncome > 0 ? monthSavings / monthIncome * 100 : 0;
-        dashboardSavingsLabel.setText(formatMoney(savings)); dashboardSavingsRateLabel.setText(String.format(Locale.US, "%.1f%%", rate)); dashboardMonthlyIncomeLabel.setText(formatMoney(monthIncome)); dashboardMonthlyExpenseLabel.setText(formatMoney(monthExpense)); dashboardMonthlySavingsLabel.setText(formatMoney(monthSavings)); dashboardHealthLabel.setText(monthIncome == 0 && monthExpense == 0 ? "● Ready" : monthSavings >= 0 ? "● Good" : "● Review");
+        dashboardSavingsLabel.setText(formatMoney(savings)); dashboardSavingsRateLabel.setText(String.format(Locale.US, "%.1f%%", rate)); dashboardMonthlyIncomeLabel.setText(formatMoney(monthIncome)); dashboardMonthlyExpenseLabel.setText(formatMoney(monthExpense)); dashboardMonthlySavingsLabel.setText(formatMoney(monthSavings));
         recentActivityBox.getChildren().clear(); List<Transaction> recent = list.stream().filter(t -> t != null).sorted((a,b) -> { if (a.getDate() == null && b.getDate() == null) return 0; if (a.getDate() == null) return 1; if (b.getDate() == null) return -1; return b.getDate().compareTo(a.getDate()); }).limit(5).toList();
         if (recent.isEmpty()) { Label empty = new Label("No transactions yet. Add your first income or expense to see it here."); empty.getStyleClass().add("activity-empty"); recentActivityBox.getChildren().add(empty); } else recent.forEach(this::addActivityRow);
     }
