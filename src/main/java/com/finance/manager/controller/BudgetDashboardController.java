@@ -6,6 +6,8 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -65,26 +67,31 @@ public class BudgetDashboardController extends DashboardController {
     }
 
     private void setupBudgetEditing() {
+        Button saveButton = getDashboardField("saveBudgetButton", Button.class);
+        TextField budgetInput = getDashboardField("budgetField", TextField.class);
+        Label status = getDashboardField("statusLabel", Label.class);
+
         if (editBudgetButton != null) {
             editBudgetButton.setOnAction(event -> {
-                if (budgetField != null) {
-                    budgetField.setEditable(true);
-                    budgetField.requestFocus();
-                    budgetField.selectAll();
+                if (budgetInput != null) {
+                    budgetInput.setEditable(true);
+                    budgetInput.requestFocus();
+                    budgetInput.selectAll();
                 }
-                if (saveBudgetButton != null) saveBudgetButton.setDisable(false);
-                if (statusLabel != null) statusLabel.setText("Edit the monthly budget and click Save Budget.");
+                if (saveButton != null) saveButton.setDisable(false);
+                if (status != null) status.setText("Edit the monthly budget and click Save Budget.");
             });
         }
-        if (budgetField != null) {
-            budgetField.textProperty().addListener((observable, oldValue, newValue) -> refreshBudgetStats());
+        if (budgetInput != null) {
+            budgetInput.textProperty().addListener((observable, oldValue, newValue) -> refreshBudgetStats());
         }
         refreshBudgetStats();
     }
 
     private void refreshBudgetStats() {
-        if (budgetField == null) return;
-        double budget = parseAmount(budgetField.getText());
+        TextField budgetInput = getDashboardField("budgetField", TextField.class);
+        if (budgetInput == null) return;
+        double budget = parseAmount(budgetInput.getText());
         double spent = liveTransactions == null ? 0 : liveTransactions.stream()
                 .filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE)
                 .filter(t -> isMonth(t, YearMonth.now()))
@@ -93,11 +100,26 @@ public class BudgetDashboardController extends DashboardController {
         double usedPercentage = budget > 0 ? (spent / budget) * 100.0 : 0;
         double saved = Math.max(remaining, 0);
 
-        if (budgetSpentLabel != null) budgetSpentLabel.setText(formatMoney(spent));
-        if (budgetRemainingLabel != null) budgetRemainingLabel.setText(formatMoney(remaining));
+        Label spentLabel = getDashboardField("budgetSpentLabel", Label.class);
+        Label remainingLabel = getDashboardField("budgetRemainingLabel", Label.class);
+        ProgressBar progressBar = getDashboardField("budgetProgressBar", ProgressBar.class);
+        if (spentLabel != null) spentLabel.setText(formatMoney(spent));
+        if (remainingLabel != null) remainingLabel.setText(formatMoney(remaining));
         if (budgetSavedLabel != null) budgetSavedLabel.setText(formatMoney(saved));
         if (budgetPercentageLabel != null) budgetPercentageLabel.setText(String.format(Locale.US, "%.1f%% used", Math.max(0, usedPercentage)));
-        if (budgetProgressBar != null) budgetProgressBar.setProgress(budget <= 0 ? 0 : Math.min(spent / budget, 1.0));
+        if (progressBar != null) progressBar.setProgress(budget <= 0 ? 0 : Math.min(spent / budget, 1.0));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getDashboardField(String name, Class<T> type) {
+        try {
+            Field field = DashboardController.class.getDeclaredField(name);
+            field.setAccessible(true);
+            Object value = field.get(this);
+            return type.isInstance(value) ? (T) value : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private double parseAmount(String value) {
