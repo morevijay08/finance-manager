@@ -20,7 +20,9 @@ import java.lang.reflect.Method;
 
 public class FinanceShellController extends BudgetDashboardController {
     @FXML private VBox profileCard;
+    @FXML private VBox sidebar;
     @FXML private Label profileEmailLabel;
+    @FXML private Button menuToggle;
     @FXML private Button dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav, addTransactionNav;
     private final FirebaseAuthService shellAuthService = new FirebaseAuthService();
 
@@ -32,6 +34,7 @@ public class FinanceShellController extends BudgetDashboardController {
         setupDashboardActions();
         showSection("dashboardSection");
         activate(dashboardNav);
+        closeSidebar();
     }
 
     private void setupProfile() {
@@ -81,36 +84,42 @@ public class FinanceShellController extends BudgetDashboardController {
                         e.consume();
                         activate(transactionsNav);
                         showSection("transactionsSection");
+                        closeSidebar();
                     });
                 } else if (text.contains("Analytics")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(analyticsNav);
                         showSection("analyticsSection");
+                        closeSidebar();
                     });
                 } else if (text.contains("Reports")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(reportsNav);
                         showSection("reportsSection");
+                        closeSidebar();
                     });
                 } else if (text.contains("Goals")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(goalsNav);
                         showSection("goalsSection");
+                        closeSidebar();
                     });
                 } else if (text.contains("Alerts")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(notificationsNav);
                         showSection("notificationsSection");
+                        closeSidebar();
                     });
                 } else if (text.contains("Budget")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(budgetNav);
                         showSection("budgetSection");
+                        closeSidebar();
                     });
                 }
             } else if (node instanceof Pane child) {
@@ -159,20 +168,43 @@ public class FinanceShellController extends BudgetDashboardController {
         }
     }
 
-    @FXML private void handleDashboardNav(ActionEvent event) { activate(dashboardNav); showSection("dashboardSection"); }
-    @FXML private void handleAnalyticsNav(ActionEvent event) { activate(analyticsNav); showSection("analyticsSection"); }
-    @FXML private void handleNotificationsNav(ActionEvent event) { activate(notificationsNav); showSection("notificationsSection"); }
-    @FXML private void handleReportsNav(ActionEvent event) { activate(reportsNav); showSection("reportsSection"); }
-    @FXML private void handleGoalsNav(ActionEvent event) { activate(goalsNav); showSection("goalsSection"); }
-    @FXML private void handleBudgetNav(ActionEvent event) { activate(budgetNav); showSection("budgetSection"); }
-    @FXML private void handleTransactionsNav(ActionEvent event) { activate(transactionsNav); showSection("transactionsSection"); }
+    @FXML private void handleSidebarToggle() {
+        if (sidebar == null) return;
+        boolean show = !sidebar.isVisible();
+        sidebar.setVisible(show);
+        sidebar.setManaged(show);
+        sidebar.setMouseTransparent(!show);
+        if (show) {
+            closeProfile();
+            sidebar.toFront();
+            if (menuToggle != null) menuToggle.toFront();
+        }
+    }
+
+    private void closeSidebar() {
+        if (sidebar != null) {
+            sidebar.setVisible(false);
+            sidebar.setManaged(false);
+            sidebar.setMouseTransparent(true);
+        }
+    }
+
+    @FXML private void handleDashboardNav(ActionEvent event) { activate(dashboardNav); showSection("dashboardSection"); closeSidebar(); }
+    @FXML private void handleAnalyticsNav(ActionEvent event) { activate(analyticsNav); showSection("analyticsSection"); closeSidebar(); }
+    @FXML private void handleNotificationsNav(ActionEvent event) { activate(notificationsNav); showSection("notificationsSection"); closeSidebar(); }
+    @FXML private void handleReportsNav(ActionEvent event) { activate(reportsNav); showSection("reportsSection"); closeSidebar(); }
+    @FXML private void handleGoalsNav(ActionEvent event) { activate(goalsNav); showSection("goalsSection"); closeSidebar(); }
+    @FXML private void handleBudgetNav(ActionEvent event) { activate(budgetNav); showSection("budgetSection"); closeSidebar(); }
+    @FXML private void handleTransactionsNav(ActionEvent event) { activate(transactionsNav); showSection("transactionsSection"); closeSidebar(); }
     @FXML private void handleAddTransactionNav(ActionEvent event) {
         activate(null);
         if (addTransactionNav != null) addTransactionNav.getStyleClass().add("navbar-add-button-active");
         showSection("addTransactionSection");
+        closeSidebar();
     }
 
     @FXML private void handleProfileMenu() {
+        closeSidebar();
         if (profileCard == null) return;
         boolean show = !profileCard.isVisible();
         profileCard.setVisible(show);
