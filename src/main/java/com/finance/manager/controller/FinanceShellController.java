@@ -11,6 +11,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -36,6 +38,7 @@ public class FinanceShellController extends BudgetDashboardController {
         setupProfile();
         addSettingsToProfileMenu();
         setupDashboardActions();
+        setupTransactionEditNavigation();
         showSection("dashboardSection");
         activate(dashboardNav);
     }
@@ -144,6 +147,34 @@ public class FinanceShellController extends BudgetDashboardController {
     private void setupDashboardActions() {
         Node dashboard = getSection("dashboardSection");
         if (dashboard instanceof Pane pane) installDashboardButtonHandlers(pane);
+    }
+
+    /** Navigate to the editable form when the Edit button in the transactions table is clicked. */
+    private void setupTransactionEditNavigation() {
+        try {
+            Field field = DashboardController.class.getDeclaredField("transactionTable");
+            field.setAccessible(true);
+            Object value = field.get(this);
+            if (!(value instanceof TableView<?> table)) return;
+
+            table.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+                Node target = event.getPickResult().getIntersectedNode();
+                while (target != null && target != table) {
+                    if (target instanceof Button button && "Edit".equals(button.getText())) {
+                        javafx.application.Platform.runLater(() -> {
+                            activate(null);
+                            if (addTransactionNav != null) addTransactionNav.getStyleClass().add("navbar-add-button-active");
+                            showSection("addTransactionSection");
+                            if (dashboardScrollPane != null) dashboardScrollPane.setVvalue(0);
+                        });
+                        break;
+                    }
+                    target = target.getParent();
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("Could not configure transaction editing.", e);
+        }
     }
 
     private void installDashboardButtonHandlers(Pane parent) {
