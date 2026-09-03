@@ -144,29 +144,57 @@ public class BudgetDashboardController extends DashboardController {
         row.setHgap(14);
         row.getStyleClass().add("dashboard-extra-row");
 
-        ColumnConstraints firstColumn = new ColumnConstraints();
-        firstColumn.setPercentWidth(33.3333);
-        firstColumn.setHgrow(Priority.ALWAYS);
-        ColumnConstraints secondColumn = new ColumnConstraints();
-        secondColumn.setPercentWidth(33.3333);
-        secondColumn.setHgrow(Priority.ALWAYS);
-        ColumnConstraints thirdColumn = new ColumnConstraints();
-        thirdColumn.setPercentWidth(33.3334);
-        thirdColumn.setHgrow(Priority.ALWAYS);
-        row.getColumnConstraints().addAll(firstColumn, secondColumn, thirdColumn);
+        for (int i = 0; i < 3; i++) {
+            ColumnConstraints column = new ColumnConstraints();
+            column.setPercentWidth(i == 2 ? 33.334 : 33.333);
+            column.setHgrow(Priority.ALWAYS);
+            row.getColumnConstraints().add(column);
+        }
 
         VBox savings = metricCard("NET SAVINGS", "₹0.00", "Total income minus total expense", "dashboard-savings-card");
         VBox rate = metricCard("SAVINGS RATE", "0.0%", "This month's saving efficiency", "dashboard-rate-card");
         dashboardSavingsLabel = valueLabel(savings);
         dashboardSavingsRateLabel = valueLabel(rate);
 
-        row.add(savings, 0, 0);
-        row.add(rate, 1, 0);
+        GridPane.setColumnIndex(savings, 0);
+        GridPane.setColumnIndex(rate, 1);
+        row.getChildren().addAll(savings, rate);
         return row;
     }
 
-    private VBox metricCard(String title, String value, String caption, String style) { VBox card = new VBox(6); card.getStyleClass().addAll("summary-card", style); Label titleLabel = new Label(title); titleLabel.getStyleClass().add("card-title"); Label valueLabel = new Label(value); valueLabel.getStyleClass().add("dashboard-extra-value"); Label captionLabel = new Label(caption); captionLabel.getStyleClass().add("card-caption"); card.getChildren().addAll(titleLabel, valueLabel, captionLabel); return card; }
-    private Label valueLabel(VBox card) { return (Label) card.getChildren().get(1); }
+    private VBox metricCard(String title, String value, String caption, String style) {
+        VBox card = new VBox(6);
+        card.getStyleClass().addAll("summary-card", style);
+
+        String icon = title.equals("NET SAVINGS") ? "▣" : "%";
+        String iconBackground = title.equals("NET SAVINGS") ? "#dbeafe" : "#f3e8ff";
+        String iconText = title.equals("NET SAVINGS") ? "#2563eb" : "#7c3aed";
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-min-width: 54px; -fx-min-height: 54px; -fx-max-width: 54px; -fx-max-height: 54px; -fx-alignment: center; -fx-background-color: " + iconBackground + "; -fx-background-radius: 15px; -fx-text-fill: " + iconText + "; -fx-font-size: 26px; -fx-font-weight: bold;");
+
+        VBox text = new VBox(5);
+        Label titleLabel = new Label(title);
+        titleLabel.getStyleClass().add("card-title");
+        Label valueLabel = new Label(value);
+        valueLabel.getStyleClass().add("dashboard-extra-value");
+        Label captionLabel = new Label(caption);
+        captionLabel.getStyleClass().add("card-caption");
+        text.getChildren().addAll(titleLabel, valueLabel, captionLabel);
+
+        HBox content = new HBox(15);
+        content.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        HBox.setHgrow(text, Priority.ALWAYS);
+        content.getChildren().addAll(iconLabel, text);
+        card.getChildren().add(content);
+        return card;
+    }
+
+    private Label valueLabel(VBox card) {
+        HBox content = (HBox) card.getChildren().get(0);
+        VBox text = (VBox) content.getChildren().get(1);
+        return (Label) text.getChildren().get(1);
+    }
 
     private Node createCashFlow() {
         HBox row = new HBox(14); VBox cash = new VBox(10); cash.getStyleClass().addAll("summary-card", "dashboard-cashflow-card");
