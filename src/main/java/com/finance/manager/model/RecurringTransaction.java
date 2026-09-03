@@ -1,6 +1,7 @@
 package com.finance.manager.model;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class RecurringTransaction {
 
@@ -18,6 +19,7 @@ public class RecurringTransaction {
     private String description;
     private Frequency frequency;
     private LocalDate nextDate;
+    private LocalTime nextTime;
     private boolean active;
 
     public RecurringTransaction() {
@@ -26,6 +28,12 @@ public class RecurringTransaction {
     public RecurringTransaction(String id, Transaction.Type type, double amount,
                                 String category, String description, Frequency frequency,
                                 LocalDate nextDate, boolean active) {
+        this(id, type, amount, category, description, frequency, nextDate, LocalTime.of(9, 0), active);
+    }
+
+    public RecurringTransaction(String id, Transaction.Type type, double amount,
+                                String category, String description, Frequency frequency,
+                                LocalDate nextDate, LocalTime nextTime, boolean active) {
         this.id = id;
         this.type = type;
         this.amount = amount;
@@ -33,6 +41,7 @@ public class RecurringTransaction {
         this.description = description;
         this.frequency = frequency;
         this.nextDate = nextDate;
+        this.nextTime = nextTime;
         this.active = active;
     }
 
@@ -50,6 +59,8 @@ public class RecurringTransaction {
     public void setFrequency(Frequency frequency) { this.frequency = frequency; }
     public LocalDate getNextDate() { return nextDate; }
     public void setNextDate(LocalDate nextDate) { this.nextDate = nextDate; }
+    public LocalTime getNextTime() { return nextTime; }
+    public void setNextTime(LocalTime nextTime) { this.nextTime = nextTime; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 }
