@@ -99,7 +99,7 @@ public class FinanceShellController extends BudgetDashboardController {
             for (Node child : header.getChildren()) {
                 if (child instanceof VBox brandBox) {
                     for (Node brandNode : brandBox.getChildren()) {
-                        if (brandNode instanceof Label label && "Khatabook".equals(label.getText()))
+                        if (brandNode instanceof Label label && "Hisaabi".equals(label.getText()))
                             label.setStyle("-fx-text-fill: #ffffff; -fx-font-size: 21px; -fx-font-weight: 800;");
                         else if (brandNode instanceof Label label)
                             label.setStyle("-fx-text-fill: #60a5fa; -fx-font-size: 9px; -fx-font-weight: bold; -fx-letter-spacing: 0.5px;");
@@ -230,7 +230,7 @@ public class FinanceShellController extends BudgetDashboardController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Settings.fxml"));
             Parent settingsRoot = loader.load();
-            Stage settingsStage = new Stage(); settingsStage.setTitle("Settings - Khatabook Finance Manager"); settingsStage.initModality(Modality.WINDOW_MODAL);
+            Stage settingsStage = new Stage(); settingsStage.setTitle("Settings - Hisaabi Finance Manager"); settingsStage.initModality(Modality.WINDOW_MODAL);
             Stage owner = (Stage) ((Node) event.getSource()).getScene().getWindow(); settingsStage.initOwner(owner);
             settingsStage.setScene(new Scene(settingsRoot, 620, 520)); settingsStage.setResizable(false); settingsStage.showAndWait();
         } catch (Exception e) { throw new RuntimeException("Could not open Settings.", e); }
