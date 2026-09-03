@@ -22,7 +22,7 @@ public class Main extends Application {
                 Main.class.getResource("/css/application.css").toExternalForm()
         );
 
-        stage.setTitle("Khatabook Finance Manager");
+        stage.setTitle("Hisaabi Finance Manager");
         stage.setScene(scene);
         stage.setMinWidth(800);
         stage.setMinHeight(500);
