@@ -10,7 +10,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.geometry.Insets;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -22,6 +26,7 @@ public class FinanceShellController extends BudgetDashboardController {
     @FXML private Label profileEmailLabel;
     @FXML private VBox sidebar;
     @FXML private Button menuToggle;
+    @FXML private ScrollPane dashboardScrollPane;
     @FXML private Button dashboardNav, analyticsNav, notificationsNav, reportsNav, goalsNav, budgetNav, transactionsNav, addTransactionNav;
     private final FirebaseAuthService shellAuthService = new FirebaseAuthService();
 
@@ -34,15 +39,31 @@ public class FinanceShellController extends BudgetDashboardController {
         setupDashboardActions();
         showSection("dashboardSection");
         activate(dashboardNav);
-        closeSidebar();
     }
 
+    /** Keep the navigation permanently visible on the left and reserve space for it. */
     private void setupSidebar() {
         if (sidebar == null) return;
-        sidebar.setVisible(false);
-        sidebar.setManaged(false);
-        sidebar.setMouseTransparent(true);
+
+        // The sidebar is part of the FXML and is intentionally always visible.
+        sidebar.setVisible(true);
+        sidebar.setManaged(true);
+        sidebar.setMouseTransparent(false);
+        sidebar.setMaxHeight(Double.MAX_VALUE);
+        sidebar.setTranslateY(74);
         sidebar.toFront();
+
+        // Hide the old hamburger control; navigation is now permanently visible.
+        if (menuToggle != null) {
+            menuToggle.setVisible(false);
+            menuToggle.setManaged(false);
+            menuToggle.setMouseTransparent(true);
+        }
+
+        // Reserve the sidebar's width so dashboard content never sits underneath it.
+        if (dashboardScrollPane != null) {
+            BorderPane.setMargin(dashboardScrollPane, new Insets(0, 0, 0, 300));
+        }
     }
 
     private void setupProfile() {
@@ -92,42 +113,36 @@ public class FinanceShellController extends BudgetDashboardController {
                         e.consume();
                         activate(transactionsNav);
                         showSection("transactionsSection");
-                        closeSidebar();
                     });
                 } else if (text.contains("Analytics")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(analyticsNav);
                         showSection("analyticsSection");
-                        closeSidebar();
                     });
                 } else if (text.contains("Reports")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(reportsNav);
                         showSection("reportsSection");
-                        closeSidebar();
                     });
                 } else if (text.contains("Goals")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(goalsNav);
                         showSection("goalsSection");
-                        closeSidebar();
                     });
                 } else if (text.contains("Alerts")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(notificationsNav);
                         showSection("notificationsSection");
-                        closeSidebar();
                     });
                 } else if (text.contains("Budget")) {
                     button.addEventFilter(ActionEvent.ACTION, e -> {
                         e.consume();
                         activate(budgetNav);
                         showSection("budgetSection");
-                        closeSidebar();
                     });
                 }
             } else if (node instanceof javafx.scene.layout.Pane child) {
@@ -176,43 +191,31 @@ public class FinanceShellController extends BudgetDashboardController {
         }
     }
 
+    /** Kept only for compatibility with any older FXML reference. The sidebar is permanent now. */
     @FXML
     private void handleSidebarToggle() {
-        if (sidebar == null) return;
-        boolean show = !sidebar.isVisible();
-        sidebar.setVisible(show);
-        sidebar.setManaged(show);
-        sidebar.setMouseTransparent(!show);
-        if (show) {
-            closeProfile();
+        if (sidebar != null) {
+            sidebar.setVisible(true);
+            sidebar.setManaged(true);
+            sidebar.setMouseTransparent(false);
             sidebar.toFront();
         }
     }
 
-    private void closeSidebar() {
-        if (sidebar != null) {
-            sidebar.setVisible(false);
-            sidebar.setManaged(false);
-            sidebar.setMouseTransparent(true);
-        }
-    }
-
-    @FXML private void handleDashboardNav(ActionEvent event) { activate(dashboardNav); showSection("dashboardSection"); closeSidebar(); }
-    @FXML private void handleAnalyticsNav(ActionEvent event) { activate(analyticsNav); showSection("analyticsSection"); closeSidebar(); }
-    @FXML private void handleNotificationsNav(ActionEvent event) { activate(notificationsNav); showSection("notificationsSection"); closeSidebar(); }
-    @FXML private void handleReportsNav(ActionEvent event) { activate(reportsNav); showSection("reportsSection"); closeSidebar(); }
-    @FXML private void handleGoalsNav(ActionEvent event) { activate(goalsNav); showSection("goalsSection"); closeSidebar(); }
-    @FXML private void handleBudgetNav(ActionEvent event) { activate(budgetNav); showSection("budgetSection"); closeSidebar(); }
-    @FXML private void handleTransactionsNav(ActionEvent event) { activate(transactionsNav); showSection("transactionsSection"); closeSidebar(); }
+    @FXML private void handleDashboardNav(ActionEvent event) { activate(dashboardNav); showSection("dashboardSection"); }
+    @FXML private void handleAnalyticsNav(ActionEvent event) { activate(analyticsNav); showSection("analyticsSection"); }
+    @FXML private void handleNotificationsNav(ActionEvent event) { activate(notificationsNav); showSection("notificationsSection"); }
+    @FXML private void handleReportsNav(ActionEvent event) { activate(reportsNav); showSection("reportsSection"); }
+    @FXML private void handleGoalsNav(ActionEvent event) { activate(goalsNav); showSection("goalsSection"); }
+    @FXML private void handleBudgetNav(ActionEvent event) { activate(budgetNav); showSection("budgetSection"); }
+    @FXML private void handleTransactionsNav(ActionEvent event) { activate(transactionsNav); showSection("transactionsSection"); }
     @FXML private void handleAddTransactionNav(ActionEvent event) {
         activate(null);
         if (addTransactionNav != null) addTransactionNav.getStyleClass().add("navbar-add-button-active");
         showSection("addTransactionSection");
-        closeSidebar();
     }
 
     @FXML private void handleProfileMenu() {
-        closeSidebar();
         if (profileCard == null) return;
         boolean show = !profileCard.isVisible();
         profileCard.setVisible(show);
