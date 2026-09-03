@@ -269,17 +269,28 @@ public class FinanceShellController extends BudgetDashboardController {
 
     private void closeProfile() { if (profileCard != null) { profileCard.setVisible(false); profileCard.setManaged(false); profileCard.setMouseTransparent(true); } }
 
-    @FXML protected void handleLogout(ActionEvent event) { invokeDashboardActionWithEvent("handleLogout", event); }
+    /** Directly clear the shared auth session and replace the current window with Login.fxml. */
+    @FXML protected void handleLogout(ActionEvent event) {
+        shellAuthService.logout();
+        closeProfile();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Login.fxml"));
+            Parent loginRoot = loader.load();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(loginRoot));
+            stage.setTitle("Hisaabi Finance Manager - Sign In");
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @FXML private void handleAddTransaction(ActionEvent event) { invokeDashboardAction("handleAddTransaction"); }
     @FXML private void handleExportCsv(ActionEvent event) { invokeDashboardAction("handleExportCsv"); }
     @FXML protected void handleSaveBudget() { invokeBudgetAction("handleSaveBudget"); }
 
     private void invokeDashboardAction(String methodName) {
         try { Method method = DashboardController.class.getDeclaredMethod(methodName); method.setAccessible(true); method.invoke(this); }
-        catch (Exception e) { throw new RuntimeException("Could not execute action: " + methodName, e); }
-    }
-    private void invokeDashboardActionWithEvent(String methodName, ActionEvent event) {
-        try { Method method = DashboardController.class.getDeclaredMethod(methodName, ActionEvent.class); method.setAccessible(true); method.invoke(this, event); }
         catch (Exception e) { throw new RuntimeException("Could not execute action: " + methodName, e); }
     }
     private void invokeBudgetAction(String methodName) {
