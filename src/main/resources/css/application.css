@@ -63,6 +63,8 @@
 .summary-row, .dashboard-extra-row { -fx-fill-height: true; }
 .summary-card { -fx-background-color: white; -fx-background-radius: 15px; -fx-border-color: #e2e8f0; -fx-border-radius: 15px; -fx-padding: 20px; -fx-spacing: 8px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.07), 14, 0.12, 0, 4); }
 .summary-card:hover { -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.12), 18, 0.14, 0, 6); }
+.dashboard-page .summary-card:hover { -fx-border-color: #818cf8; -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.22), 24, 0.18, 0, 8); -fx-translate-y: -3px; }
+.dashboard-page .transaction-form:hover { -fx-border-color: #818cf8; -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.18), 20, 0.16, 0, 7); -fx-translate-y: -2px; }
 .balance-card { -fx-background-color: linear-gradient(to bottom right, #eff6ff, white); -fx-border-color: #bfdbfe; }
 .dashboard-income-card { -fx-background-color: linear-gradient(to bottom right, #f0fdf4, white); -fx-border-color: #bbf7d0; }
 .dashboard-expense-card { -fx-background-color: linear-gradient(to bottom right, #fff7f7, white); -fx-border-color: #fecaca; }
