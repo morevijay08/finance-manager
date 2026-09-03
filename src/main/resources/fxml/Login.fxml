@@ -18,7 +18,7 @@
         <Insets top="40" right="40" bottom="40" left="40" />
     </padding>
 
-    <Label text="Khatabook Finance Manager" styleClass="app-title" />
+    <Label text="Hisaabi Finance Manager" styleClass="app-title" />
     <Label text="Welcome Back" styleClass="screen-title" />
     <Label text="Sign in to manage your finances" styleClass="subtitle" />
 
