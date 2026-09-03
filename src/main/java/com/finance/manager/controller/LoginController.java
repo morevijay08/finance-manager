@@ -49,8 +49,6 @@ public class LoginController {
                     try {
                         switchScene(event, "/fxml/Main.fxml");
                     } catch (Exception e) {
-                        // Do not hide the real FXMLLoader problem behind a generic message.
-                        // The root cause is shown to the user and also printed for debugging.
                         e.printStackTrace();
                         showError("Could not open the dashboard: " + rootCauseMessage(e));
                     }
@@ -96,7 +94,6 @@ public class LoginController {
         if (message == null || message.isBlank()) {
             return cause.getClass().getSimpleName();
         }
-        // Keep the login screen readable even when FXMLLoader produces a very long message.
         return message.length() > 180 ? message.substring(0, 180) + "..." : message;
     }
 
@@ -125,6 +122,7 @@ public class LoginController {
 
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
+        stage.setMaximized(true);
         stage.show();
     }
 }
