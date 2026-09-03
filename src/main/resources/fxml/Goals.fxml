@@ -42,7 +42,7 @@
     <VBox spacing="8" styleClass="transaction-form">
         <VBox spacing="3">
             <Label text="Recurring Transactions" styleClass="section-title" />
-            <Label text="Automatically add repeating income or expenses when their due date arrives." styleClass="subtitle" />
+            <Label text="Automatically add repeating income or expenses when their due date and time arrive." styleClass="subtitle" />
         </VBox>
         <GridPane hgap="10" vgap="8">
             <Label text="Type" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
@@ -51,6 +51,7 @@
             <Label text="Description" styleClass="field-label" GridPane.columnIndex="3" GridPane.rowIndex="0" />
             <Label text="Frequency" styleClass="field-label" GridPane.columnIndex="4" GridPane.rowIndex="0" />
             <Label text="Next date" styleClass="field-label" GridPane.columnIndex="5" GridPane.rowIndex="0" />
+            <Label text="Time" styleClass="field-label" GridPane.columnIndex="6" GridPane.rowIndex="0" />
 
             <ComboBox fx:id="recurringTypeCombo" prefWidth="115" GridPane.columnIndex="0" GridPane.rowIndex="1" />
             <TextField fx:id="recurringAmountField" promptText="0.00" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="1" />
@@ -58,8 +59,10 @@
             <TextField fx:id="recurringDescriptionField" promptText="e.g. Rent" prefWidth="170" GridPane.columnIndex="3" GridPane.rowIndex="1" />
             <ComboBox fx:id="recurringFrequencyCombo" prefWidth="120" GridPane.columnIndex="4" GridPane.rowIndex="1" />
             <DatePicker fx:id="recurringNextDatePicker" prefWidth="140" GridPane.columnIndex="5" GridPane.rowIndex="1" />
-            <Button fx:id="addRecurringButton" text="Add Recurring" onAction="#handleAddRecurring" styleClass="primary-button" GridPane.columnIndex="6" GridPane.rowIndex="1" />
+            <TextField fx:id="recurringTimeField" promptText="HH:mm" prefWidth="90" GridPane.columnIndex="6" GridPane.rowIndex="1" />
+            <Button fx:id="addRecurringButton" text="Add Recurring" onAction="#handleAddRecurring" styleClass="primary-button" GridPane.columnIndex="7" GridPane.rowIndex="1" />
         </GridPane>
+        <Label text="Use 24-hour time, for example 09:30 or 18:45." styleClass="subtitle" />
     </VBox>
 
     <ScrollPane fitToWidth="true" prefViewportHeight="260" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
