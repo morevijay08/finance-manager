@@ -58,7 +58,6 @@ public class FinanceShellController extends BudgetDashboardController {
                 "-fx-border-color: transparent #263453 transparent transparent;" +
                 "-fx-border-width: 0 1px 0 0;");
 
-        // Remove the hamburger button from the header; the sidebar is always visible.
         if (menuToggle != null) {
             menuToggle.setVisible(false);
             menuToggle.setManaged(false);
@@ -70,7 +69,6 @@ public class FinanceShellController extends BudgetDashboardController {
             borderPane.setLeft(sidebar);
         }
 
-        // Polish the existing sidebar elements without changing their actions.
         for (Node node : sidebar.getChildren()) {
             if (node instanceof Button button) {
                 button.setMaxWidth(Double.MAX_VALUE);
@@ -96,7 +94,6 @@ public class FinanceShellController extends BudgetDashboardController {
             }
         }
 
-        // Make the sidebar brand and header visually stronger.
         if (!sidebar.getChildren().isEmpty() && sidebar.getChildren().get(0) instanceof Pane header) {
             header.setStyle("-fx-padding: 2px 6px 17px 6px; -fx-border-color: transparent transparent #263453 transparent; -fx-border-width: 0 0 1px 0;");
             for (Node child : header.getChildren()) {
@@ -111,7 +108,6 @@ public class FinanceShellController extends BudgetDashboardController {
             }
         }
 
-        // Highlight the quick-action button in the same visual language as the dashboard.
         if (addTransactionNav != null) {
             addTransactionNav.setStyle("-fx-background-color: linear-gradient(to right, #2563eb, #4f46e5); -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 10px; -fx-padding: 0 14px; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.35), 10, 0.18, 0, 3);");
         }
@@ -149,7 +145,6 @@ public class FinanceShellController extends BudgetDashboardController {
         if (dashboard instanceof Pane pane) installDashboardButtonHandlers(pane);
     }
 
-    /** Navigate to the editable form when the Edit button in the transactions table is clicked. */
     private void setupTransactionEditNavigation() {
         try {
             Field field = DashboardController.class.getDeclaredField("transactionTable");
@@ -269,16 +264,20 @@ public class FinanceShellController extends BudgetDashboardController {
 
     private void closeProfile() { if (profileCard != null) { profileCard.setVisible(false); profileCard.setManaged(false); profileCard.setMouseTransparent(true); } }
 
-    /** Directly clear the shared auth session and replace the current window with Login.fxml. */
+    /** Return to the same Login scene configuration used when the application starts. */
     @FXML protected void handleLogout(ActionEvent event) {
         shellAuthService.logout();
         closeProfile();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Login.fxml"));
             Parent loginRoot = loader.load();
+            Scene loginScene = new Scene(loginRoot, 900, 600);
+            loginScene.getStylesheets().add(MainStylesheetHolder.getStylesheet());
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(loginRoot));
-            stage.setTitle("Hisaabi Finance Manager - Sign In");
+            stage.setScene(loginScene);
+            stage.setTitle("Hisaabi Finance Manager");
+            stage.setMinWidth(800);
+            stage.setMinHeight(500);
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -296,5 +295,11 @@ public class FinanceShellController extends BudgetDashboardController {
     private void invokeBudgetAction(String methodName) {
         try { Method method = BudgetDashboardController.class.getDeclaredMethod(methodName); method.setAccessible(true); method.invoke(this); }
         catch (Exception e) { throw new RuntimeException("Could not execute budget action: " + methodName, e); }
+    }
+
+    private static final class MainStylesheetHolder {
+        private static String getStylesheet() {
+            return FinanceShellController.class.getResource("/css/application.css").toExternalForm();
+        }
     }
 }
