@@ -11,10 +11,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.geometry.Insets;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -41,28 +40,30 @@ public class FinanceShellController extends BudgetDashboardController {
         activate(dashboardNav);
     }
 
-    /** Keep the navigation permanently visible on the left and reserve space for it. */
+    /** Convert the existing FXML sidebar into a permanent left column. */
     private void setupSidebar() {
         if (sidebar == null) return;
 
-        // The sidebar is part of the FXML and is intentionally always visible.
         sidebar.setVisible(true);
         sidebar.setManaged(true);
         sidebar.setMouseTransparent(false);
         sidebar.setMaxHeight(Double.MAX_VALUE);
-        sidebar.setTranslateY(74);
-        sidebar.toFront();
+        sidebar.setTranslateY(0);
 
-        // Hide the old hamburger control; navigation is now permanently visible.
+        // Remove the old hamburger button from the header.
         if (menuToggle != null) {
             menuToggle.setVisible(false);
             menuToggle.setManaged(false);
             menuToggle.setMouseTransparent(true);
         }
 
-        // Reserve the sidebar's width so dashboard content never sits underneath it.
-        if (dashboardScrollPane != null) {
-            BorderPane.setMargin(dashboardScrollPane, new Insets(0, 0, 0, 300));
+        // Move the sidebar from the StackPane overlay into BorderPane.left.
+        // This makes it permanent and automatically reserves its width for the content.
+        if (dashboardScrollPane != null && dashboardScrollPane.getParent() instanceof BorderPane borderPane) {
+            if (sidebar.getParent() instanceof Pane parent) {
+                parent.getChildren().remove(sidebar);
+            }
+            borderPane.setLeft(sidebar);
         }
     }
 
@@ -95,10 +96,10 @@ public class FinanceShellController extends BudgetDashboardController {
 
     private void setupDashboardActions() {
         Node dashboard = getSection("dashboardSection");
-        if (dashboard instanceof javafx.scene.layout.Pane pane) installDashboardButtonHandlers(pane);
+        if (dashboard instanceof Pane pane) installDashboardButtonHandlers(pane);
     }
 
-    private void installDashboardButtonHandlers(javafx.scene.layout.Pane parent) {
+    private void installDashboardButtonHandlers(Pane parent) {
         for (Node node : parent.getChildren()) {
             if (node instanceof Button button) {
                 String text = button.getText();
@@ -145,7 +146,7 @@ public class FinanceShellController extends BudgetDashboardController {
                         showSection("budgetSection");
                     });
                 }
-            } else if (node instanceof javafx.scene.layout.Pane child) {
+            } else if (node instanceof Pane child) {
                 installDashboardButtonHandlers(child);
             }
         }
@@ -191,14 +192,13 @@ public class FinanceShellController extends BudgetDashboardController {
         }
     }
 
-    /** Kept only for compatibility with any older FXML reference. The sidebar is permanent now. */
+    /** Kept for compatibility with the current FXML; the sidebar is always visible. */
     @FXML
     private void handleSidebarToggle() {
         if (sidebar != null) {
             sidebar.setVisible(true);
             sidebar.setManaged(true);
             sidebar.setMouseTransparent(false);
-            sidebar.toFront();
         }
     }
 
