@@ -82,6 +82,31 @@ public class FirestoreGoalRepository {
         });
     }
 
+    public CompletableFuture<Void> updateGoal(AuthSession session, FinancialGoal goal) {
+        return CompletableFuture.runAsync(() -> {
+            validateSession(session);
+            if (goal == null || goal.getId() == null || goal.getId().isBlank())
+                throw new RuntimeException("Goal ID is missing.");
+            if (goal.getName() == null || goal.getName().isBlank()
+                    || goal.getTargetAmount() <= 0 || goal.getSavedAmount() < 0
+                    || goal.getSavedAmount() > goal.getTargetAmount())
+                throw new RuntimeException("Enter valid goal details.");
+            try {
+                HttpRequest request = authorized(goalsUrl(session) + "/" + encode(goal.getId())
+                                + "?key=" + FirebaseConfig.getWebApiKey(), session.getIdToken())
+                        .method("PATCH", HttpRequest.BodyPublishers.ofString(goalDocument(goal).toString()))
+                        .build();
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                ensureSuccess(response);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to update financial goal.", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Goal update was interrupted.", e);
+            }
+        });
+    }
+
     public CompletableFuture<Void> deleteGoal(AuthSession session, String goalId) {
         return CompletableFuture.runAsync(() -> {
             validateSession(session);
