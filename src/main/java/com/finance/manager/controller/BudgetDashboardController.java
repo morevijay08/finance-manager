@@ -8,6 +8,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -138,12 +140,31 @@ public class BudgetDashboardController extends DashboardController {
     }
 
     private Node createMetrics() {
-        HBox row = new HBox(14); row.getStyleClass().add("dashboard-extra-row");
+        GridPane row = new GridPane();
+        row.setHgap(14);
+        row.getStyleClass().add("dashboard-extra-row");
+
+        ColumnConstraints firstColumn = new ColumnConstraints();
+        firstColumn.setPercentWidth(33.3333);
+        firstColumn.setHgrow(Priority.ALWAYS);
+        ColumnConstraints secondColumn = new ColumnConstraints();
+        secondColumn.setPercentWidth(33.3333);
+        secondColumn.setHgrow(Priority.ALWAYS);
+        ColumnConstraints thirdColumn = new ColumnConstraints();
+        thirdColumn.setPercentWidth(33.3334);
+        thirdColumn.setHgrow(Priority.ALWAYS);
+        row.getColumnConstraints().addAll(firstColumn, secondColumn, thirdColumn);
+
         VBox savings = metricCard("NET SAVINGS", "₹0.00", "Total income minus total expense", "dashboard-savings-card");
         VBox rate = metricCard("SAVINGS RATE", "0.0%", "This month's saving efficiency", "dashboard-rate-card");
-        dashboardSavingsLabel = valueLabel(savings); dashboardSavingsRateLabel = valueLabel(rate);
-        row.getChildren().addAll(savings, rate); for (Node node : row.getChildren()) HBox.setHgrow(node, Priority.ALWAYS); return row;
+        dashboardSavingsLabel = valueLabel(savings);
+        dashboardSavingsRateLabel = valueLabel(rate);
+
+        row.add(savings, 0, 0);
+        row.add(rate, 1, 0);
+        return row;
     }
+
     private VBox metricCard(String title, String value, String caption, String style) { VBox card = new VBox(6); card.getStyleClass().addAll("summary-card", style); Label titleLabel = new Label(title); titleLabel.getStyleClass().add("card-title"); Label valueLabel = new Label(value); valueLabel.getStyleClass().add("dashboard-extra-value"); Label captionLabel = new Label(caption); captionLabel.getStyleClass().add("card-caption"); card.getChildren().addAll(titleLabel, valueLabel, captionLabel); return card; }
     private Label valueLabel(VBox card) { return (Label) card.getChildren().get(1); }
 
