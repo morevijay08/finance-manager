@@ -1,4 +1,4 @@
-# Khatabook Finance Manager
+# Hisaabi Finance Manager
 
 Desktop finance-management application built with Java, JavaFX, FXML, Maven and Firebase.
 
