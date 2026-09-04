@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import com.finance.manager.ui.BackToDashboardButton?>
 
 <VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.finance.manager.controller.PeopleController" spacing="18" style="-fx-padding: 26px; -fx-background-color: #f8fafc;">
     <HBox alignment="CENTER_LEFT" spacing="16">
+        <BackToDashboardButton/>
         <VBox HBox.hgrow="ALWAYS" spacing="4">
             <Label text="People &amp; Friends" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
             <Label text="Your personal ledger for money given, received, comments and bills." style="-fx-font-size: 13px; -fx-text-fill: #64748b;"/>
