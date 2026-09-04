@@ -1,9 +1,12 @@
 package com.finance.manager.ui;
 
+import javafx.application.Platform;
 import javafx.geometry.Side;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
@@ -15,6 +18,8 @@ import java.util.Locale;
 /**
  * Global navigation search used by the main dashboard.
  * It searches feature/page names and redirects to the matching section.
+ * It also applies a small visual polish layer to the existing dashboard
+ * without changing its navigation or business logic.
  */
 public class GlobalSearchBar extends TextField {
     private final ContextMenu suggestions = new ContextMenu();
@@ -31,20 +36,28 @@ public class GlobalSearchBar extends TextField {
             new SearchTarget("Settings", "Account and application settings", "settings setting preferences account profile")
     );
 
+    private static final String SEARCH_STYLE = "-fx-background-color: rgba(255,255,255,0.14);-fx-background-radius: 13px;-fx-border-color: rgba(191,219,254,0.52);-fx-border-radius: 13px;-fx-border-width: 1px;-fx-text-fill: white;-fx-prompt-text-fill: #cbd5e1;-fx-font-size: 12px;-fx-padding: 0 16px;-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.20), 14, 0.14, 0, 4);";
+    private static final String SEARCH_FOCUS_STYLE = "-fx-background-color: rgba(255,255,255,0.20);-fx-background-radius: 13px;-fx-border-color: #93c5fd;-fx-border-radius: 13px;-fx-border-width: 1.5px;-fx-text-fill: white;-fx-prompt-text-fill: #dbeafe;-fx-font-size: 12px;-fx-padding: 0 16px;-fx-effect: dropshadow(gaussian, rgba(59,130,246,0.34), 18, 0.18, 0, 5);";
+
     public GlobalSearchBar() {
-        setPromptText("Search Hisaabi — Dashboard, transactions, budget, goals...");
-        setPrefWidth(560);
-        setMinWidth(320);
-        setMaxWidth(680);
-        setPrefHeight(40);
+        setPromptText("Search Hisaabi  •  Dashboard, transactions, budget, goals...");
+        setPrefWidth(610);
+        setMinWidth(360);
+        setMaxWidth(700);
+        setPrefHeight(44);
         setFocusTraversable(true);
-        setStyle("-fx-background-color: rgba(255,255,255,0.12);-fx-background-radius: 11px;-fx-border-color: rgba(191,219,254,0.42);-fx-border-radius: 11px;-fx-border-width: 1px;-fx-text-fill: white;-fx-prompt-text-fill: #cbd5e1;-fx-font-size: 12px;-fx-padding: 0 14px;-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 10, 0.12, 0, 3);");
+        setStyle(SEARCH_STYLE);
 
         textProperty().addListener((obs, oldValue, newValue) -> showSuggestions(newValue));
         setOnAction(e -> navigate(getText()));
         focusedProperty().addListener((obs, oldValue, focused) -> {
+            setStyle(focused ? SEARCH_FOCUS_STYLE : SEARCH_STYLE);
             if (!focused) suggestions.hide();
             else showSuggestions(getText());
+        });
+
+        sceneProperty().addListener((obs, oldScene, scene) -> {
+            if (scene != null) Platform.runLater(() -> polishDashboard(scene.getRoot()));
         });
     }
 
@@ -77,9 +90,7 @@ public class GlobalSearchBar extends TextField {
             suggestions.getItems().add(none);
         }
 
-        if (!suggestions.isShowing()) {
-            suggestions.show(this, Side.BOTTOM, 0, 4);
-        }
+        if (!suggestions.isShowing()) suggestions.show(this, Side.BOTTOM, 0, 5);
     }
 
     private void navigate(String value) {
@@ -125,13 +136,64 @@ public class GlobalSearchBar extends TextField {
             }) return button;
         }
 
-        if (node instanceof Pane pane) {
-            for (Node child : pane.getChildren()) {
+        if (node instanceof Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) {
                 Button result = findNavigationButton(child, targetName);
                 if (result != null) return result;
             }
         }
         return null;
+    }
+
+    /**
+     * Visual-only refinement of the existing screen. All existing FXML,
+     * navigation handlers, Firebase calls and transaction logic remain intact.
+     */
+    private void polishDashboard(Parent root) {
+        applyStyleToClass(root, "navbar", "-fx-background-color: linear-gradient(to right, #0b1224, #172554, #312e81);-fx-padding: 11px 26px;-fx-min-height: 76px;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.30), 22, 0.20, 0, 7);");
+        applyStyleToClass(root, "welcome-bar", "-fx-background-color: white;-fx-padding: 11px 30px;-fx-border-color: #e2e8f0;-fx-border-width: 0 0 1px 0;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.05), 8, 0.08, 0, 2);");
+        applyStyleToClass(root, "dashboard-content", "-fx-padding: 28px 38px 44px 38px;-fx-background-color: #f7f9fc;");
+        applyStyleToClass(root, "sidebar", "-fx-background-color: linear-gradient(to bottom, #081126 0%, #101d40 52%, #172554 100%);-fx-padding: 24px 14px 20px 14px;-fx-spacing: 9px;-fx-border-color: transparent #263453 transparent transparent;-fx-border-width: 0 1px 0 0;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.22), 18, 0.16, 3, 0);");
+        applyStyleToClass(root, "summary-card", "-fx-background-color: white;-fx-background-radius: 17px;-fx-border-color: #e2e8f0;-fx-border-radius: 17px;-fx-padding: 20px;-fx-spacing: 8px;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.075), 16, 0.12, 0, 5);");
+        applyStyleToClass(root, "dashboard-page", "-fx-padding: 3px 0 12px 0;");
+
+        Label title = findLabel(root, "Good to see you 👋");
+        if (title != null) title.setStyle("-fx-font-size: 30px;-fx-font-weight: 800;-fx-text-fill: #0f172a;");
+        Label subtitle = findLabel(root, "Your personal finance command center");
+        if (subtitle != null) subtitle.setStyle("-fx-font-size: 13px;-fx-text-fill: #64748b;");
+
+        for (Node node : collect(root)) {
+            if (node instanceof Button button && button.getStyleClass().contains("nav-button")) {
+                button.setMinHeight(43);
+                button.setPrefHeight(43);
+            }
+        }
+    }
+
+    private void applyStyleToClass(Node root, String className, String style) {
+        for (Node node : collect(root)) {
+            if (node.getStyleClass().contains(className)) node.setStyle(style);
+        }
+    }
+
+    private Label findLabel(Node root, String text) {
+        for (Node node : collect(root)) {
+            if (node instanceof Label label && text.equals(label.getText())) return label;
+        }
+        return null;
+    }
+
+    private List<Node> collect(Node root) {
+        List<Node> nodes = new ArrayList<>();
+        collectRecursive(root, nodes);
+        return nodes;
+    }
+
+    private void collectRecursive(Node node, List<Node> nodes) {
+        nodes.add(node);
+        if (node instanceof Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) collectRecursive(child, nodes);
+        }
     }
 
     private record SearchTarget(String name, String description, String keywords) {
