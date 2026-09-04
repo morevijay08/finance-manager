@@ -40,7 +40,7 @@ public class GlobalSearchBar extends TextField {
     private static final String SEARCH_FOCUS_STYLE = "-fx-background-color: rgba(255,255,255,0.20);-fx-background-radius: 13px;-fx-border-color: #93c5fd;-fx-border-radius: 13px;-fx-border-width: 1.5px;-fx-text-fill: white;-fx-prompt-text-fill: #dbeafe;-fx-font-size: 12px;-fx-padding: 0 16px;-fx-effect: dropshadow(gaussian, rgba(59,130,246,0.34), 18, 0.18, 0, 5);";
 
     public GlobalSearchBar() {
-        setPromptText("Search Hisaabi  •  Dashboard, transactions, budget, goals...");
+        setPromptText("Search Khatabook  •  Dashboard, transactions, budget, goals...");
         setPrefWidth(610);
         setMinWidth(360);
         setMaxWidth(700);
@@ -57,7 +57,12 @@ public class GlobalSearchBar extends TextField {
         });
 
         sceneProperty().addListener((obs, oldScene, scene) -> {
-            if (scene != null) Platform.runLater(() -> polishDashboard(scene.getRoot()));
+            if (scene != null) {
+                Platform.runLater(() -> {
+                    Branding.apply(scene.getRoot());
+                    polishDashboard(scene.getRoot());
+                });
+            }
         });
     }
 
@@ -85,7 +90,7 @@ public class GlobalSearchBar extends TextField {
         }
 
         if (matches.isEmpty()) {
-            MenuItem none = new MenuItem("No matching Hisaabi section");
+            MenuItem none = new MenuItem("No matching Khatabook section");
             none.setDisable(true);
             suggestions.getItems().add(none);
         }
@@ -145,10 +150,6 @@ public class GlobalSearchBar extends TextField {
         return null;
     }
 
-    /**
-     * Visual-only refinement of the existing screen. All existing FXML,
-     * navigation handlers, Firebase calls and transaction logic remain intact.
-     */
     private void polishDashboard(Parent root) {
         applyStyleToClass(root, "navbar", "-fx-background-color: linear-gradient(to right, #07101f, #172554, #3730a3);-fx-padding: 11px 26px;-fx-min-height: 76px;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.34), 24, 0.22, 0, 8);");
         applyStyleToClass(root, "welcome-bar", "-fx-background-color: linear-gradient(to right, #ffffff, #f8fbff);-fx-padding: 12px 30px;-fx-border-color: #e2e8f0;-fx-border-width: 0 0 1px 0;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.055), 9, 0.08, 0, 2);");
