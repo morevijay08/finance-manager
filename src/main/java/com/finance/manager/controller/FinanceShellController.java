@@ -82,7 +82,7 @@ public class FinanceShellController extends BudgetDashboardController {
             flowCombo.setValue("I GAVE"); flowCombo.setPrefWidth(150);
             personFieldRef.set(this, personField); flowFieldRef.set(this, flowCombo);
 
-            Field sectionRef = DashboardController.class.getDeclaredField("addTransactionSection");
+            Field sectionRef = BudgetDashboardController.class.getDeclaredField("addTransactionSection");
             sectionRef.setAccessible(true);
             Object sectionObject = sectionRef.get(this);
             if (!(sectionObject instanceof VBox section)) return;
@@ -123,7 +123,6 @@ public class FinanceShellController extends BudgetDashboardController {
         if (peopleController != null) peopleController.refresh();
     }
 
-    /** Convert the existing FXML sidebar into a permanent, polished left column. */
     private void setupSidebar() {
         if (sidebar == null) return;
         sidebar.setVisible(true); sidebar.setManaged(true); sidebar.setMouseTransparent(false); sidebar.setMaxHeight(Double.MAX_VALUE); sidebar.setTranslateY(0);
