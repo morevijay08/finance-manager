@@ -5,7 +5,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputControl;
-import javafx.stage.Window;
+import javafx.stage.Stage;
 
 /** Central application branding. Keeps user-facing product text consistent. */
 public final class Branding {
@@ -19,16 +19,8 @@ public final class Branding {
         if (root == null) return;
         applyText(root);
 
-        Window window = root.getScene() == null ? null : root.getScene().getWindow();
-        if (window != null) {
-            window.setOnShown(event -> window.setOnShown(null));
-            String title = window.getUserData() instanceof String
-                    ? (String) window.getUserData()
-                    : window instanceof javafx.stage.Stage stage ? stage.getTitle() : null;
-            if (title != null) {
-                window.setUserData(replace(title));
-                if (window instanceof javafx.stage.Stage stage) stage.setTitle(replace(title));
-            }
+        if (root.getScene() != null && root.getScene().getWindow() instanceof Stage stage) {
+            stage.setTitle(replace(stage.getTitle()));
         }
     }
 
