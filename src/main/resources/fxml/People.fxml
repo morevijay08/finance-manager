@@ -2,39 +2,41 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.finance.manager.controller.PeopleController" spacing="16" style="-fx-padding: 24px; -fx-background-color: #f8fafc;">
-    <VBox spacing="3">
-        <Label text="People &amp; Friends" style="-fx-font-size: 26px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
-        <Label text="Track money you gave to or received from each person, including comments and bills." style="-fx-font-size: 13px; -fx-text-fill: #64748b;"/>
-    </VBox>
-    <HBox spacing="14" VBox.vgrow="ALWAYS">
-        <VBox prefWidth="250" minWidth="220" spacing="10" style="-fx-background-color: white; -fx-background-radius: 14px; -fx-padding: 16px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.10), 14, 0.12, 0, 3);">
-            <HBox alignment="CENTER_LEFT" spacing="8">
-                <Label text="PEOPLE" HBox.hgrow="ALWAYS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                <Button fx:id="addPersonButton" text="＋ Add Person" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 8px; -fx-padding: 7px 10px;"/>
-            </HBox>
-            <Label text="Select a person to manage their complete money history." wrapText="true" style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;"/>
-            <ListView fx:id="peopleList" VBox.vgrow="ALWAYS"/>
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.finance.manager.controller.PeopleController" spacing="18" style="-fx-padding: 26px; -fx-background-color: #f8fafc;">
+    <HBox alignment="CENTER_LEFT" spacing="16">
+        <VBox HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="People &amp; Friends" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+            <Label text="Your personal ledger for money given, received, comments and bills." style="-fx-font-size: 13px; -fx-text-fill: #64748b;"/>
+        </VBox>
+        <Button fx:id="addPersonButton" text="＋ Add Person" style="-fx-background-color: linear-gradient(to right,#2563eb,#4f46e5); -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 10px; -fx-padding: 10px 16px;"/>
+    </HBox>
+    <HBox spacing="16" VBox.vgrow="ALWAYS">
+        <VBox prefWidth="270" minWidth="250" spacing="11" style="-fx-background-color: white; -fx-background-radius: 16px; -fx-padding: 16px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.10), 18, 0.12, 0, 4);">
+            <HBox alignment="CENTER_LEFT" spacing="8"><Label text="PEOPLE" HBox.hgrow="ALWAYS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="peopleCountLabel" text="0" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #2563eb;"/></HBox>
+            <TextField fx:id="peopleSearchField" promptText="🔍 Search people..." style="-fx-background-color: #f8fafc; -fx-background-radius: 9px; -fx-border-color: #e2e8f0; -fx-border-radius: 9px; -fx-padding: 9px 11px;"/>
+            <HBox spacing="7"><Button fx:id="editPersonButton" text="Edit" disable="true" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/><Button fx:id="deletePersonButton" text="Delete" disable="true" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/></HBox>
+            <Label text="Click a person to open their complete ledger." wrapText="true" style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;"/>
+            <ListView fx:id="peopleList" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-border-color: transparent;"/>
         </VBox>
         <VBox HBox.hgrow="ALWAYS" spacing="14">
-            <VBox spacing="7" style="-fx-background-color: white; -fx-background-radius: 14px; -fx-padding: 16px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.10), 14, 0.12, 0, 3);">
-                <HBox alignment="CENTER_LEFT" spacing="12">
-                    <VBox HBox.hgrow="ALWAYS" spacing="3"><Label fx:id="selectedPersonLabel" text="Select a person" style="-fx-font-size: 22px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/><Label fx:id="hintLabel" text="Add a person, then record money given or received." style="-fx-font-size: 12px; -fx-text-fill: #64748b;" wrapText="true"/></VBox>
-                    <Button fx:id="addTransactionButton" text="＋ Add Transaction" disable="true" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 9px; -fx-padding: 9px 14px;"/>
-                </HBox>
-            </VBox>
-            <HBox spacing="12">
-                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #eff6ff; -fx-background-radius: 12px; -fx-padding: 14px;"><Label text="I GAVE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="givenLabel" text="₹0.00" style="-fx-font-size: 19px; -fx-font-weight: 800; -fx-text-fill: #2563eb;"/></VBox>
-                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #ecfdf5; -fx-background-radius: 12px; -fx-padding: 14px;"><Label text="PAID ME BACK" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="receivedLabel" text="₹0.00" style="-fx-font-size: 19px; -fx-font-weight: 800; -fx-text-fill: #16a34a;"/></VBox>
-                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #f5f3ff; -fx-background-radius: 12px; -fx-padding: 14px;"><Label text="BALANCE DUE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="balanceLabel" text="₹0.00" style="-fx-font-size: 19px; -fx-font-weight: 800; -fx-text-fill: #7c3aed;"/></VBox>
+            <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: white; -fx-background-radius: 16px; -fx-padding: 16px 18px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.10), 18, 0.12, 0, 4);">
+                <VBox HBox.hgrow="ALWAYS" spacing="3"><Label fx:id="selectedPersonLabel" text="Select a person" style="-fx-font-size: 23px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/><Label fx:id="hintLabel" text="Choose a person to see their ledger." style="-fx-font-size: 12px; -fx-text-fill: #64748b;" wrapText="true"/></VBox>
+                <Button fx:id="settleButton" text="✓ Settle Up" disable="true" style="-fx-background-color: #ecfdf5; -fx-text-fill: #15803d; -fx-font-weight: bold; -fx-background-radius: 9px; -fx-padding: 9px 13px;"/>
+                <Button fx:id="addTransactionButton" text="＋ Add Transaction" disable="true" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 9px; -fx-padding: 9px 14px;"/>
             </HBox>
+            <HBox spacing="12">
+                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #eff6ff; -fx-background-radius: 13px; -fx-padding: 15px;"><Label text="YOU GAVE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="givenLabel" text="₹0.00" style="-fx-font-size: 20px; -fx-font-weight: 800; -fx-text-fill: #2563eb;"/><Label text="Total money you gave" style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/></VBox>
+                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #ecfdf5; -fx-background-radius: 13px; -fx-padding: 15px;"><Label text="PAID YOU BACK" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="receivedLabel" text="₹0.00" style="-fx-font-size: 20px; -fx-font-weight: 800; -fx-text-fill: #16a34a;"/><Label text="Total money received" style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/></VBox>
+                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #f5f3ff; -fx-background-radius: 13px; -fx-padding: 15px;"><Label text="CURRENT BALANCE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="balanceLabel" text="₹0.00" style="-fx-font-size: 20px; -fx-font-weight: 800; -fx-text-fill: #7c3aed;"/><Label fx:id="balanceHintLabel" text="Select a person" style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/></VBox>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="8"><Label text="TRANSACTION HISTORY" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #475569;"/><Label text="All activity for the selected person" style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;" HBox.hgrow="ALWAYS"/></HBox>
             <TableView fx:id="transactionTable" VBox.vgrow="ALWAYS" styleClass="transaction-table">
                 <columns>
                     <TableColumn fx:id="dateColumn" text="Date" prefWidth="120"/>
                     <TableColumn fx:id="directionColumn" text="Direction" prefWidth="130"/>
                     <TableColumn fx:id="amountColumn" text="Amount" prefWidth="130"/>
                     <TableColumn fx:id="descriptionColumn" text="Comment / Details" prefWidth="300"/>
-                    <TableColumn fx:id="attachmentColumn" text="Bills" prefWidth="120"/>
+                    <TableColumn fx:id="attachmentColumn" text="Bills" prefWidth="130"/>
                     <TableColumn fx:id="actionColumn" text="Actions" prefWidth="160"/>
                 </columns>
             </TableView>
