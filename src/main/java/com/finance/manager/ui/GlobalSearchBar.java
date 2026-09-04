@@ -2,6 +2,7 @@ package com.finance.manager.ui;
 
 import javafx.application.Platform;
 import javafx.geometry.Side;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -9,7 +10,6 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.Pane;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -150,11 +150,11 @@ public class GlobalSearchBar extends TextField {
      * navigation handlers, Firebase calls and transaction logic remain intact.
      */
     private void polishDashboard(Parent root) {
-        applyStyleToClass(root, "navbar", "-fx-background-color: linear-gradient(to right, #0b1224, #172554, #312e81);-fx-padding: 11px 26px;-fx-min-height: 76px;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.30), 22, 0.20, 0, 7);");
-        applyStyleToClass(root, "welcome-bar", "-fx-background-color: white;-fx-padding: 11px 30px;-fx-border-color: #e2e8f0;-fx-border-width: 0 0 1px 0;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.05), 8, 0.08, 0, 2);");
-        applyStyleToClass(root, "dashboard-content", "-fx-padding: 28px 38px 44px 38px;-fx-background-color: #f7f9fc;");
-        applyStyleToClass(root, "sidebar", "-fx-background-color: linear-gradient(to bottom, #081126 0%, #101d40 52%, #172554 100%);-fx-padding: 24px 14px 20px 14px;-fx-spacing: 9px;-fx-border-color: transparent #263453 transparent transparent;-fx-border-width: 0 1px 0 0;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.22), 18, 0.16, 3, 0);");
-        applyStyleToClass(root, "summary-card", "-fx-background-color: white;-fx-background-radius: 17px;-fx-border-color: #e2e8f0;-fx-border-radius: 17px;-fx-padding: 20px;-fx-spacing: 8px;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.075), 16, 0.12, 0, 5);");
+        applyStyleToClass(root, "navbar", "-fx-background-color: linear-gradient(to right, #07101f, #172554, #3730a3);-fx-padding: 11px 26px;-fx-min-height: 76px;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.34), 24, 0.22, 0, 8);");
+        applyStyleToClass(root, "welcome-bar", "-fx-background-color: linear-gradient(to right, #ffffff, #f8fbff);-fx-padding: 12px 30px;-fx-border-color: #e2e8f0;-fx-border-width: 0 0 1px 0;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.055), 9, 0.08, 0, 2);");
+        applyStyleToClass(root, "dashboard-content", "-fx-padding: 28px 38px 44px 38px;-fx-background-color: linear-gradient(to bottom, #f8fafc, #f5f7fb);");
+        applyStyleToClass(root, "sidebar", "-fx-background-color: linear-gradient(to bottom, #070f20 0%, #101d40 52%, #1e2b5f 100%);-fx-padding: 24px 14px 20px 14px;-fx-spacing: 9px;-fx-border-color: transparent #263453 transparent transparent;-fx-border-width: 0 1px 0 0;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.25), 20, 0.17, 3, 0);");
+        applyStyleToClass(root, "summary-card", "-fx-background-color: rgba(255,255,255,0.98);-fx-background-radius: 18px;-fx-border-color: #e2e8f0;-fx-border-radius: 18px;-fx-padding: 20px;-fx-spacing: 8px;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.085), 18, 0.13, 0, 6);");
         applyStyleToClass(root, "dashboard-page", "-fx-padding: 3px 0 12px 0;");
 
         Label title = findLabel(root, "Good to see you 👋");
@@ -162,10 +162,43 @@ public class GlobalSearchBar extends TextField {
         Label subtitle = findLabel(root, "Your personal finance command center");
         if (subtitle != null) subtitle.setStyle("-fx-font-size: 13px;-fx-text-fill: #64748b;");
 
+        polishCards(root);
+        polishButtons(root);
+    }
+
+    private void polishCards(Node root) {
         for (Node node : collect(root)) {
-            if (node instanceof Button button && button.getStyleClass().contains("nav-button")) {
+            if (!node.getStyleClass().contains("summary-card")) continue;
+
+            node.setOnMouseEntered(e -> {
+                node.setTranslateY(-2);
+                node.setScaleX(1.008);
+                node.setScaleY(1.008);
+                node.setStyle("-fx-background-color: white;-fx-background-radius: 18px;-fx-border-color: #cbd5e1;-fx-border-radius: 18px;-fx-padding: 20px;-fx-spacing: 8px;-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.13), 22, 0.16, 0, 8);");
+            });
+            node.setOnMouseExited(e -> {
+                node.setTranslateY(0);
+                node.setScaleX(1);
+                node.setScaleY(1);
+                node.setStyle("-fx-background-color: rgba(255,255,255,0.98);-fx-background-radius: 18px;-fx-border-color: #e2e8f0;-fx-border-radius: 18px;-fx-padding: 20px;-fx-spacing: 8px;-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.085), 18, 0.13, 0, 6);");
+            });
+        }
+    }
+
+    private void polishButtons(Node root) {
+        for (Node node : collect(root)) {
+            if (!(node instanceof Button button)) continue;
+
+            if (button.getStyleClass().contains("primary-button")) {
+                button.setStyle("-fx-background-color: linear-gradient(to right, #2563eb, #4f46e5);-fx-background-radius: 10px;-fx-text-fill: white;-fx-font-weight: bold;-fx-padding: 10px 16px;-fx-cursor: hand;-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.20), 10, 0.10, 0, 3);");
+            } else if (button.getStyleClass().contains("secondary-button")) {
+                button.setStyle("-fx-background-color: #f8fafc;-fx-background-radius: 10px;-fx-border-color: #dbe3ee;-fx-border-radius: 10px;-fx-text-fill: #334155;-fx-font-weight: 600;-fx-padding: 9px 14px;-fx-cursor: hand;");
+            }
+
+            if (button.getStyleClass().contains("nav-button")) {
                 button.setMinHeight(43);
                 button.setPrefHeight(43);
+                button.setCursor(Cursor.HAND);
             }
         }
     }
