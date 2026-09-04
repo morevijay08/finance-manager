@@ -41,7 +41,7 @@ public class GlobalSearchBar extends TextField {
         setStyle("-fx-background-color: rgba(255,255,255,0.12);-fx-background-radius: 11px;-fx-border-color: rgba(191,219,254,0.42);-fx-border-radius: 11px;-fx-border-width: 1px;-fx-text-fill: white;-fx-prompt-text-fill: #cbd5e1;-fx-font-size: 12px;-fx-padding: 0 14px;-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 10, 0.12, 0, 3);");
 
         textProperty().addListener((obs, oldValue, newValue) -> showSuggestions(newValue));
-        setOnAction(e -> navigate(text));
+        setOnAction(e -> navigate(getText()));
         focusedProperty().addListener((obs, oldValue, focused) -> {
             if (!focused) suggestions.hide();
             else showSuggestions(getText());
