@@ -11,6 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -122,15 +123,32 @@ public class LoginController {
 
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
+        maximizeStage(stage);
         stage.show();
+        maximizeStage(stage);
+        Platform.runLater(() -> maximizeStage(stage));
+        Platform.runLater(() -> Platform.runLater(() -> maximizeStage(stage)));
+    }
 
-        // Maximize after the new scene is attached and shown so the dashboard
-        // reliably fills the entire available desktop area on Windows.
+    private void maximizeStage(Stage stage) {
+        if (stage == null) return;
+        stage.setIconified(false);
         stage.setMaximized(true);
-        Platform.runLater(() -> {
-            if (stage.isShowing() && !stage.isMaximized()) {
-                stage.setMaximized(true);
-            }
-        });
+
+        // Windows can occasionally ignore the first maximize request while a
+        // new JavaFX scene is being attached. Fall back to the current screen's
+        // visual bounds so the application still fills the available desktop.
+        if (stage.isShowing() && !stage.isMaximized()) {
+            javafx.geometry.Rectangle2D bounds = Screen.getScreensForRectangle(
+                    stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight())
+                    .stream()
+                    .findFirst()
+                    .orElse(Screen.getPrimary())
+                    .getVisualBounds();
+            stage.setX(bounds.getMinX());
+            stage.setY(bounds.getMinY());
+            stage.setWidth(bounds.getWidth());
+            stage.setHeight(bounds.getHeight());
+        }
     }
 }
