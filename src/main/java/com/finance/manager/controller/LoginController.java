@@ -123,32 +123,37 @@ public class LoginController {
 
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
-        maximizeStage(stage);
         stage.show();
-        maximizeStage(stage);
-        Platform.runLater(() -> maximizeStage(stage));
-        Platform.runLater(() -> Platform.runLater(() -> maximizeStage(stage)));
+        forceMaximized(stage);
+        Platform.runLater(() -> forceMaximized(stage));
+        Platform.runLater(() -> Platform.runLater(() -> forceMaximized(stage)));
     }
 
-    private void maximizeStage(Stage stage) {
+    /**
+     * Force the application window to occupy the full available desktop area.
+     * This deliberately applies the screen bounds even when JavaFX reports the
+     * stage as maximized, because Windows can retain a previous snapped/restored
+     * size when only the Scene is replaced.
+     */
+    private void forceMaximized(Stage stage) {
         if (stage == null) return;
-        stage.setIconified(false);
-        stage.setMaximized(true);
 
-        // Windows can occasionally ignore the first maximize request while a
-        // new JavaFX scene is being attached. Fall back to the current screen's
-        // visual bounds so the application still fills the available desktop.
-        if (stage.isShowing() && !stage.isMaximized()) {
-            javafx.geometry.Rectangle2D bounds = Screen.getScreensForRectangle(
-                    stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight())
-                    .stream()
-                    .findFirst()
-                    .orElse(Screen.getPrimary())
-                    .getVisualBounds();
-            stage.setX(bounds.getMinX());
-            stage.setY(bounds.getMinY());
-            stage.setWidth(bounds.getWidth());
-            stage.setHeight(bounds.getHeight());
-        }
+        stage.setIconified(false);
+        stage.setMaximized(false);
+
+        javafx.geometry.Rectangle2D bounds = Screen.getScreensForRectangle(
+                stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight())
+                .stream()
+                .findFirst()
+                .orElse(Screen.getPrimary())
+                .getVisualBounds();
+
+        stage.setX(bounds.getMinX());
+        stage.setY(bounds.getMinY());
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
+        stage.show();
+        stage.setMaximized(true);
+        stage.toFront();
     }
 }
