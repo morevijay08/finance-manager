@@ -122,7 +122,15 @@ public class LoginController {
 
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
-        stage.setMaximized(true);
         stage.show();
+
+        // Maximize after the new scene is attached and shown so the dashboard
+        // reliably fills the entire available desktop area on Windows.
+        stage.setMaximized(true);
+        Platform.runLater(() -> {
+            if (stage.isShowing() && !stage.isMaximized()) {
+                stage.setMaximized(true);
+            }
+        });
     }
 }
