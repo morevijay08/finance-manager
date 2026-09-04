@@ -279,8 +279,26 @@ public class FinanceShellController extends BudgetDashboardController {
             stage.setMinWidth(800);
             stage.setMinHeight(500);
             stage.show();
+            maximizeStage(stage);
+            javafx.application.Platform.runLater(() -> maximizeStage(stage));
+            javafx.application.Platform.runLater(() -> javafx.application.Platform.runLater(() -> maximizeStage(stage)));
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void maximizeStage(Stage stage) {
+        if (stage == null) return;
+        stage.setIconified(false);
+        stage.setMaximized(true);
+        if (stage.isShowing() && !stage.isMaximized()) {
+            javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getScreensForRectangle(
+                    stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight())
+                    .stream().findFirst().orElse(javafx.stage.Screen.getPrimary()).getVisualBounds();
+            stage.setX(bounds.getMinX());
+            stage.setY(bounds.getMinY());
+            stage.setWidth(bounds.getWidth());
+            stage.setHeight(bounds.getHeight());
         }
     }
 
