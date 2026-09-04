@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.finance.manager.controller.PeopleController" spacing="16" style="-fx-padding: 24px; -fx-background-color: #f8fafc;">
+    <VBox spacing="3">
+        <Label text="People &amp; Friends" style="-fx-font-size: 26px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+        <Label text="Track money you gave to or received from each person." style="-fx-font-size: 13px; -fx-text-fill: #64748b;"/>
+    </VBox>
+    <HBox spacing="14" VBox.vgrow="ALWAYS">
+        <VBox prefWidth="250" minWidth="220" spacing="10" style="-fx-background-color: white; -fx-background-radius: 14px; -fx-padding: 16px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.10), 14, 0.12, 0, 3);">
+            <Label text="PEOPLE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+            <ListView fx:id="peopleList" VBox.vgrow="ALWAYS"/>
+        </VBox>
+        <VBox HBox.hgrow="ALWAYS" spacing="14">
+            <VBox spacing="3" style="-fx-background-color: white; -fx-background-radius: 14px; -fx-padding: 16px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.10), 14, 0.12, 0, 3);">
+                <Label fx:id="selectedPersonLabel" text="Select a person" style="-fx-font-size: 22px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+                <Label text="Personal money history" style="-fx-font-size: 12px; -fx-text-fill: #64748b;"/>
+            </VBox>
+            <HBox spacing="12">
+                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #eff6ff; -fx-background-radius: 12px; -fx-padding: 14px;"><Label text="I GAVE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="givenLabel" text="₹0.00" style="-fx-font-size: 19px; -fx-font-weight: 800; -fx-text-fill: #2563eb;"/></VBox>
+                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #ecfdf5; -fx-background-radius: 12px; -fx-padding: 14px;"><Label text="PAID ME BACK" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="receivedLabel" text="₹0.00" style="-fx-font-size: 19px; -fx-font-weight: 800; -fx-text-fill: #16a34a;"/></VBox>
+                <VBox HBox.hgrow="ALWAYS" spacing="4" style="-fx-background-color: #f5f3ff; -fx-background-radius: 12px; -fx-padding: 14px;"><Label text="BALANCE DUE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/><Label fx:id="balanceLabel" text="₹0.00" style="-fx-font-size: 19px; -fx-font-weight: 800; -fx-text-fill: #7c3aed;"/></VBox>
+            </HBox>
+            <TableView fx:id="transactionTable" VBox.vgrow="ALWAYS" styleClass="transaction-table">
+                <columns>
+                    <TableColumn fx:id="dateColumn" text="Date" prefWidth="130"/>
+                    <TableColumn fx:id="directionColumn" text="Direction" prefWidth="150"/>
+                    <TableColumn fx:id="amountColumn" text="Amount" prefWidth="150"/>
+                    <TableColumn fx:id="descriptionColumn" text="Details" prefWidth="300"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </HBox>
+</VBox>
