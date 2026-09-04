@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.finance.manager.controller.SettingsController" spacing="18" styleClass="settings-page">
-    <VBox spacing="4"><Label text="Settings" styleClass="page-title"/><Label text="Manage your Hisaabi Finance Manager preferences" styleClass="subtitle"/></VBox>
+    <VBox spacing="4"><Label text="Settings" styleClass="page-title"/><Label text="Manage your Khatabook Finance Manager preferences" styleClass="subtitle"/></VBox>
     <VBox spacing="12" styleClass="summary-card">
         <Label text="Preferences" styleClass="section-title"/>
         <HBox alignment="CENTER_LEFT" spacing="12"><VBox HBox.hgrow="ALWAYS"><Label text="Notifications" styleClass="card-title"/><Label text="Show alerts for important finance activity" styleClass="subtitle"/></VBox><CheckBox text="Enabled" selected="true" fx:id="notificationsEnabled"/></HBox>
