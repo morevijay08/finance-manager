@@ -25,7 +25,7 @@
                preserveRatio="true"
                pickOnBounds="true">
         <image>
-            <Image url="@../images/khatabook-logo.jpg" />
+            <Image url="@../images/khatabook-logo.svg" />
         </image>
     </ImageView>
 
