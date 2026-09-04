@@ -6,6 +6,8 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx/25"
@@ -15,10 +17,19 @@
       spacing="12"
       styleClass="auth-screen">
     <padding>
-        <Insets top="40" right="40" bottom="40" left="40" />
+        <Insets top="32" right="40" bottom="40" left="40" />
     </padding>
 
-    <Label text="Hisaabi Finance Manager" styleClass="app-title" />
+    <ImageView fitWidth="120"
+               fitHeight="120"
+               preserveRatio="true"
+               pickOnBounds="true">
+        <image>
+            <Image url="@../images/khatabook-logo.jpg" />
+        </image>
+    </ImageView>
+
+    <Label text="Khatabook Finance Manager" styleClass="app-title" />
     <Label text="Welcome Back" styleClass="screen-title" />
     <Label text="Sign in to manage your finances" styleClass="subtitle" />
 
