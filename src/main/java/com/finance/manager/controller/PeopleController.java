@@ -7,11 +7,12 @@ import com.finance.manager.service.FirebaseAuthService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import java.awt.Desktop;
@@ -87,7 +88,74 @@ public class PeopleController {
     private void clearDetails(){selectedPerson=null;selectedPersonLabel.setText("Select a person");hintLabel.setText("Choose a person to see their ledger.");balanceHintLabel.setText("Select a person");givenLabel.setText(money(0));receivedLabel.setText(money(0));balanceLabel.setText(money(0));selectedTransactions.clear();addTransactionButton.setDisable(true);editPersonButton.setDisable(true);deletePersonButton.setDisable(true);settleButton.setDisable(true);}
 
     private void settleUp(){String person=selectedPerson;if(person==null)return;double given=personTotal(person,Transaction.Type.EXPENSE),received=personTotal(person,Transaction.Type.INCOME),balance=given-received;if(Math.abs(balance)<0.005)return;TextInputDialog d=new TextInputDialog(String.format(Locale.US,"%.2f",Math.abs(balance)));d.setTitle("Settle Up — "+person);d.setHeaderText(balance>0?person+" owes you "+money(balance):"You owe "+person+" "+money(-balance));d.setContentText("Settlement amount:");d.showAndWait().ifPresent(v->{try{double amount=Double.parseDouble(v.trim());if(amount<=0||amount>Math.abs(balance)+0.005)throw new IllegalArgumentException("Enter an amount up to the current balance.");Transaction.Type type=balance>0?Transaction.Type.INCOME:Transaction.Type.EXPENSE;Transaction t=new Transaction(null,type,amount,"Settlement","Settlement with "+person,LocalDate.now(),person);repository.addTransaction(authService.getCurrentSession(),t).thenAccept(x->Platform.runLater(()->{allTransactions.add(0,x);showPerson(person);rebuildPeople();peopleList.getSelectionModel().select(person);}));}catch(Exception e){error(e.getMessage());}});}
-    private void openTransactionDialog(Transaction existing){String person=peopleList.getSelectionModel().getSelectedItem();if(person==null){error("Select a person first.");return;}Dialog<ButtonType>d=new Dialog<>();d.setTitle(existing==null?"Add Transaction — "+person:"Edit Transaction — "+person);d.setHeaderText(existing==null?"Record money given or received":"Update transaction");ButtonType ok=new ButtonType(existing==null?"Save":"Update",ButtonBar.ButtonData.OK_DONE);d.getDialogPane().getButtonTypes().addAll(ok,ButtonType.CANCEL);ComboBox<String> flow=new ComboBox<>(FXCollections.observableArrayList("I GAVE","I RECEIVED"));flow.setValue(existing!=null&&existing.getType()==Transaction.Type.INCOME?"I RECEIVED":"I GAVE");TextField amount=new TextField(existing==null?"":String.valueOf(existing.getAmount()));TextField category=new TextField(existing==null?"Other":existing.getCategory());DatePicker date=new DatePicker(existing==null?LocalDate.now():existing.getDate());TextArea comment=new TextArea(existing==null?"":existing.getDescription());comment.setPromptText("Comment / bill details / notes...");comment.setPrefRowCount(3);Label files=new Label(existing==null?"No attachments":"Existing: "+attachmentText(existing));List<File> chosen=new ArrayList<>();Button attach=new Button("＋ Add photo / PDF");attach.setOnAction(e->{FileChooser fc=new FileChooser();fc.setTitle("Attach bills or documents (max 4)");fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Images and PDF","*.png","*.jpg","*.jpeg","*.webp","*.pdf"));List<File> p=fc.showOpenMultipleDialog(d.getOwner());if(p!=null){for(File f:p){if(chosen.size()>=4)break;chosen.add(f);}files.setText(chosen.size()+" new attachment(s) selected");}});GridPane g=new GridPane();g.setHgap(12);g.setVgap(10);g.setPadding(new Insets(8));g.addRow(0,new Label("Person"),new Label(person));g.addRow(1,new Label("Money flow"),flow);g.addRow(2,new Label("Amount"),amount);g.addRow(3,new Label("Category"),category);g.addRow(4,new Label("Date"),date);g.addRow(5,new Label("Comment / Details"),comment);g.addRow(6,new Label("Attachments"),attach);g.add(files,1,7);d.getDialogPane().setContent(g);d.setResultConverter(b->b==ok?b:null);if(d.showAndWait().isEmpty())return;try{double v=Double.parseDouble(amount.getText().trim());if(v<=0)throw new IllegalArgumentException("Amount must be greater than 0.");Transaction t=existing==null?new Transaction(null,"I RECEIVED".equals(flow.getValue())?Transaction.Type.INCOME:Transaction.Type.EXPENSE,v,category.getText().trim(),comment.getText().trim(),date.getValue(),person):existing;t.setType("I RECEIVED".equals(flow.getValue())?Transaction.Type.INCOME:Transaction.Type.EXPENSE);t.setAmount(v);t.setCategory(category.getText().trim().isBlank()?"Other":category.getText().trim());t.setDescription(comment.getText().trim());t.setDate(date.getValue());t.setPersonName(person);if(!chosen.isEmpty()){Path dir=attachmentDirectory();Files.createDirectories(dir);List<String> names=new ArrayList<>(t.getAttachmentNames()),paths=new ArrayList<>(t.getAttachmentPaths());for(File f:chosen){if(names.size()>=4)break;Path target=dir.resolve(System.currentTimeMillis()+"_"+sanitize(f.getName()));Files.copy(f.toPath(),target,StandardCopyOption.REPLACE_EXISTING);names.add(f.getName());paths.add(target.toString());}t.setAttachmentNames(names);t.setAttachmentPaths(paths);}AuthSession s=authService.getCurrentSession();if(existing==null)repository.addTransaction(s,t).thenAccept(x->Platform.runLater(()->{allTransactions.add(0,x);rebuildPeople();peopleList.getSelectionModel().select(person);}));else repository.updateTransaction(s,t).thenAccept(x->Platform.runLater(()->{rebuildPeople();peopleList.getSelectionModel().select(person);}));}catch(Exception e){error(e.getMessage());}}
+
+    private void openTransactionDialog(Transaction existing){
+        String person=peopleList.getSelectionModel().getSelectedItem();
+        if(person==null){error("Select a person first.");return;}
+
+        Dialog<ButtonType> dialog=new Dialog<>();
+        dialog.setTitle(existing==null?"Add Transaction — "+person:"Edit Transaction — "+person);
+        dialog.setHeaderText(null);
+        dialog.getDialogPane().setPrefWidth(720);
+        dialog.getDialogPane().setStyle("-fx-background-color:#f8fafc;");
+
+        ButtonType saveType=new ButtonType(existing==null?"✓ SAVE TRANSACTION":"✓ UPDATE TRANSACTION",ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveType,ButtonType.CANCEL);
+
+        VBox root=new VBox(18);root.setPadding(new Insets(20));root.setStyle("-fx-background-color:#f8fafc;");
+        VBox header=new VBox(3);
+        Label title=new Label(existing==null?"Add Transaction":"Edit Transaction");title.setStyle("-fx-font-size:24px;-fx-font-weight:800;-fx-text-fill:#0f172a;");
+        Label subtitle=new Label("Personal ledger  •  "+person);subtitle.setStyle("-fx-font-size:12px;-fx-text-fill:#64748b;");header.getChildren().addAll(title,subtitle);
+
+        Label flowTitle=new Label("HOW DO YOU WANT TO RECORD IT?");flowTitle.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#64748b;");
+        ToggleButton gave=new ToggleButton("↘  I GAVE\nMoney to "+person);ToggleButton received=new ToggleButton("↗  I RECEIVED\nMoney from "+person);
+        gave.setMaxWidth(Double.MAX_VALUE);received.setMaxWidth(Double.MAX_VALUE);gave.setPrefHeight(68);received.setPrefHeight(68);HBox.setHgrow(gave,Priority.ALWAYS);HBox.setHgrow(received,Priority.ALWAYS);
+        ToggleGroup group=new ToggleGroup();gave.setToggleGroup(group);received.setToggleGroup(group);if(existing!=null&&existing.getType()==Transaction.Type.INCOME)received.setSelected(true);else gave.setSelected(true);
+        Runnable styleFlow=()->{String base="-fx-font-size:13px;-fx-font-weight:800;-fx-background-radius:12px;-fx-padding:12px;";gave.setStyle(base+(gave.isSelected()?"-fx-background-color:#fee2e2;-fx-border-color:#ef4444;-fx-border-width:2px;-fx-border-radius:12px;-fx-text-fill:#b91c1c;":"-fx-background-color:white;-fx-border-color:#e2e8f0;-fx-border-width:1px;-fx-border-radius:12px;-fx-text-fill:#475569;"));received.setStyle(base+(received.isSelected()?"-fx-background-color:#dcfce7;-fx-border-color:#22c55e;-fx-border-width:2px;-fx-border-radius:12px;-fx-text-fill:#15803d;":"-fx-background-color:white;-fx-border-color:#e2e8f0;-fx-border-width:1px;-fx-border-radius:12px;-fx-text-fill:#475569;"));};
+        gave.selectedProperty().addListener((o,a,b)->styleFlow.run());received.selectedProperty().addListener((o,a,b)->styleFlow.run());styleFlow.run();
+        HBox flowBox=new HBox(12,gave,received);
+
+        Label amountTitle=new Label("AMOUNT");amountTitle.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#64748b;");
+        TextField amount=new TextField(existing==null?"":String.format(Locale.US,"%.2f",existing.getAmount()));amount.setPromptText("0.00");amount.setStyle("-fx-font-size:25px;-fx-font-weight:800;-fx-padding:13px 15px;-fx-background-color:white;-fx-background-radius:10px;-fx-border-color:#cbd5e1;-fx-border-radius:10px;");
+        VBox amountBox=new VBox(7,amountTitle,amount);
+
+        Label categoryTitle=new Label("CATEGORY");categoryTitle.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#64748b;");
+        TextField category=new TextField(existing==null?"Other":existing.getCategory());category.setPromptText("e.g. Food, Rent, Travel");
+        VBox categoryBox=new VBox(7,categoryTitle,category);
+
+        Label dateTitle=new Label("DATE");dateTitle.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#64748b;");
+        DatePicker date=new DatePicker(existing==null?LocalDate.now():existing.getDate());
+        Label commentTitle=new Label("COMMENT / DETAILS");commentTitle.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#64748b;");
+        TextArea comment=new TextArea(existing==null?"":existing.getDescription());comment.setPromptText("What was this payment for?");comment.setPrefRowCount(3);comment.setWrapText(true);
+        GridPane details=new GridPane();details.setHgap(14);details.setVgap(7);details.add(dateTitle,0,0);details.add(commentTitle,1,0);details.add(date,0,1);details.add(comment,1,1);GridPane.setHgrow(comment,Priority.ALWAYS);
+
+        Label attachTitle=new Label("ATTACH BILLS");attachTitle.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#64748b;");
+        Label files=new Label(existing==null?"No attachments selected":"Existing: "+attachmentText(existing));files.setStyle("-fx-font-size:11px;-fx-text-fill:#64748b;");
+        List<File> chosen=new ArrayList<>();
+        Button photo=new Button("📷  Add Photo"),pdf=new Button("📄  Add PDF");
+        String attachmentStyle="-fx-background-color:white;-fx-border-color:#cbd5e1;-fx-border-radius:9px;-fx-background-radius:9px;-fx-padding:9px 14px;-fx-font-weight:700;-fx-text-fill:#334155;";photo.setStyle(attachmentStyle);pdf.setStyle(attachmentStyle);
+        photo.setOnAction(e->chooseAttachments(dialog,chosen,files,new String[]{"*.png","*.jpg","*.jpeg","*.webp"}));
+        pdf.setOnAction(e->chooseAttachments(dialog,chosen,files,new String[]{"*.pdf"}));
+        VBox attachments=new VBox(7,attachTitle,new HBox(10,photo,pdf),files);
+
+        Label impact=new Label("Enter an amount to preview the new balance.");impact.setWrapText(true);impact.setPadding(new Insets(10,12,10,12));impact.setStyle("-fx-background-color:#eef2ff;-fx-background-radius:10px;-fx-text-fill:#4338ca;-fx-font-size:12px;-fx-font-weight:700;");
+        Runnable updateImpact=()->{try{double v=Double.parseDouble(amount.getText().trim());double currentGiven=existing==null?personTotal(person,Transaction.Type.EXPENSE):personTotalExcluding(existing,person,Transaction.Type.EXPENSE);double currentReceived=existing==null?personTotal(person,Transaction.Type.INCOME):personTotalExcluding(existing,person,Transaction.Type.INCOME);double newBalance=currentGiven-currentReceived+(gave.isSelected()?v:-v);impact.setText(newBalance>0?person+" will owe you "+money(newBalance):newBalance<0?"You will owe "+person+" "+money(-newBalance):"This transaction will settle the current balance.");}catch(Exception ex){impact.setText("Enter a valid amount to preview the balance impact.");}};
+        amount.textProperty().addListener((o,a,b)->updateImpact.run());gave.selectedProperty().addListener((o,a,b)->updateImpact.run());received.selectedProperty().addListener((o,a,b)->updateImpact.run());updateImpact.run();
+
+        VBox form=new VBox(14,flowTitle,flowBox,amountBox,categoryBox,details,attachments,impact);root.getChildren().addAll(header,form);dialog.getDialogPane().setContent(root);
+        Button saveButton=(Button)dialog.getDialogPane().lookupButton(saveType);saveButton.setStyle("-fx-background-color:#2563eb;-fx-text-fill:white;-fx-font-weight:800;-fx-background-radius:9px;-fx-padding:10px 18px;");
+        dialog.setResultConverter(b->b==saveType?b:null);
+        if(dialog.showAndWait().isEmpty())return;
+        try{
+            double v=Double.parseDouble(amount.getText().trim());if(v<=0)throw new IllegalArgumentException("Amount must be greater than 0.");if(date.getValue()==null)throw new IllegalArgumentException("Please select a date.");
+            Transaction t=existing==null?new Transaction(null,gave.isSelected()?Transaction.Type.EXPENSE:Transaction.Type.INCOME,v,category.getText().trim(),comment.getText().trim(),date.getValue(),person):existing;
+            t.setType(gave.isSelected()?Transaction.Type.EXPENSE:Transaction.Type.INCOME);t.setAmount(v);t.setCategory(category.getText().trim().isBlank()?"Other":category.getText().trim());t.setDescription(comment.getText().trim());t.setDate(date.getValue());t.setPersonName(person);
+            if(!chosen.isEmpty()){Path dir=attachmentDirectory();Files.createDirectories(dir);List<String> names=new ArrayList<>(t.getAttachmentNames()),paths=new ArrayList<>(t.getAttachmentPaths());for(File f:chosen){if(names.size()>=4)break;Path target=dir.resolve(System.currentTimeMillis()+"_"+sanitize(f.getName()));Files.copy(f.toPath(),target,StandardCopyOption.REPLACE_EXISTING);names.add(f.getName());paths.add(target.toString());}t.setAttachmentNames(names);t.setAttachmentPaths(paths);}
+            AuthSession s=authService.getCurrentSession();if(existing==null)repository.addTransaction(s,t).thenAccept(x->Platform.runLater(()->{allTransactions.add(0,x);rebuildPeople();peopleList.getSelectionModel().select(person);}));else repository.updateTransaction(s,t).thenAccept(x->Platform.runLater(()->{rebuildPeople();peopleList.getSelectionModel().select(person);}));
+        }catch(Exception e){error(e.getMessage());}
+    }
+    private double personTotalExcluding(Transaction excluded,String person,Transaction.Type type){return allTransactions.stream().filter(t->t!=excluded&&person.equalsIgnoreCase(t.getPersonName())&&t.getType()==type).mapToDouble(Transaction::getAmount).sum();}
+    private void chooseAttachments(Dialog<?> dialog,List<File> chosen,Label files,String[] extensions){if(chosen.size()>=4){error("Maximum 4 attachments allowed.");return;}FileChooser fc=new FileChooser();fc.setTitle("Choose attachment");fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Supported files",extensions));File f=fc.showOpenDialog(dialog.getOwner());if(f!=null){if(chosen.stream().anyMatch(x->x.equals(f)))return;chosen.add(f);files.setText(chosen.size()+" new attachment(s) selected");}}
     private void deleteTransaction(Transaction t){Alert a=new Alert(Alert.AlertType.CONFIRMATION,"Delete this transaction?",ButtonType.YES,ButtonType.NO);a.setTitle("Delete Transaction");a.showAndWait().ifPresent(b->{if(b==ButtonType.YES)repository.deleteTransaction(authService.getCurrentSession(),t.getId()).thenRun(()->Platform.runLater(()->{allTransactions.remove(t);showPerson(t.getPersonName());rebuildPeople();}));});}
     private Path attachmentDirectory(){return Paths.get(System.getProperty("user.home"),".hisaabi","attachments",authService.getCurrentSession().getLocalId());}
     private String sanitize(String s){return s.replaceAll("[^a-zA-Z0-9._-]","_");}private String attachmentText(Transaction t){return t.getAttachmentNames()==null||t.getAttachmentNames().isEmpty()?"—":t.getAttachmentNames().size()+" file(s)";}private void openAttachments(Transaction t){if(t.getAttachmentPaths()==null||t.getAttachmentPaths().isEmpty())return;try{if(!Desktop.isDesktopSupported()){error("Opening attachments is not supported on this system.");return;}for(String p:t.getAttachmentPaths()){File f=new File(p);if(f.exists()){Desktop.getDesktop().open(f);break;}}}catch(IOException e){error("Could not open attachment.");}}
