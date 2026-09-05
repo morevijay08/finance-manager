@@ -45,5 +45,6 @@
         <Button text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="primary-button" />
         <Hyperlink text="Forgot Password?" onAction="#handleForgotPassword" />
         <Hyperlink text="Don't have an account? Create Account" onAction="#handleRegister" />
+        <Hyperlink text="Admin Login" onAction="#handleAdminLogin" />
     </VBox>
 </VBox>
