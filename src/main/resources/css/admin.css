@@ -1,5 +1,5 @@
 /* Admin portal layout */
-.admin-shell { -fx-background-color: #f5f7fb; }
+.admin-shell { -fx-background-color: #f5f7fb; -fx-spacing: 24px; }
 .admin-sidebar { -fx-background-color: #0f172a; -fx-pref-width: 235px; -fx-min-width: 235px; -fx-padding: 30px 16px 22px 16px; -fx-spacing: 9px; -fx-border-color: #1e293b; -fx-border-width: 0 1px 0 0; }
 .admin-sidebar-brand { -fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: white; -fx-padding: 5px 11px 0 11px; }
 .admin-sidebar-subtitle { -fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #818cf8; -fx-padding: 0 11px 20px 11px; }
@@ -8,7 +8,7 @@
 .admin-sidebar-button:hover { -fx-background-color: #1e293b; -fx-text-fill: white; }
 .admin-sidebar-button-active { -fx-background-color: linear-gradient(to right, #3730a3, #4f46e5); -fx-border-color: #818cf8; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.35), 10, 0.15, 0, 3); }
 .admin-sidebar-footer { -fx-padding: 20px 11px 0 11px; -fx-border-color: #1e293b transparent transparent transparent; -fx-border-width: 1px 0 0 0; }
-.admin-main { -fx-background-color: #f5f7fb; -fx-padding: 30px 34px 44px 34px; }
+.admin-main { -fx-background-color: #f5f7fb; -fx-padding: 30px 34px 44px 10px; }
 .admin-main-scroll { -fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; }
 .admin-main-scroll > .viewport { -fx-background-color: #f5f7fb; }
 .admin-section { -fx-scroll-margin: 14px; }
