@@ -139,21 +139,24 @@ public class GlobalSearchBar extends TextField {
             if (!(node instanceof HBox box)) continue;
 
             if (box.getStyleClass().contains("navbar") && !hasLogo(box)) {
-                ImageView imageView = createLogoView(38);
+                ImageView imageView = createLogoView(34);
                 box.getChildren().add(1, imageView);
-                box.setSpacing(12);
+                box.setSpacing(10);
             }
 
             if (box.getStyleClass().contains("sidebar-header") && !hasLogo(box)) {
-                ImageView imageView = createLogoView(42);
+                ImageView imageView = createLogoView(34);
                 box.getChildren().add(0, imageView);
-                box.setSpacing(12);
+                box.setSpacing(10);
             }
         }
     }
 
     private ImageView createLogoView(double size) {
-        Image image = new Image(getClass().getResource("/images/khatabook-logo-small.png").toExternalForm(), false);
+        java.net.URL logoUrl = getClass().getResource("/images/khatabook-logo-small.png");
+        if (logoUrl == null) throw new IllegalStateException("Khatabook logo asset not found");
+        Image image = new Image(logoUrl.toExternalForm(), false);
+        if (image.isError()) throw new IllegalStateException("Unable to load Khatabook logo asset");
         ImageView view = new ImageView(image);
         view.setFitWidth(size);
         view.setFitHeight(size);
@@ -164,7 +167,7 @@ public class GlobalSearchBar extends TextField {
     }
 
     private boolean hasLogo(HBox box) {
-        for (Node child : box.getChildren()) if (child instanceof ImageView) return true;
+        for (Node child : box.getChildren()) if (child instanceof ImageView imageView && imageView.getUserData() == null) return true;
         return false;
     }
 
