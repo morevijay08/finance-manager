@@ -46,5 +46,12 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
+
+    match /adminAuditLogs/{logId} {
+      // Only administrators can view or create audit records.
+      allow read, create: if isAdmin();
+      // Audit records are immutable from the client application.
+      allow update, delete: if false;
+    }
   }
 }
