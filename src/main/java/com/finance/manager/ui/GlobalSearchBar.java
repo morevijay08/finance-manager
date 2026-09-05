@@ -134,13 +134,13 @@ public class GlobalSearchBar extends TextField {
             if (!(node instanceof HBox box)) continue;
 
             if (box.getStyleClass().contains("navbar") && !hasLogo(box)) {
-                ImageView logo = createLogoView(42);
+                ImageView logo = createLogoView(60);
                 box.getChildren().add(1, logo);
                 box.setSpacing(10);
             }
 
             if (box.getStyleClass().contains("sidebar-header") && !hasLogo(box)) {
-                ImageView logo = createLogoView(42);
+                ImageView logo = createLogoView(54);
                 box.getChildren().add(0, logo);
                 box.setSpacing(10);
             }
