@@ -1,6 +1,8 @@
 package com.finance.manager.controller;
 
 import com.finance.manager.firebase.FirebaseAuthException;
+import com.finance.manager.firebase.AuthSession;
+import com.finance.manager.repository.FirestoreUserRepository;
 import com.finance.manager.service.FirebaseAuthService;
 import com.finance.manager.ui.Branding;
 import javafx.application.Platform;
@@ -25,6 +27,7 @@ public class LoginController {
     public Label errorLabel;
 
     private final FirebaseAuthService authService = new FirebaseAuthService();
+    private final FirestoreUserRepository userRepository = new FirestoreUserRepository();
 
     public void handleLogin(ActionEvent event) {
         String email = emailField.getText().trim();
@@ -47,7 +50,15 @@ public class LoginController {
 
         errorLabel.setText("Signing in...");
         authService.signIn(email, password)
-                .thenAccept(session -> Platform.runLater(() -> {
+                .thenCompose(session -> userRepository.getUserStatus(session)
+                        .thenApply(status -> new LoginResult(session, status)))
+                .thenAccept(result -> Platform.runLater(() -> {
+                    if ("DISABLED".equalsIgnoreCase(result.status())) {
+                        authService.logout();
+                        showError("This account has been disabled by an administrator.");
+                        return;
+                    }
+
                     try {
                         switchScene(event, "/fxml/Main.fxml");
                     } catch (Exception e) {
@@ -82,11 +93,11 @@ public class LoginController {
         if (cause instanceof CompletionException && cause.getCause() != null) {
             cause = cause.getCause();
         }
-        if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) {
-            return authException.getMessage();
-        }
         if (cause instanceof IllegalStateException) {
             return cause.getMessage();
+        }
+        if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) {
+            return authException.getMessage();
         }
         return "Unable to sign in. Check your Firebase configuration and try again.";
     }
@@ -136,12 +147,6 @@ public class LoginController {
         Platform.runLater(() -> Platform.runLater(() -> forceMaximized(stage)));
     }
 
-    /**
-     * Force the application window to occupy the full available desktop area.
-     * This deliberately applies the screen bounds even when JavaFX reports the
-     * stage as maximized, because Windows can retain a previous snapped/restored
-     * size when only the Scene is replaced.
-     */
     private void forceMaximized(Stage stage) {
         if (stage == null) return;
 
@@ -163,4 +168,6 @@ public class LoginController {
         stage.setMaximized(true);
         stage.toFront();
     }
+
+    private record LoginResult(AuthSession session, String status) {}
 }
