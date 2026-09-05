@@ -9,9 +9,13 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -128,46 +132,84 @@ public class GlobalSearchBar extends TextField {
         }
     }
 
+    /** Adds a native JavaFX vector logo mark so it renders without SVG support. */
     private void addLogoToBranding(Parent root) {
-        java.net.URL logoUrl = getClass().getResource("/images/khatabook-logo-small.png");
-        if (logoUrl == null) return;
-
-        Image logo = new Image(logoUrl.toExternalForm(), false);
-        if (logo.isError()) return;
-
         for (Node node : collect(root)) {
             if (!(node instanceof HBox box)) continue;
 
             if (box.getStyleClass().contains("navbar") && !hasLogo(box)) {
-                ImageView imageView = createLogoView(34);
-                box.getChildren().add(1, imageView);
+                StackPane logo = createLogoMark(38);
+                box.getChildren().add(1, logo);
                 box.setSpacing(10);
             }
 
             if (box.getStyleClass().contains("sidebar-header") && !hasLogo(box)) {
-                ImageView imageView = createLogoView(34);
-                box.getChildren().add(0, imageView);
+                StackPane logo = createLogoMark(34);
+                box.getChildren().add(0, logo);
                 box.setSpacing(10);
             }
         }
     }
 
-    private ImageView createLogoView(double size) {
-        java.net.URL logoUrl = getClass().getResource("/images/khatabook-logo-small.png");
-        if (logoUrl == null) throw new IllegalStateException("Khatabook logo asset not found");
-        Image image = new Image(logoUrl.toExternalForm(), false);
-        if (image.isError()) throw new IllegalStateException("Unable to load Khatabook logo asset");
-        ImageView view = new ImageView(image);
-        view.setFitWidth(size);
-        view.setFitHeight(size);
-        view.setPreserveRatio(true);
-        view.setSmooth(true);
-        view.setMouseTransparent(true);
-        return view;
+    private StackPane createLogoMark(double size) {
+        StackPane mark = new StackPane();
+        mark.setMinSize(size, size);
+        mark.setPrefSize(size, size);
+        mark.setMaxSize(size, size);
+        mark.setUserData("khatabook-logo");
+        mark.setMouseTransparent(true);
+
+        Circle outer = new Circle(size * 0.46);
+        outer.setFill(Color.TRANSPARENT);
+        outer.setStroke(Color.web("#b8d7f5"));
+        outer.setStrokeWidth(Math.max(1.0, size * 0.045));
+
+        Circle inner = new Circle(size * 0.37);
+        inner.setFill(Color.TRANSPARENT);
+        inner.setStroke(Color.web("#24558a"));
+        inner.setStrokeWidth(Math.max(1.0, size * 0.055));
+
+        Rectangle blueBook = new Rectangle(size * 0.20, size * 0.42);
+        blueBook.setArcWidth(size * 0.08);
+        blueBook.setArcHeight(size * 0.08);
+        blueBook.setFill(Color.TRANSPARENT);
+        blueBook.setStroke(Color.web("#1788bf"));
+        blueBook.setStrokeWidth(Math.max(1.0, size * 0.055));
+        blueBook.setTranslateX(-size * 0.075);
+        blueBook.setTranslateY(size * 0.025);
+
+        Rectangle orangeBook = new Rectangle(size * 0.17, size * 0.38);
+        orangeBook.setArcWidth(size * 0.07);
+        orangeBook.setArcHeight(size * 0.07);
+        orangeBook.setFill(Color.TRANSPARENT);
+        orangeBook.setStroke(Color.web("#f97316"));
+        orangeBook.setStrokeWidth(Math.max(1.0, size * 0.055));
+        orangeBook.setTranslateX(size * 0.075);
+        orangeBook.setTranslateY(size * 0.045);
+
+        Line trend = new Line(-size * 0.24, size * 0.13, size * 0.16, -size * 0.10);
+        trend.setStroke(Color.web("#1269a5"));
+        trend.setStrokeWidth(Math.max(1.3, size * 0.07));
+        trend.setStrokeLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+
+        Polygon arrow = new Polygon(
+                size * 0.09, -size * 0.15,
+                size * 0.29, -size * 0.25,
+                size * 0.19, -size * 0.035
+        );
+        arrow.setFill(Color.web("#1269a5"));
+
+        Line orange = new Line(size * 0.00, size * 0.20, size * 0.15, size * 0.04);
+        orange.setStroke(Color.web("#f97316"));
+        orange.setStrokeWidth(Math.max(1.0, size * 0.05));
+        orange.setStrokeLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+
+        mark.getChildren().addAll(outer, inner, blueBook, orangeBook, orange, trend, arrow);
+        return mark;
     }
 
     private boolean hasLogo(HBox box) {
-        for (Node child : box.getChildren()) if (child instanceof ImageView imageView && imageView.getUserData() == null) return true;
+        for (Node child : box.getChildren()) if ("khatabook-logo".equals(child.getUserData())) return true;
         return false;
     }
 
