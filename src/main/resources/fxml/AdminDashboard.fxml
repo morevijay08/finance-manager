@@ -27,67 +27,81 @@
         </HBox>
     </top>
     <center>
-        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll-pane">
-            <content>
-                <VBox spacing="22" styleClass="dashboard-content">
-                    <VBox spacing="3">
-                        <Label text="Admin Dashboard" styleClass="page-title" />
-                        <Label text="Manage Khatabook accounts and basic account access." styleClass="subtitle" />
-                    </VBox>
-
-                    <GridPane hgap="14" styleClass="summary-row">
-                        <VBox GridPane.columnIndex="0" styleClass="summary-card" GridPane.hgrow="ALWAYS">
-                            <Label text="TOTAL USERS" styleClass="card-title" />
-                            <Label fx:id="totalUsersLabel" text="0" styleClass="balance-value" />
-                        </VBox>
-                        <VBox GridPane.columnIndex="1" styleClass="summary-card" GridPane.hgrow="ALWAYS">
-                            <Label text="ACTIVE USERS" styleClass="card-title" />
-                            <Label fx:id="activeUsersLabel" text="0" styleClass="income-value" />
-                        </VBox>
-                        <VBox GridPane.columnIndex="2" styleClass="summary-card" GridPane.hgrow="ALWAYS">
-                            <Label text="DISABLED USERS" styleClass="card-title" />
-                            <Label fx:id="disabledUsersLabel" text="0" styleClass="expense-value" />
-                        </VBox>
-                    </GridPane>
-
-                    <VBox spacing="12" styleClass="summary-card">
-                        <HBox alignment="CENTER_LEFT" spacing="12">
-                            <VBox HBox.hgrow="ALWAYS" spacing="2">
-                                <Label text="User Management" styleClass="section-title" />
-                                <Label text="Search accounts and enable or disable access." styleClass="subtitle" />
-                            </VBox>
-                            <TextField fx:id="userSearchField" promptText="Search name, email, role or status..." prefWidth="340" />
-                        </HBox>
-
-                        <TableView fx:id="usersTable" prefHeight="430">
-                            <columns>
-                                <TableColumn fx:id="nameColumn" text="Name" prefWidth="180" />
-                                <TableColumn fx:id="emailColumn" text="Email" prefWidth="280" />
-                                <TableColumn fx:id="roleColumn" text="Role" prefWidth="120" />
-                                <TableColumn fx:id="statusColumn" text="Status" prefWidth="130" />
-                                <TableColumn fx:id="actionColumn" text="Action" prefWidth="130" />
-                            </columns>
-                        </TableView>
-                    </VBox>
-
-                    <VBox spacing="12" styleClass="summary-card">
-                        <VBox spacing="2">
-                            <Label text="Audit Logs" styleClass="section-title" />
-                            <Label text="Track important administrator actions." styleClass="subtitle" />
-                        </VBox>
-                        <TableView fx:id="auditLogsTable" prefHeight="300">
-                            <columns>
-                                <TableColumn fx:id="auditAdminColumn" text="Admin" prefWidth="220" />
-                                <TableColumn fx:id="auditActionColumn" text="Action" prefWidth="160" />
-                                <TableColumn fx:id="auditTargetColumn" text="Target User" prefWidth="260" />
-                                <TableColumn fx:id="auditTimeColumn" text="Time" prefWidth="260" />
-                            </columns>
-                        </TableView>
-                    </VBox>
-
-                    <Label fx:id="statusLabel" text="Loading users..." styleClass="message-label" />
+        <HBox styleClass="admin-shell">
+            <VBox styleClass="admin-sidebar">
+                <Label text="ADMIN MENU" styleClass="admin-sidebar-brand" />
+                <Label text="CONTROL CENTER" styleClass="admin-sidebar-subtitle" />
+                <Label text="MAIN" styleClass="admin-sidebar-section" />
+                <Button fx:id="overviewNavButton" text="Dashboard Overview" onAction="#handleShowOverview" styleClass="admin-sidebar-button admin-sidebar-button-active" />
+                <Button fx:id="usersNavButton" text="User Management" onAction="#handleShowUsers" styleClass="admin-sidebar-button" />
+                <Button fx:id="auditNavButton" text="Audit Logs" onAction="#handleShowAuditLogs" styleClass="admin-sidebar-button" />
+                <VBox VBox.vgrow="ALWAYS" />
+                <VBox styleClass="admin-sidebar-footer">
+                    <Label text="Khatabook Finance Manager" styleClass="subtitle" />
+                    <Label text="Administrator tools" styleClass="subtitle" />
                 </VBox>
-            </content>
-        </ScrollPane>
+            </VBox>
+
+            <ScrollPane fx:id="adminScrollPane" fitToWidth="true" hbarPolicy="NEVER" styleClass="admin-main-scroll" HBox.hgrow="ALWAYS">
+                <content>
+                    <VBox fx:id="adminContent" spacing="22" styleClass="dashboard-content admin-main">
+                        <VBox fx:id="overviewSection" spacing="3" styleClass="admin-section">
+                            <Label text="Admin Dashboard" styleClass="page-title" />
+                            <Label text="Manage Khatabook accounts and basic account access." styleClass="subtitle" />
+                            <GridPane hgap="14" styleClass="summary-row">
+                                <VBox GridPane.columnIndex="0" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                                    <Label text="TOTAL USERS" styleClass="card-title" />
+                                    <Label fx:id="totalUsersLabel" text="0" styleClass="balance-value" />
+                                </VBox>
+                                <VBox GridPane.columnIndex="1" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                                    <Label text="ACTIVE USERS" styleClass="card-title" />
+                                    <Label fx:id="activeUsersLabel" text="0" styleClass="income-value" />
+                                </VBox>
+                                <VBox GridPane.columnIndex="2" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                                    <Label text="DISABLED USERS" styleClass="card-title" />
+                                    <Label fx:id="disabledUsersLabel" text="0" styleClass="expense-value" />
+                                </VBox>
+                            </GridPane>
+                        </VBox>
+
+                        <VBox fx:id="userManagementSection" spacing="12" styleClass="summary-card admin-section">
+                            <HBox alignment="CENTER_LEFT" spacing="12">
+                                <VBox HBox.hgrow="ALWAYS" spacing="2">
+                                    <Label text="User Management" styleClass="section-title" />
+                                    <Label text="Search accounts and enable or disable access." styleClass="subtitle" />
+                                </VBox>
+                                <TextField fx:id="userSearchField" promptText="Search name, email, role or status..." prefWidth="340" />
+                            </HBox>
+                            <TableView fx:id="usersTable" prefHeight="430">
+                                <columns>
+                                    <TableColumn fx:id="nameColumn" text="Name" prefWidth="180" />
+                                    <TableColumn fx:id="emailColumn" text="Email" prefWidth="280" />
+                                    <TableColumn fx:id="roleColumn" text="Role" prefWidth="120" />
+                                    <TableColumn fx:id="statusColumn" text="Status" prefWidth="130" />
+                                    <TableColumn fx:id="actionColumn" text="Action" prefWidth="130" />
+                                </columns>
+                            </TableView>
+                        </VBox>
+
+                        <VBox fx:id="auditLogsSection" spacing="12" styleClass="summary-card admin-section">
+                            <VBox spacing="2">
+                                <Label text="Audit Logs" styleClass="section-title" />
+                                <Label text="Track important administrator actions." styleClass="subtitle" />
+                            </VBox>
+                            <TableView fx:id="auditLogsTable" prefHeight="300">
+                                <columns>
+                                    <TableColumn fx:id="auditAdminColumn" text="Admin" prefWidth="220" />
+                                    <TableColumn fx:id="auditActionColumn" text="Action" prefWidth="160" />
+                                    <TableColumn fx:id="auditTargetColumn" text="Target User" prefWidth="260" />
+                                    <TableColumn fx:id="auditTimeColumn" text="Time" prefWidth="260" />
+                                </columns>
+                            </TableView>
+                        </VBox>
+
+                        <Label fx:id="statusLabel" text="Loading users..." styleClass="message-label" />
+                    </VBox>
+                </content>
+            </ScrollPane>
+        </HBox>
     </center>
 </BorderPane>
