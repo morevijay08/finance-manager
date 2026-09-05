@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.finance.manager.controller.UserManagementController" styleClass="dashboard-root">
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="16" styleClass="navbar">
+            <padding><Insets top="16" right="24" bottom="16" left="24" /></padding>
+            <VBox HBox.hgrow="ALWAYS" spacing="2">
+                <Label text="Khatabook Admin" styleClass="navbar-brand" />
+                <Label text="ADMIN PORTAL" styleClass="navbar-tagline" />
+            </VBox>
+            <Label fx:id="adminEmailLabel" text="Admin" styleClass="subtitle" />
+            <Button text="Logout" onAction="#handleLogout" styleClass="secondary-button" />
+        </HBox>
+    </top>
+    <center>
+        <HBox styleClass="admin-shell">
+            <VBox styleClass="admin-sidebar">
+                <Label text="ADMIN MENU" styleClass="admin-sidebar-brand" />
+                <Label text="CONTROL CENTER" styleClass="admin-sidebar-subtitle" />
+                <Label text="MAIN" styleClass="admin-sidebar-section" />
+                <Button text="Dashboard Overview" onAction="#handleShowOverview" styleClass="admin-sidebar-button" />
+                <Button text="User Management" styleClass="admin-sidebar-button admin-sidebar-button-active" />
+                <Button text="Audit Logs" onAction="#handleShowAuditLogs" styleClass="admin-sidebar-button" />
+                <VBox VBox.vgrow="ALWAYS" />
+                <VBox styleClass="admin-sidebar-footer">
+                    <Label text="Khatabook Finance Manager" styleClass="subtitle" />
+                    <Label text="Administrator tools" styleClass="subtitle" />
+                </VBox>
+            </VBox>
+            <VBox spacing="24" styleClass="admin-main" HBox.hgrow="ALWAYS">
+                <VBox spacing="8" styleClass="details-header">
+                    <Label text="User Management" styleClass="page-title" />
+                    <Label text="Search accounts, view details, and manage account access." styleClass="subtitle" />
+                </VBox>
+                <GridPane hgap="18" styleClass="summary-row">
+                    <VBox GridPane.columnIndex="0" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                        <Label text="TOTAL USERS" styleClass="card-title" />
+                        <Label fx:id="totalUsersLabel" text="0" styleClass="balance-value" />
+                    </VBox>
+                    <VBox GridPane.columnIndex="1" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                        <Label text="ACTIVE USERS" styleClass="card-title" />
+                        <Label fx:id="activeUsersLabel" text="0" styleClass="income-value" />
+                    </VBox>
+                    <VBox GridPane.columnIndex="2" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                        <Label text="DISABLED USERS" styleClass="card-title" />
+                        <Label fx:id="disabledUsersLabel" text="0" styleClass="expense-value" />
+                    </VBox>
+                </GridPane>
+                <VBox spacing="14" styleClass="summary-card" VBox.vgrow="ALWAYS">
+                    <HBox alignment="CENTER_LEFT" spacing="16">
+                        <VBox HBox.hgrow="ALWAYS" spacing="3">
+                            <Label text="Accounts" styleClass="section-title" />
+                            <Label text="View account information and control access." styleClass="subtitle" />
+                        </VBox>
+                        <TextField fx:id="userSearchField" promptText="Search name, email, role or status..." prefWidth="330" />
+                        <Button text="Refresh" onAction="#handleRefresh" styleClass="secondary-button" />
+                    </HBox>
+                    <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" prefHeight="450">
+                        <columns>
+                            <TableColumn fx:id="nameColumn" text="Name" prefWidth="180" />
+                            <TableColumn fx:id="emailColumn" text="Email" prefWidth="280" />
+                            <TableColumn fx:id="roleColumn" text="Role" prefWidth="110" />
+                            <TableColumn fx:id="statusColumn" text="Status" prefWidth="120" />
+                            <TableColumn fx:id="actionColumn" text="Actions" prefWidth="210" />
+                        </columns>
+                    </TableView>
+                    <Label fx:id="statusLabel" text="Loading users..." styleClass="message-label" />
+                </VBox>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>
