@@ -45,6 +45,10 @@ public class FirestoreUserRepository {
         return CompletableFuture.supplyAsync(() -> stringField(getUserDocument(session), "role", "USER").toUpperCase());
     }
 
+    public CompletableFuture<String> getUserStatus(AuthSession session) {
+        return CompletableFuture.supplyAsync(() -> stringField(getUserDocument(session), "status", "ACTIVE").toUpperCase());
+    }
+
     public CompletableFuture<List<AdminUser>> listUsers(AuthSession session) {
         return CompletableFuture.supplyAsync(() -> {
             validateSession(session);
