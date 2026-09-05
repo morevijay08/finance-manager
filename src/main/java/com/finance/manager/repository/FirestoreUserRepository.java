@@ -2,22 +2,25 @@ package com.finance.manager.repository;
 
 import com.finance.manager.firebase.AuthSession;
 import com.finance.manager.firebase.FirebaseConfig;
+import com.finance.manager.model.AdminUser;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class FirestoreUserRepository {
 
     private static final String PROJECT_ID = "khatabook-finance-manager";
-
     private static final String FIRESTORE_BASE_URL =
             "https://firestore.googleapis.com/v1/projects/"
                     + PROJECT_ID
@@ -25,175 +28,121 @@ public class FirestoreUserRepository {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    public CompletableFuture<Void> createUserProfile(
-            AuthSession session,
-            String name
-    ) {
+    public CompletableFuture<Void> createUserProfile(AuthSession session, String name) {
         return CompletableFuture.runAsync(() -> {
-
             validateSession(session);
-
             JsonObject fields = new JsonObject();
-
-            JsonObject nameValue = new JsonObject();
-            nameValue.addProperty("stringValue", name);
-            fields.add("name", nameValue);
-
-            JsonObject emailValue = new JsonObject();
-            emailValue.addProperty("stringValue", session.getEmail());
-            fields.add("email", emailValue);
-
-            // Every self-registered account starts as a normal USER.
-            // Administrator roles must be provisioned separately.
-            JsonObject roleValue = new JsonObject();
-            roleValue.addProperty("stringValue", "USER");
-            fields.add("role", roleValue);
+            addString(fields, "name", name);
+            addString(fields, "email", session.getEmail());
+            addString(fields, "role", "USER");
+            addString(fields, "status", "ACTIVE");
 
             JsonObject document = new JsonObject();
             document.add("fields", fields);
-
-            HttpRequest request = authorizedRequest(userDocumentUrl(session), session.getIdToken())
-                    .method(
-                            "PATCH",
-                            HttpRequest.BodyPublishers.ofString(document.toString())
-                    )
-                    .build();
-
-            try {
-                HttpResponse<String> response = httpClient.send(
-                        request,
-                        HttpResponse.BodyHandlers.ofString()
-                );
-
-                ensureSuccess(response);
-
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to connect to Firestore.", e);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Firestore request was interrupted.", e);
-            }
+            send("PATCH", userDocumentUrl(session), session.getIdToken(), document);
         });
     }
 
-    /**
-     * Reads the user's profile from users/{Firebase UID}.
-     */
     public CompletableFuture<String> getUserName(AuthSession session) {
         return CompletableFuture.supplyAsync(() -> {
-
-            validateSession(session);
-
-            HttpRequest request = authorizedRequest(
-                    userDocumentUrl(session),
-                    session.getIdToken()
-            ).GET().build();
-
-            try {
-                HttpResponse<String> response = httpClient.send(
-                        request,
-                        HttpResponse.BodyHandlers.ofString()
-                );
-
-                ensureSuccess(response);
-
-                JsonObject document = JsonParser.parseString(response.body())
-                        .getAsJsonObject();
-
-                if (!document.has("fields")) {
-                    return "User";
-                }
-
-                JsonObject fields = document.getAsJsonObject("fields");
-                if (!fields.has("name")) {
-                    return "User";
-                }
-
-                JsonObject nameField = fields.getAsJsonObject("name");
-                if (nameField == null || !nameField.has("stringValue")) {
-                    return "User";
-                }
-
-                String name = nameField.get("stringValue").getAsString();
-                return name.isBlank() ? "User" : name;
-
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to connect to Firestore.", e);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Firestore request was interrupted.", e);
-            }
+            JsonObject fields = getUserDocument(session);
+            return stringField(fields, "name", "User");
         });
     }
 
-    /**
-     * Reads the authorization role stored on users/{Firebase UID}.
-     */
     public CompletableFuture<String> getUserRole(AuthSession session) {
         return CompletableFuture.supplyAsync(() -> {
-            validateSession(session);
-
-            HttpRequest request = authorizedRequest(
-                    userDocumentUrl(session),
-                    session.getIdToken()
-            ).GET().build();
-
-            try {
-                HttpResponse<String> response = httpClient.send(
-                        request,
-                        HttpResponse.BodyHandlers.ofString()
-                );
-
-                ensureSuccess(response);
-
-                JsonObject document = JsonParser.parseString(response.body())
-                        .getAsJsonObject();
-                JsonObject fields = document.has("fields")
-                        ? document.getAsJsonObject("fields")
-                        : null;
-
-                if (fields == null || !fields.has("role")) {
-                    return "USER";
-                }
-
-                JsonObject roleField = fields.getAsJsonObject("role");
-                if (roleField == null || !roleField.has("stringValue")) {
-                    return "USER";
-                }
-
-                String role = roleField.get("stringValue").getAsString();
-                return role.isBlank() ? "USER" : role.toUpperCase();
-
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to connect to Firestore.", e);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Firestore request was interrupted.", e);
-            }
+            JsonObject fields = getUserDocument(session);
+            return stringField(fields, "role", "USER").toUpperCase();
         });
+    }
+
+    /** Returns all user profiles for an authenticated administrator. */
+    public CompletableFuture<List<AdminUser>> listUsers(AuthSession session) {
+        return CompletableFuture.supplyAsync(() -> {
+            validateSession(session);
+            String url = FIRESTORE_BASE_URL + "?pageSize=1000&key=" + FirebaseConfig.getWebApiKey();
+            JsonObject response = send("GET", url, session.getIdToken(), null);
+            List<AdminUser> users = new ArrayList<>();
+            if (!response.has("documents")) return users;
+
+            JsonArray documents = response.getAsJsonArray("documents");
+            documents.forEach(element -> {
+                JsonObject document = element.getAsJsonObject();
+                JsonObject fields = document.has("fields")
+                        ? document.getAsJsonObject("fields") : new JsonObject();
+                String id = document.has("name")
+                        ? document.get("name").getAsString().substring(
+                                document.get("name").getAsString().lastIndexOf('/') + 1)
+                        : "";
+                users.add(new AdminUser(
+                        id,
+                        stringField(fields, "name", "User"),
+                        stringField(fields, "email", ""),
+                        stringField(fields, "role", "USER"),
+                        stringField(fields, "status", "ACTIVE")
+                ));
+            });
+            return users;
+        });
+    }
+
+    /** Updates only account status; the role cannot be changed from this feature. */
+    public CompletableFuture<Void> updateUserStatus(AuthSession adminSession, String userId, String status) {
+        return CompletableFuture.runAsync(() -> {
+            validateSession(adminSession);
+            if (!"ACTIVE".equals(status) && !"DISABLED".equals(status)) {
+                throw new IllegalArgumentException("Invalid user status.");
+            }
+            String url = FIRESTORE_BASE_URL
+                    + URLEncoder.encode(userId, StandardCharsets.UTF_8)
+                    + "?updateMask.fieldPaths=status&key=" + FirebaseConfig.getWebApiKey();
+            JsonObject fields = new JsonObject();
+            addString(fields, "status", status);
+            JsonObject document = new JsonObject();
+            document.add("fields", fields);
+            send("PATCH", url, adminSession.getIdToken(), document);
+        });
+    }
+
+    private JsonObject getUserDocument(AuthSession session) {
+        validateSession(session);
+        return send("GET", userDocumentUrl(session), session.getIdToken(), null).has("fields")
+                ? send("GET", userDocumentUrl(session), session.getIdToken(), null).getAsJsonObject("fields")
+                : new JsonObject();
+    }
+
+    private JsonObject send(String method, String url, String idToken, JsonObject body) {
+        try {
+            HttpRequest.Builder builder = authorizedRequest(url, idToken);
+            HttpRequest request = switch (method) {
+                case "GET" -> builder.GET().build();
+                case "PATCH" -> builder.method("PATCH", HttpRequest.BodyPublishers.ofString(body.toString())).build();
+                default -> throw new IllegalArgumentException("Unsupported HTTP method: " + method);
+            };
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            ensureSuccess(response);
+            return response.body().isBlank() ? new JsonObject() : JsonParser.parseString(response.body()).getAsJsonObject();
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to connect to Firestore.", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Firestore request was interrupted.", e);
+        }
     }
 
     private void validateSession(AuthSession session) {
-        if (session == null) {
+        if (session == null || session.getIdToken() == null || session.getIdToken().isBlank()) {
             throw new RuntimeException("No authenticated session.");
         }
-
-        if (session.getIdToken() == null ||
-                session.getIdToken().isBlank()) {
-            throw new RuntimeException("Authentication token is missing.");
-        }
-
-        if (session.getLocalId() == null ||
-                session.getLocalId().isBlank()) {
+        if (session.getLocalId() == null || session.getLocalId().isBlank()) {
             throw new RuntimeException("Firebase user ID is missing.");
         }
     }
 
     private String userDocumentUrl(AuthSession session) {
-        return FIRESTORE_BASE_URL
-                + URLEncoder.encode(session.getLocalId(), StandardCharsets.UTF_8)
-                + "?key="
-                + FirebaseConfig.getWebApiKey();
+        return FIRESTORE_BASE_URL + URLEncoder.encode(session.getLocalId(), StandardCharsets.UTF_8)
+                + "?key=" + FirebaseConfig.getWebApiKey();
     }
 
     private HttpRequest.Builder authorizedRequest(String url, String idToken) {
@@ -203,14 +152,23 @@ public class FirestoreUserRepository {
                 .header("Content-Type", "application/json");
     }
 
+    private String stringField(JsonObject fields, String name, String fallback) {
+        if (!fields.has(name)) return fallback;
+        JsonObject value = fields.getAsJsonObject(name);
+        if (value == null || !value.has("stringValue")) return fallback;
+        String result = value.get("stringValue").getAsString();
+        return result.isBlank() ? fallback : result;
+    }
+
+    private void addString(JsonObject fields, String name, String value) {
+        JsonObject field = new JsonObject();
+        field.addProperty("stringValue", value == null ? "" : value);
+        fields.add(name, field);
+    }
+
     private void ensureSuccess(HttpResponse<String> response) {
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new RuntimeException(
-                    "Firestore error "
-                            + response.statusCode()
-                            + ": "
-                            + response.body()
-            );
+            throw new RuntimeException("Firestore error " + response.statusCode() + ": " + response.body());
         }
     }
 }
