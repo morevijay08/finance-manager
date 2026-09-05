@@ -26,7 +26,6 @@
             <Button text="Logout" onAction="#handleLogout" styleClass="secondary-button" />
         </HBox>
     </top>
-
     <center>
         <HBox styleClass="admin-shell">
             <VBox styleClass="admin-sidebar">
@@ -42,7 +41,6 @@
                     <Label text="Administrator tools" styleClass="subtitle" />
                 </VBox>
             </VBox>
-
             <ScrollPane fx:id="adminScrollPane" fitToWidth="true" hbarPolicy="NEVER" styleClass="admin-main-scroll" HBox.hgrow="ALWAYS">
                 <content>
                     <VBox fx:id="adminContent" spacing="24" styleClass="dashboard-content admin-main">
@@ -69,7 +67,7 @@
                             <HBox alignment="CENTER_LEFT" spacing="16">
                                 <VBox HBox.hgrow="ALWAYS" spacing="3">
                                     <Label text="User Management" styleClass="section-title" />
-                                    <Label text="Search accounts and enable or disable access." styleClass="subtitle" />
+                                    <Label text="Search accounts, view details, and manage access." styleClass="subtitle" />
                                 </VBox>
                                 <TextField fx:id="userSearchField" promptText="Search name, email, role or status..." prefWidth="330" />
                             </HBox>
@@ -77,9 +75,9 @@
                                 <columns>
                                     <TableColumn fx:id="nameColumn" text="Name" prefWidth="180" />
                                     <TableColumn fx:id="emailColumn" text="Email" prefWidth="280" />
-                                    <TableColumn fx:id="roleColumn" text="Role" prefWidth="120" />
-                                    <TableColumn fx:id="statusColumn" text="Status" prefWidth="130" />
-                                    <TableColumn fx:id="actionColumn" text="Action" prefWidth="130" />
+                                    <TableColumn fx:id="roleColumn" text="Role" prefWidth="110" />
+                                    <TableColumn fx:id="statusColumn" text="Status" prefWidth="120" />
+                                    <TableColumn fx:id="actionColumn" text="Actions" prefWidth="190" />
                                 </columns>
                             </TableView>
                             <Label fx:id="statusLabel" text="Loading users..." styleClass="message-label" />
