@@ -1,7 +1,9 @@
 package com.finance.manager.controller;
 
 import com.finance.manager.firebase.AuthSession;
+import com.finance.manager.model.AdminAuditLog;
 import com.finance.manager.model.AdminUser;
+import com.finance.manager.repository.FirestoreAdminAuditLogRepository;
 import com.finance.manager.repository.FirestoreUserRepository;
 import com.finance.manager.service.FirebaseAuthService;
 import javafx.application.Platform;
@@ -37,13 +39,21 @@ public class AdminDashboardController {
     public TableColumn<AdminUser, String> statusColumn;
     public TableColumn<AdminUser, Void> actionColumn;
 
+    public TableView<AdminAuditLog> auditLogsTable;
+    public TableColumn<AdminAuditLog, String> auditAdminColumn;
+    public TableColumn<AdminAuditLog, String> auditActionColumn;
+    public TableColumn<AdminAuditLog, String> auditTargetColumn;
+    public TableColumn<AdminAuditLog, String> auditTimeColumn;
+
     private final FirebaseAuthService authService = new FirebaseAuthService();
     private final FirestoreUserRepository userRepository = new FirestoreUserRepository();
+    private final FirestoreAdminAuditLogRepository auditLogRepository = new FirestoreAdminAuditLogRepository();
     private final ObservableList<AdminUser> allUsers = FXCollections.observableArrayList();
 
     public void initialize() {
         AuthSession session = authService.getCurrentSession();
         if (session != null && session.getEmail() != null) adminEmailLabel.setText(session.getEmail());
+
         nameColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().displayName()));
         emailColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().email()));
         roleColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().displayRole()));
@@ -62,8 +72,15 @@ public class AdminDashboardController {
                 }
             }
         });
+
+        auditAdminColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().adminEmail()));
+        auditActionColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().action()));
+        auditTargetColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().targetUserEmail()));
+        auditTimeColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().timestamp()));
+
         userSearchField.textProperty().addListener((obs, oldValue, newValue) -> filterUsers(newValue));
         loadUsers();
+        loadAuditLogs();
     }
 
     private void loadUsers() {
@@ -77,6 +94,17 @@ public class AdminDashboardController {
             statusLabel.setText(users.size() + " users loaded");
         })).exceptionally(error -> {
             Platform.runLater(() -> statusLabel.setText("Unable to load users: " + rootMessage(error)));
+            return null;
+        });
+    }
+
+    private void loadAuditLogs() {
+        AuthSession session = authService.getCurrentSession();
+        if (session == null) return;
+        auditLogRepository.listLogs(session).thenAccept(logs -> Platform.runLater(() -> {
+            auditLogsTable.setItems(FXCollections.observableArrayList(logs));
+        })).exceptionally(error -> {
+            Platform.runLater(() -> statusLabel.setText("Unable to load audit logs: " + rootMessage(error)));
             return null;
         });
     }
@@ -107,9 +135,14 @@ public class AdminDashboardController {
             return;
         }
         String newStatus = "ACTIVE".equalsIgnoreCase(user.displayStatus()) ? "DISABLED" : "ACTIVE";
+        String action = "DISABLED".equals(newStatus) ? "DISABLE_USER" : "ENABLE_USER";
         statusLabel.setText(("DISABLED".equals(newStatus) ? "Disabling " : "Enabling ") + user.displayName() + "...");
         userRepository.updateUserStatus(session, user.id(), newStatus)
-                .thenRun(() -> Platform.runLater(this::loadUsers))
+                .thenCompose(ignored -> auditLogRepository.createLog(session, action, user.email()))
+                .thenRun(() -> Platform.runLater(() -> {
+                    loadUsers();
+                    loadAuditLogs();
+                }))
                 .exceptionally(error -> {
                     Platform.runLater(() -> statusLabel.setText("Unable to update user: " + rootMessage(error)));
                     return null;
