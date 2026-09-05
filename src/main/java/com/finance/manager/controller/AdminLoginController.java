@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.util.concurrent.CompletionException;
 
 public class AdminLoginController {
-
     public TextField emailField;
     public PasswordField passwordField;
     public Label errorLabel;
@@ -97,11 +96,11 @@ public class AdminLoginController {
     private void switchScene(ActionEvent event, String resource) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(resource));
         Parent root = loader.load();
-        Scene scene = new Scene(root, 900, 600);
+        Scene scene = new Scene(root, 1200, 800);
         java.net.URL stylesheet = getClass().getResource("/css/application.css");
-        if (stylesheet != null) {
-            scene.getStylesheets().add(stylesheet.toExternalForm());
-        }
+        if (stylesheet != null) scene.getStylesheets().add(stylesheet.toExternalForm());
+        java.net.URL adminStylesheet = getClass().getResource("/css/admin.css");
+        if (adminStylesheet != null) scene.getStylesheets().add(adminStylesheet.toExternalForm());
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
         stage.setTitle("Khatabook Admin");
