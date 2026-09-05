@@ -44,24 +44,17 @@ public class AdminDashboardController {
     public void initialize() {
         AuthSession session = authService.getCurrentSession();
         if (session != null && session.getEmail() != null) adminEmailLabel.setText(session.getEmail());
-
         nameColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().displayName()));
         emailColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().email()));
         roleColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().displayRole()));
         statusColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().displayStatus()));
         actionColumn.setCellFactory(column -> new TableCell<>() {
             private final Button button = new Button();
-            {
-                button.setOnAction(event -> {
-                    AdminUser user = getTableView().getItems().get(getIndex());
-                    toggleUserStatus(user);
-                });
-            }
+            { button.setOnAction(event -> toggleUserStatus(getTableView().getItems().get(getIndex()))); }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getIndex() < 0) {
-                    setGraphic(null);
-                } else {
+                if (empty || getIndex() < 0) setGraphic(null);
+                else {
                     AdminUser user = getTableView().getItems().get(getIndex());
                     button.setText("ACTIVE".equalsIgnoreCase(user.displayStatus()) ? "Disable" : "Enable");
                     button.getStyleClass().setAll("secondary-button");
@@ -69,7 +62,6 @@ public class AdminDashboardController {
                 }
             }
         });
-
         userSearchField.textProperty().addListener((obs, oldValue, newValue) -> filterUsers(newValue));
         loadUsers();
     }
@@ -77,7 +69,7 @@ public class AdminDashboardController {
     private void loadUsers() {
         AuthSession session = authService.getCurrentSession();
         if (session == null) return;
-        statusLabel.setText("Loading users...");
+        Platform.runLater(() -> statusLabel.setText("Loading users..."));
         userRepository.listUsers(session).thenAccept(users -> Platform.runLater(() -> {
             allUsers.setAll(users);
             filterUsers(userSearchField.getText());
@@ -92,12 +84,10 @@ public class AdminDashboardController {
     private void filterUsers(String query) {
         String q = query == null ? "" : query.trim().toLowerCase();
         List<AdminUser> filtered = allUsers.stream()
-                .filter(user -> q.isBlank()
-                        || user.displayName().toLowerCase().contains(q)
+                .filter(user -> q.isBlank() || user.displayName().toLowerCase().contains(q)
                         || user.email().toLowerCase().contains(q)
                         || user.displayRole().toLowerCase().contains(q)
-                        || user.displayStatus().toLowerCase().contains(q))
-                .toList();
+                        || user.displayStatus().toLowerCase().contains(q)).toList();
         usersTable.setItems(FXCollections.observableArrayList(filtered));
     }
 
@@ -118,10 +108,12 @@ public class AdminDashboardController {
         }
         String newStatus = "ACTIVE".equalsIgnoreCase(user.displayStatus()) ? "DISABLED" : "ACTIVE";
         statusLabel.setText(("DISABLED".equals(newStatus) ? "Disabling " : "Enabling ") + user.displayName() + "...");
-        userRepository.updateUserStatus(session, user.id(), newStatus).thenRun(this::loadUsers).exceptionally(error -> {
-            Platform.runLater(() -> statusLabel.setText("Unable to update user: " + rootMessage(error)));
-            return null;
-        });
+        userRepository.updateUserStatus(session, user.id(), newStatus)
+                .thenRun(() -> Platform.runLater(this::loadUsers))
+                .exceptionally(error -> {
+                    Platform.runLater(() -> statusLabel.setText("Unable to update user: " + rootMessage(error)));
+                    return null;
+                });
     }
 
     private String rootMessage(Throwable error) {
