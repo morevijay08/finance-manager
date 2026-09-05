@@ -3,10 +3,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
@@ -32,7 +28,7 @@
                 <Label text="ADMIN MENU" styleClass="admin-sidebar-brand" />
                 <Label text="CONTROL CENTER" styleClass="admin-sidebar-subtitle" />
                 <Label text="MAIN" styleClass="admin-sidebar-section" />
-                <Button fx:id="overviewNavButton" text="Dashboard Overview" onAction="#handleShowOverview" styleClass="admin-sidebar-button admin-sidebar-button-active" />
+                <Button fx:id="overviewNavButton" text="Dashboard Overview" styleClass="admin-sidebar-button admin-sidebar-button-active" />
                 <Button fx:id="usersNavButton" text="User Management" onAction="#handleShowUsers" styleClass="admin-sidebar-button" />
                 <Button fx:id="auditNavButton" text="Audit Logs" onAction="#handleShowAuditLogs" styleClass="admin-sidebar-button" />
                 <VBox VBox.vgrow="ALWAYS" />
@@ -41,50 +37,35 @@
                     <Label text="Administrator tools" styleClass="subtitle" />
                 </VBox>
             </VBox>
-            <ScrollPane fx:id="adminScrollPane" fitToWidth="true" hbarPolicy="NEVER" styleClass="admin-main-scroll" HBox.hgrow="ALWAYS">
-                <content>
-                    <VBox fx:id="adminContent" spacing="24" styleClass="dashboard-content admin-main">
-                        <VBox fx:id="overviewSection" spacing="8" styleClass="admin-section">
-                            <Label text="Admin Dashboard" styleClass="page-title" />
-                            <Label text="Manage Khatabook accounts and basic account access." styleClass="subtitle" />
-                            <GridPane hgap="18" styleClass="summary-row">
-                                <VBox GridPane.columnIndex="0" styleClass="summary-card" GridPane.hgrow="ALWAYS">
-                                    <Label text="TOTAL USERS" styleClass="card-title" />
-                                    <Label fx:id="totalUsersLabel" text="0" styleClass="balance-value" />
-                                </VBox>
-                                <VBox GridPane.columnIndex="1" styleClass="summary-card" GridPane.hgrow="ALWAYS">
-                                    <Label text="ACTIVE USERS" styleClass="card-title" />
-                                    <Label fx:id="activeUsersLabel" text="0" styleClass="income-value" />
-                                </VBox>
-                                <VBox GridPane.columnIndex="2" styleClass="summary-card" GridPane.hgrow="ALWAYS">
-                                    <Label text="DISABLED USERS" styleClass="card-title" />
-                                    <Label fx:id="disabledUsersLabel" text="0" styleClass="expense-value" />
-                                </VBox>
-                            </GridPane>
-                        </VBox>
-
-                        <VBox fx:id="userManagementSection" spacing="14" styleClass="summary-card admin-section">
-                            <HBox alignment="CENTER_LEFT" spacing="16">
-                                <VBox HBox.hgrow="ALWAYS" spacing="3">
-                                    <Label text="User Management" styleClass="section-title" />
-                                    <Label text="Search accounts, view details, and manage access." styleClass="subtitle" />
-                                </VBox>
-                                <TextField fx:id="userSearchField" promptText="Search name, email, role or status..." prefWidth="330" />
-                            </HBox>
-                            <TableView fx:id="usersTable" prefHeight="470">
-                                <columns>
-                                    <TableColumn fx:id="nameColumn" text="Name" prefWidth="180" />
-                                    <TableColumn fx:id="emailColumn" text="Email" prefWidth="280" />
-                                    <TableColumn fx:id="roleColumn" text="Role" prefWidth="110" />
-                                    <TableColumn fx:id="statusColumn" text="Status" prefWidth="120" />
-                                    <TableColumn fx:id="actionColumn" text="Actions" prefWidth="190" />
-                                </columns>
-                            </TableView>
-                            <Label fx:id="statusLabel" text="Loading users..." styleClass="message-label" />
-                        </VBox>
+            <VBox spacing="24" styleClass="admin-main" HBox.hgrow="ALWAYS">
+                <VBox spacing="8" styleClass="details-header">
+                    <Label text="Admin Dashboard" styleClass="page-title" />
+                    <Label text="System overview and account access status." styleClass="subtitle" />
+                </VBox>
+                <GridPane hgap="18" styleClass="summary-row">
+                    <VBox GridPane.columnIndex="0" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                        <Label text="TOTAL USERS" styleClass="card-title" />
+                        <Label fx:id="totalUsersLabel" text="0" styleClass="balance-value" />
                     </VBox>
-                </content>
-            </ScrollPane>
+                    <VBox GridPane.columnIndex="1" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                        <Label text="ACTIVE USERS" styleClass="card-title" />
+                        <Label fx:id="activeUsersLabel" text="0" styleClass="income-value" />
+                    </VBox>
+                    <VBox GridPane.columnIndex="2" styleClass="summary-card" GridPane.hgrow="ALWAYS">
+                        <Label text="DISABLED USERS" styleClass="card-title" />
+                        <Label fx:id="disabledUsersLabel" text="0" styleClass="expense-value" />
+                    </VBox>
+                </GridPane>
+                <VBox spacing="12" styleClass="summary-card">
+                    <Label text="Administration Overview" styleClass="section-title" />
+                    <Label text="Use the sidebar to manage accounts and review administrator activity. Each administration feature opens on its own page for a cleaner workspace." wrapText="true" styleClass="subtitle" />
+                    <HBox spacing="12">
+                        <Button text="Open User Management" onAction="#handleShowUsers" styleClass="primary-button" />
+                        <Button text="Open Audit Logs" onAction="#handleShowAuditLogs" styleClass="secondary-button" />
+                    </HBox>
+                </VBox>
+                <Label fx:id="statusLabel" text="Loading system overview..." styleClass="message-label" />
+            </VBox>
         </HBox>
     </center>
 </BorderPane>
