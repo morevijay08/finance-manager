@@ -9,6 +9,9 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,19 +121,51 @@ public class GlobalSearchBar extends TextField {
         Label subtitle = findLabel(root, "Your personal finance command center");
         if (subtitle != null) subtitle.setStyle("-fx-font-size: 13px;-fx-text-fill: #64748b;");
 
-        // Dashboard header logo: compact, readable and consistent with the supplied Khatabook mark.
+        addLogoToBranding(root);
+
         for (Node node : collect(root)) {
-            if (node instanceof Parent parent && parent.getStyleClass().contains("navbar")) {
-                parent.setStyle(parent.getStyle() + ";-fx-background-image: url('/images/khatabook-logo-small.png');-fx-background-repeat: no-repeat;-fx-background-position: 20px center;-fx-background-size: 44px 44px;");
-            }
-            if (node instanceof Parent parent && parent.getStyleClass().contains("brand-block")) {
-                parent.setStyle(parent.getStyle() + ";-fx-padding: 0 20px 0 54px;-fx-background-image: url('/images/khatabook-logo-small.png');-fx-background-repeat: no-repeat;-fx-background-position: left center;-fx-background-size: 42px 42px;");
-            }
-            if (node instanceof Parent parent && parent.getStyleClass().contains("sidebar-header")) {
-                parent.setStyle(parent.getStyle() + ";-fx-padding: 2px 6px 17px 54px;-fx-background-image: url('/images/khatabook-logo-small.png');-fx-background-repeat: no-repeat;-fx-background-position: left 4px center;-fx-background-size: 40px 40px;");
-            }
             if (node instanceof Button button && button.getStyleClass().contains("nav-button")) { button.setMinHeight(43); button.setPrefHeight(43); }
         }
+    }
+
+    private void addLogoToBranding(Parent root) {
+        java.net.URL logoUrl = getClass().getResource("/images/khatabook-logo.svg");
+        if (logoUrl == null) return;
+
+        Image logo = new Image(logoUrl.toExternalForm(), false);
+        if (logo.isError()) return;
+
+        for (Node node : collect(root)) {
+            if (!(node instanceof HBox box)) continue;
+
+            if (box.getStyleClass().contains("navbar") && !hasLogo(box)) {
+                ImageView imageView = createLogoView(38);
+                box.getChildren().add(1, imageView);
+                box.setSpacing(12);
+            }
+
+            if (box.getStyleClass().contains("sidebar-header") && !hasLogo(box)) {
+                ImageView imageView = createLogoView(42);
+                box.getChildren().add(0, imageView);
+                box.setSpacing(12);
+            }
+        }
+    }
+
+    private ImageView createLogoView(double size) {
+        Image image = new Image(getClass().getResource("/images/khatabook-logo.svg").toExternalForm(), false);
+        ImageView view = new ImageView(image);
+        view.setFitWidth(size);
+        view.setFitHeight(size);
+        view.setPreserveRatio(true);
+        view.setSmooth(true);
+        view.setMouseTransparent(true);
+        return view;
+    }
+
+    private boolean hasLogo(HBox box) {
+        for (Node child : box.getChildren()) if (child instanceof ImageView) return true;
+        return false;
     }
 
     private void applyStyleToClass(Node root, String className, String style) { for (Node node : collect(root)) if (node.getStyleClass().contains(className)) node.setStyle(style); }
