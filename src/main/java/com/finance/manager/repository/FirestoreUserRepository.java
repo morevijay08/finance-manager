@@ -43,6 +43,12 @@ public class FirestoreUserRepository {
             emailValue.addProperty("stringValue", session.getEmail());
             fields.add("email", emailValue);
 
+            // Every self-registered account starts as a normal USER.
+            // Administrator roles must be provisioned separately.
+            JsonObject roleValue = new JsonObject();
+            roleValue.addProperty("stringValue", "USER");
+            fields.add("role", roleValue);
+
             JsonObject document = new JsonObject();
             document.add("fields", fields);
 
@@ -110,6 +116,53 @@ public class FirestoreUserRepository {
 
                 String name = nameField.get("stringValue").getAsString();
                 return name.isBlank() ? "User" : name;
+
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to connect to Firestore.", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Firestore request was interrupted.", e);
+            }
+        });
+    }
+
+    /**
+     * Reads the authorization role stored on users/{Firebase UID}.
+     */
+    public CompletableFuture<String> getUserRole(AuthSession session) {
+        return CompletableFuture.supplyAsync(() -> {
+            validateSession(session);
+
+            HttpRequest request = authorizedRequest(
+                    userDocumentUrl(session),
+                    session.getIdToken()
+            ).GET().build();
+
+            try {
+                HttpResponse<String> response = httpClient.send(
+                        request,
+                        HttpResponse.BodyHandlers.ofString()
+                );
+
+                ensureSuccess(response);
+
+                JsonObject document = JsonParser.parseString(response.body())
+                        .getAsJsonObject();
+                JsonObject fields = document.has("fields")
+                        ? document.getAsJsonObject("fields")
+                        : null;
+
+                if (fields == null || !fields.has("role")) {
+                    return "USER";
+                }
+
+                JsonObject roleField = fields.getAsJsonObject("role");
+                if (roleField == null || !roleField.has("stringValue")) {
+                    return "USER";
+                }
+
+                String role = roleField.get("stringValue").getAsString();
+                return role.isBlank() ? "USER" : role.toUpperCase();
 
             } catch (IOException e) {
                 throw new RuntimeException("Unable to connect to Firestore.", e);
