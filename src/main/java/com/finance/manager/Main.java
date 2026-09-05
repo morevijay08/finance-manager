@@ -5,6 +5,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -25,6 +26,16 @@ public class Main extends Application {
         );
 
         stage.setTitle(Branding.APP_TITLE);
+
+        // Set the Khatabook logo as the native application/window icon.
+        java.net.URL logoUrl = Main.class.getResource("/images/khatabook-logo-small.png");
+        if (logoUrl != null) {
+            Image appIcon = new Image(logoUrl.toExternalForm(), false);
+            if (!appIcon.isError()) {
+                stage.getIcons().add(appIcon);
+            }
+        }
+
         stage.setScene(scene);
         stage.setMinWidth(800);
         stage.setMinHeight(500);
