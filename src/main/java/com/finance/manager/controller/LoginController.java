@@ -2,6 +2,7 @@ package com.finance.manager.controller;
 
 import com.finance.manager.firebase.FirebaseAuthException;
 import com.finance.manager.service.FirebaseAuthService;
+import com.finance.manager.ui.Branding;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -110,6 +111,7 @@ public class LoginController {
 
         FXMLLoader loader = new FXMLLoader(resourceUrl);
         Parent root = loader.load();
+        Branding.apply(root);
 
         java.net.URL stylesheetUrl = getClass().getResource("/css/application.css");
         Scene scene = new Scene(root, 900, 600);
@@ -123,6 +125,7 @@ public class LoginController {
 
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
+        stage.setTitle(Branding.APP_TITLE);
         stage.show();
         forceMaximized(stage);
         Platform.runLater(() -> forceMaximized(stage));
