@@ -20,6 +20,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -44,37 +45,36 @@ public class AdminDashboardController {
     public void initialize() {
         AuthSession session = authService.getCurrentSession();
         if (session != null && session.getEmail() != null) adminEmailLabel.setText(session.getEmail());
-
         nameColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().displayName()));
         emailColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().email()));
         roleColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().displayRole()));
         statusColumn.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().displayStatus()));
         actionColumn.setCellFactory(column -> new TableCell<>() {
-            private final Button button = new Button();
-            { button.setOnAction(event -> toggleUserStatus(getTableView().getItems().get(getIndex()))); }
+            private final Button viewButton = new Button("View");
+            private final Button toggleButton = new Button();
+            private final HBox actions = new HBox(8, viewButton, toggleButton);
+            {
+                viewButton.setOnAction(event -> openUserDetails(getTableView().getItems().get(getIndex()), event));
+                toggleButton.setOnAction(event -> toggleUserStatus(getTableView().getItems().get(getIndex())));
+            }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || getIndex() < 0) setGraphic(null);
                 else {
                     AdminUser user = getTableView().getItems().get(getIndex());
-                    button.setText("ACTIVE".equalsIgnoreCase(user.displayStatus()) ? "Disable" : "Enable");
-                    button.getStyleClass().setAll("secondary-button");
-                    setGraphic(button);
+                    toggleButton.setText("ACTIVE".equalsIgnoreCase(user.displayStatus()) ? "Disable" : "Enable");
+                    viewButton.getStyleClass().setAll("secondary-button");
+                    toggleButton.getStyleClass().setAll("secondary-button");
+                    setGraphic(actions);
                 }
             }
         });
-
         userSearchField.textProperty().addListener((obs, oldValue, newValue) -> filterUsers(newValue));
         loadUsers();
     }
 
-    public void handleShowOverview() {
-        scrollToSection(overviewSection, overviewNavButton);
-    }
-
-    public void handleShowUsers() {
-        scrollToSection(userManagementSection, usersNavButton);
-    }
+    public void handleShowOverview() { scrollToSection(overviewSection, overviewNavButton); }
+    public void handleShowUsers() { scrollToSection(userManagementSection, usersNavButton); }
 
     public void handleShowAuditLogs(ActionEvent event) throws IOException {
         switchScene(event, "/fxml/AuditLogs.fxml", "Khatabook Admin - Audit Logs");
@@ -102,28 +102,24 @@ public class AdminDashboardController {
         AuthSession session = authService.getCurrentSession();
         if (session == null) return;
         Platform.runLater(() -> statusLabel.setText("Loading users..."));
-        userRepository.listUsers(session)
-                .thenAccept(users -> Platform.runLater(() -> {
-                    allUsers.setAll(users);
-                    filterUsers(userSearchField.getText());
-                    updateCounts(users);
-                    statusLabel.setText(users.size() + " users loaded");
-                }))
-                .exceptionally(error -> {
-                    Platform.runLater(() -> statusLabel.setText("Unable to load users: " + rootMessage(error)));
-                    return null;
-                });
+        userRepository.listUsers(session).thenAccept(users -> Platform.runLater(() -> {
+            allUsers.setAll(users);
+            filterUsers(userSearchField.getText());
+            updateCounts(users);
+            statusLabel.setText(users.size() + " users loaded");
+        })).exceptionally(error -> {
+            Platform.runLater(() -> statusLabel.setText("Unable to load users: " + rootMessage(error)));
+            return null;
+        });
     }
 
     private void filterUsers(String query) {
         String q = query == null ? "" : query.trim().toLowerCase();
-        List<AdminUser> filtered = allUsers.stream()
-                .filter(user -> q.isBlank()
-                        || user.displayName().toLowerCase().contains(q)
-                        || user.email().toLowerCase().contains(q)
-                        || user.displayRole().toLowerCase().contains(q)
-                        || user.displayStatus().toLowerCase().contains(q))
-                .toList();
+        List<AdminUser> filtered = allUsers.stream().filter(user -> q.isBlank()
+                || user.displayName().toLowerCase().contains(q)
+                || user.email().toLowerCase().contains(q)
+                || user.displayRole().toLowerCase().contains(q)
+                || user.displayStatus().toLowerCase().contains(q)).toList();
         usersTable.setItems(FXCollections.observableArrayList(filtered));
     }
 
@@ -154,6 +150,23 @@ public class AdminDashboardController {
                 });
     }
 
+    private void openUserDetails(AdminUser user, ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/UserDetails.fxml"));
+            Parent root = loader.load();
+            UserDetailsController controller = loader.getController();
+            controller.setUser(user);
+            Scene scene = new Scene(root, 1200, 800);
+            addStylesheets(scene);
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Khatabook Admin - User Details");
+            stage.show();
+        } catch (IOException e) {
+            statusLabel.setText("Unable to open user details.");
+        }
+    }
+
     public void handleLogout(ActionEvent event) throws IOException {
         authService.logout();
         switchScene(event, "/fxml/Login.fxml", "Khatabook Finance Manager");
@@ -163,14 +176,18 @@ public class AdminDashboardController {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(resource));
         Parent root = loader.load();
         Scene scene = new Scene(root, 1200, 800);
-        java.net.URL stylesheet = getClass().getResource("/css/application.css");
-        if (stylesheet != null) scene.getStylesheets().add(stylesheet.toExternalForm());
-        java.net.URL adminStylesheet = getClass().getResource("/css/admin.css");
-        if (adminStylesheet != null) scene.getStylesheets().add(adminStylesheet.toExternalForm());
+        addStylesheets(scene);
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
         stage.setTitle(title);
         stage.show();
+    }
+
+    private void addStylesheets(Scene scene) {
+        java.net.URL stylesheet = getClass().getResource("/css/application.css");
+        if (stylesheet != null) scene.getStylesheets().add(stylesheet.toExternalForm());
+        java.net.URL adminStylesheet = getClass().getResource("/css/admin.css");
+        if (adminStylesheet != null) scene.getStylesheets().add(adminStylesheet.toExternalForm());
     }
 
     private String rootMessage(Throwable error) {
