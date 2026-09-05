@@ -60,11 +60,17 @@ public final class Branding {
 
     private static void applyText(Node node) {
         if (node instanceof Label label) {
-            label.setText(replace(label.getText()));
+            if (!label.textProperty().isBound()) {
+                label.setText(replace(label.getText()));
+            }
         } else if (node instanceof Button button) {
-            button.setText(replace(button.getText()));
+            if (!button.textProperty().isBound()) {
+                button.setText(replace(button.getText()));
+            }
         } else if (node instanceof TextInputControl input) {
-            input.setPromptText(replace(input.getPromptText()));
+            if (!input.promptTextProperty().isBound()) {
+                input.setPromptText(replace(input.getPromptText()));
+            }
         }
 
         if (node instanceof Parent parent) {
