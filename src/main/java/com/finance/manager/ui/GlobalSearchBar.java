@@ -129,7 +129,7 @@ public class GlobalSearchBar extends TextField {
     }
 
     private void addLogoToBranding(Parent root) {
-        java.net.URL logoUrl = getClass().getResource("/images/khatabook-logo.svg");
+        java.net.URL logoUrl = getClass().getResource("/images/khatabook-logo-small.png");
         if (logoUrl == null) return;
 
         Image logo = new Image(logoUrl.toExternalForm(), false);
@@ -153,7 +153,7 @@ public class GlobalSearchBar extends TextField {
     }
 
     private ImageView createLogoView(double size) {
-        Image image = new Image(getClass().getResource("/images/khatabook-logo.svg").toExternalForm(), false);
+        Image image = new Image(getClass().getResource("/images/khatabook-logo-small.png").toExternalForm(), false);
         ImageView view = new ImageView(image);
         view.setFitWidth(size);
         view.setFitHeight(size);
