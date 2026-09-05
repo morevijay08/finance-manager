@@ -61,6 +61,10 @@ public class LoginController {
                 });
     }
 
+    public void handleAdminLogin(ActionEvent event) throws IOException {
+        switchScene(event, "/fxml/AdminLogin.fxml");
+    }
+
     public void handleRegister(ActionEvent event) throws IOException {
         switchScene(event, "/fxml/Register.fxml");
     }
