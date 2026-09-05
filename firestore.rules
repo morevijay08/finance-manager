@@ -2,20 +2,33 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['ADMIN', 'SUPER_ADMIN'];
+    }
+
     match /users/{userId} {
-      // A new account may create only its own profile and must start as USER.
+      // New accounts can create only their own USER profile.
       allow create: if request.auth != null
                     && request.auth.uid == userId
                     && request.resource.data.get('role', 'USER') == 'USER';
 
-      // Users can read only their own profile.
-      allow read: if request.auth != null && request.auth.uid == userId;
+      // Users read their own profile; admins can read user profiles for administration.
+      allow read: if request.auth != null
+                  && (request.auth.uid == userId || isAdmin());
 
-      // Users may update their own profile, but can never change their role.
-      allow update: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.data.get('role', resource.data.get('role', 'USER'))
-                       == resource.data.get('role', 'USER');
+      // Users may update their own profile without changing role/status.
+      // Admins may update account status but cannot change roles through this feature.
+      allow update: if request.auth != null && (
+          (request.auth.uid == userId
+            && request.resource.data.get('role', resource.data.get('role', 'USER')) == resource.data.get('role', 'USER')
+            && request.resource.data.get('status', resource.data.get('status', 'ACTIVE')) == resource.data.get('status', 'ACTIVE'))
+          ||
+          (isAdmin()
+            && request.resource.data.get('role', resource.data.get('role', 'USER')) == resource.data.get('role', 'USER')
+            && request.resource.data.get('name', resource.data.get('name', '')) == resource.data.get('name', '')
+            && request.resource.data.get('email', resource.data.get('email', '')) == resource.data.get('email', ''))
+        );
 
       match /transactions/{transactionId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
