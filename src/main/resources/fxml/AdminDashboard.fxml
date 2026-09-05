@@ -68,8 +68,24 @@
                                 <TableColumn fx:id="actionColumn" text="Action" prefWidth="130" />
                             </columns>
                         </TableView>
-                        <Label fx:id="statusLabel" text="Loading users..." styleClass="message-label" />
                     </VBox>
+
+                    <VBox spacing="12" styleClass="summary-card">
+                        <VBox spacing="2">
+                            <Label text="Audit Logs" styleClass="section-title" />
+                            <Label text="Track important administrator actions." styleClass="subtitle" />
+                        </VBox>
+                        <TableView fx:id="auditLogsTable" prefHeight="300">
+                            <columns>
+                                <TableColumn fx:id="auditAdminColumn" text="Admin" prefWidth="220" />
+                                <TableColumn fx:id="auditActionColumn" text="Action" prefWidth="160" />
+                                <TableColumn fx:id="auditTargetColumn" text="Target User" prefWidth="260" />
+                                <TableColumn fx:id="auditTimeColumn" text="Time" prefWidth="260" />
+                            </columns>
+                        </TableView>
+                    </VBox>
+
+                    <Label fx:id="statusLabel" text="Loading users..." styleClass="message-label" />
                 </VBox>
             </content>
         </ScrollPane>
