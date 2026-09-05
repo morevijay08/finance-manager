@@ -3,7 +3,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // A new account may create only its own profile and must start as USER.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.get('role', 'USER') == 'USER';
+
+      // Users can read only their own profile.
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Users may update their own profile, but can never change their role.
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.get('role', resource.data.get('role', 'USER'))
+                       == resource.data.get('role', 'USER');
 
       match /transactions/{transactionId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
