@@ -40,7 +40,7 @@
             <VBox styleClass="admin-main user-details-page" HBox.hgrow="ALWAYS" spacing="22">
                 <VBox spacing="4" styleClass="details-header">
                     <Label text="User Details" styleClass="page-title" />
-                    <Label text="View account information and access status." styleClass="subtitle" />
+                    <Label text="View account information and manage account access." styleClass="subtitle" />
                 </VBox>
                 <VBox styleClass="details-card" spacing="20" VBox.vgrow="NEVER">
                     <HBox alignment="CENTER_LEFT" spacing="14">
@@ -58,11 +58,16 @@
                         <Label text="ACCESS" styleClass="card-title" GridPane.columnIndex="0" GridPane.rowIndex="2" />
                         <Label fx:id="accessLabel" text="Active account" styleClass="details-value" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                     </GridPane>
-                    <HBox spacing="12">
-                        <Button text="Back to User Management" onAction="#handleUsers" styleClass="secondary-button" />
-                    </HBox>
+                    <VBox spacing="8">
+                        <Label text="ACCOUNT ACTIONS" styleClass="card-title" />
+                        <HBox spacing="12">
+                            <Button text="Send Password Reset" onAction="#handleSendPasswordReset" styleClass="secondary-button" />
+                            <Button text="Back to User Management" onAction="#handleUsers" styleClass="secondary-button" />
+                        </HBox>
+                        <Label text="The user will receive a password reset email. The administrator never sees the user's password." styleClass="subtitle" wrapText="true" />
+                    </VBox>
                 </VBox>
-                <Label fx:id="statusLabel" text="" styleClass="message-label" />
+                <Label fx:id="statusLabel" text="" styleClass="message-label" wrapText="true" />
             </VBox>
         </HBox>
     </center>
