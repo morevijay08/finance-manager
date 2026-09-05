@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.finance.manager.controller.AuditLogsController"
+            styleClass="dashboard-root">
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="16" styleClass="navbar">
+            <padding><Insets top="16" right="24" bottom="16" left="24" /></padding>
+            <VBox HBox.hgrow="ALWAYS" spacing="2">
+                <Label text="Khatabook Admin" styleClass="navbar-brand" />
+                <Label text="ADMIN PORTAL" styleClass="navbar-tagline" />
+            </VBox>
+            <Label fx:id="adminEmailLabel" text="Admin" styleClass="subtitle" />
+            <Button text="Logout" onAction="#handleLogout" styleClass="secondary-button" />
+        </HBox>
+    </top>
+
+    <center>
+        <HBox styleClass="admin-shell">
+            <VBox styleClass="admin-sidebar">
+                <Label text="ADMIN MENU" styleClass="admin-sidebar-brand" />
+                <Label text="CONTROL CENTER" styleClass="admin-sidebar-subtitle" />
+                <Label text="MAIN" styleClass="admin-sidebar-section" />
+                <Button text="Dashboard Overview" onAction="#handleShowDashboard" styleClass="admin-sidebar-button" />
+                <Button text="User Management" onAction="#handleShowUsers" styleClass="admin-sidebar-button" />
+                <Button text="Audit Logs" styleClass="admin-sidebar-button admin-sidebar-button-active" />
+                <VBox VBox.vgrow="ALWAYS" />
+                <VBox styleClass="admin-sidebar-footer">
+                    <Label text="Khatabook Finance Manager" styleClass="subtitle" />
+                    <Label text="Administrator tools" styleClass="subtitle" />
+                </VBox>
+            </VBox>
+
+            <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="admin-main-scroll" HBox.hgrow="ALWAYS">
+                <content>
+                    <VBox spacing="24" styleClass="dashboard-content admin-main audit-page">
+                        <VBox spacing="4" styleClass="audit-header">
+                            <Label text="Audit Logs" styleClass="page-title" />
+                            <Label text="Review important administrator actions and account access changes." styleClass="subtitle" />
+                        </VBox>
+
+                        <VBox spacing="14" styleClass="summary-card audit-card">
+                            <HBox alignment="CENTER_LEFT" spacing="14">
+                                <VBox HBox.hgrow="ALWAYS" spacing="2">
+                                    <Label text="Administrator Activity" styleClass="section-title" />
+                                    <Label text="Newest actions appear first." styleClass="subtitle" />
+                                </VBox>
+                                <TextField fx:id="searchField" promptText="Search admin, action or user..." prefWidth="300" />
+                                <Button text="Refresh" onAction="#handleRefresh" styleClass="secondary-button" />
+                            </HBox>
+
+                            <TableView fx:id="auditLogsTable" prefHeight="520" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="auditAdminColumn" text="Admin" prefWidth="240" />
+                                    <TableColumn fx:id="auditActionColumn" text="Action" prefWidth="190" />
+                                    <TableColumn fx:id="auditTargetColumn" text="Target User" prefWidth="300" />
+                                    <TableColumn fx:id="auditTimeColumn" text="Time" prefWidth="300" />
+                                </columns>
+                            </TableView>
+                            <Label fx:id="statusLabel" text="Loading audit logs..." styleClass="message-label" />
+                        </VBox>
+                    </VBox>
+                </content>
+            </ScrollPane>
+        </HBox>
+    </center>
+</BorderPane>
