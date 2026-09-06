@@ -36,6 +36,7 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private Label budgetPercentageLabel;
     @FXML private Label budgetSavedLabel;
     @FXML private Button editBudgetButton;
+    @FXML private Label dashboardMonthLabel;
 
     private Label dashboardSavingsLabel, dashboardSavingsRateLabel;
     private Label dashboardMonthlyIncomeLabel, dashboardMonthlyExpenseLabel, dashboardMonthlySavingsLabel;
@@ -169,7 +170,7 @@ public class BudgetDashboardController extends DashboardController {
 
         TextField budgetInput = getDashboardField("budgetField", TextField.class);
         double budget = parseAmount(budgetInput == null ? null : budgetInput.getText());
-        double remaining = budget - expense;
+        double remaining = budget > 0 ? budget - expense : 0;
 
         reportIncomeLabel.setText(formatMoney(income));
         reportExpenseLabel.setText(formatMoney(expense));
@@ -307,7 +308,7 @@ public class BudgetDashboardController extends DashboardController {
                 .filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE && isMonth(t, month))
                 .mapToDouble(Transaction::getAmount)
                 .sum();
-        double remaining = budget - spent;
+        double remaining = budget > 0 ? budget - spent : 0;
         double used = budget > 0 ? spent / budget * 100.0 : 0;
         long daysRemaining = ChronoUnit.DAYS.between(java.time.LocalDate.now(), month.atEndOfMonth());
         double dailySafeSpend = remaining > 0 && daysRemaining > 0 ? remaining / daysRemaining : 0;
@@ -376,16 +377,19 @@ public class BudgetDashboardController extends DashboardController {
                 .filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE)
                 .filter(t -> isMonth(t, YearMonth.now()))
                 .mapToDouble(Transaction::getAmount).sum();
-        double remaining = budget - spent;
+        double remaining = budget > 0 ? budget - spent : 0;
         double usedPercentage = budget > 0 ? (spent / budget) * 100.0 : 0;
-        double saved = Math.max(remaining, 0);
+        double monthlySavings = liveTransactions == null ? 0 : liveTransactions.stream()
+                .filter(t -> t != null && isMonth(t, YearMonth.now()))
+                .mapToDouble(t -> t.getType() == Transaction.Type.INCOME ? t.getAmount() : -t.getAmount())
+                .sum();
 
         Label spentLabel = getDashboardField("budgetSpentLabel", Label.class);
         Label remainingLabel = getDashboardField("budgetRemainingLabel", Label.class);
         ProgressBar progressBar = getDashboardField("budgetProgressBar", ProgressBar.class);
         if (spentLabel != null) spentLabel.setText(formatMoney(spent));
         if (remainingLabel != null) remainingLabel.setText(formatMoney(remaining));
-        if (budgetSavedLabel != null) budgetSavedLabel.setText(formatMoney(saved));
+        if (budgetSavedLabel != null) budgetSavedLabel.setText(formatMoney(monthlySavings));
         if (budgetPercentageLabel != null) budgetPercentageLabel.setText(String.format(Locale.US, "%.1f%% used", Math.max(0, usedPercentage)));
         if (progressBar != null) progressBar.setProgress(budget <= 0 ? 0 : Math.min(spent / budget, 1.0));
         refreshBudgetEnhancements();
@@ -430,8 +434,8 @@ public class BudgetDashboardController extends DashboardController {
             row.getColumnConstraints().add(column);
         }
 
-        VBox savings = metricCard("NET SAVINGS", "₹0.00", "Total income minus total expense", "dashboard-savings-card");
-        VBox rate = metricCard("SAVINGS RATE", "0.0%", "This month's saving efficiency", "dashboard-rate-card");
+        VBox savings = metricCard("MONTHLY SAVINGS", "₹0.00", "This month's income minus expenses", "dashboard-savings-card");
+        VBox rate = metricCard("MONTHLY SAVINGS RATE", "0.0%", "This month's savings as a share of income", "dashboard-rate-card");
         dashboardSavingsLabel = valueLabel(savings);
         dashboardSavingsRateLabel = valueLabel(rate);
 
@@ -445,9 +449,9 @@ public class BudgetDashboardController extends DashboardController {
         VBox card = new VBox(6);
         card.getStyleClass().addAll("summary-card", style);
 
-        String icon = title.equals("NET SAVINGS") ? "▣" : "%";
-        String iconBackground = title.equals("NET SAVINGS") ? "#dbeafe" : "#f3e8ff";
-        String iconText = title.equals("NET SAVINGS") ? "#2563eb" : "#7c3aed";
+        String icon = title.equals("MONTHLY SAVINGS") ? "▣" : "%";
+        String iconBackground = title.equals("MONTHLY SAVINGS") ? "#dbeafe" : "#f3e8ff";
+        String iconText = title.equals("MONTHLY SAVINGS") ? "#2563eb" : "#7c3aed";
 
         Label iconLabel = new Label(icon);
         iconLabel.setStyle("-fx-min-width: 54px; -fx-min-height: 54px; -fx-max-width: 54px; -fx-max-height: 54px; -fx-alignment: center; -fx-background-color: " + iconBackground + "; -fx-background-radius: 15px; -fx-text-fill: " + iconText + "; -fx-font-size: 26px; -fx-font-weight: bold;");
@@ -483,6 +487,7 @@ public class BudgetDashboardController extends DashboardController {
         Button add = new Button("＋ Add Transaction"); add.getStyleClass().add("primary-button"); add.setMaxWidth(Double.MAX_VALUE); add.setOnAction(e -> handleAddTransactionNav()); Button view = new Button("View Recent Activity  →"); view.getStyleClass().add("secondary-button"); view.setMaxWidth(Double.MAX_VALUE); view.setOnAction(e -> handleTransactionsNav());
         actions.getChildren().addAll(actionTitle, actionHint, add, view); row.getChildren().addAll(cash, actions); HBox.setHgrow(cash, Priority.ALWAYS); HBox.setHgrow(actions, Priority.ALWAYS); return row;
     }
+
     private Label snapshotLine(VBox box, String name, String value, String style) { HBox line = new HBox(10); line.getStyleClass().add("dashboard-snapshot-row"); line.setAlignment(javafx.geometry.Pos.CENTER_LEFT); Label nameLabel = new Label(name); nameLabel.getStyleClass().add("snapshot-name"); Label spacer = new Label(); HBox.setHgrow(spacer, Priority.ALWAYS); Label valueLabel = new Label(value); valueLabel.getStyleClass().add(style); line.getChildren().addAll(nameLabel, spacer, valueLabel); box.getChildren().add(line); return valueLabel; }
 
     private Node createRecentActivity() {
@@ -491,14 +496,58 @@ public class BudgetDashboardController extends DashboardController {
         Button viewAll = new Button("View all  →"); viewAll.getStyleClass().add("text-action-button"); viewAll.setOnAction(e -> handleTransactionsNav()); header.getChildren().addAll(heading, viewAll); recentActivityBox = new VBox(5); card.getChildren().addAll(header, recentActivityBox); return card;
     }
 
-    private void refreshDashboardOverview() { if (liveTransactions == null) return; refreshDashboardOverview(List.copyOf(liveTransactions)); }
+    private void refreshDashboardOverview() {
+        if (liveTransactions == null) return;
+        refreshDashboardOverview(List.copyOf(liveTransactions));
+    }
+
     private void refreshDashboardOverview(List<Transaction> list) {
         if (list == null || dashboardSavingsLabel == null || recentActivityBox == null) return;
-        double income = list.stream().filter(t -> t != null && t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum(); double expense = list.stream().filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum(); double savings = income - expense;
-        YearMonth month = YearMonth.now(); double monthIncome = list.stream().filter(t -> isMonth(t, month) && t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum(); double monthExpense = list.stream().filter(t -> isMonth(t, month) && t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum(); double monthSavings = monthIncome - monthExpense; double rate = monthIncome > 0 ? monthSavings / monthIncome * 100 : 0;
-        dashboardSavingsLabel.setText(formatMoney(savings)); dashboardSavingsRateLabel.setText(String.format(Locale.US, "%.1f%%", rate)); dashboardMonthlyIncomeLabel.setText(formatMoney(monthIncome)); dashboardMonthlyExpenseLabel.setText(formatMoney(monthExpense)); dashboardMonthlySavingsLabel.setText(formatMoney(monthSavings));
-        recentActivityBox.getChildren().clear(); List<Transaction> recent = list.stream().filter(t -> t != null).sorted((a,b) -> { if (a.getDate() == null && b.getDate() == null) return 0; if (a.getDate() == null) return 1; if (b.getDate() == null) return -1; return b.getDate().compareTo(a.getDate()); }).limit(5).toList();
-        if (recent.isEmpty()) { Label empty = new Label("No transactions yet. Add your first income or expense to see it here."); empty.getStyleClass().add("activity-empty"); recentActivityBox.getChildren().add(empty); } else recent.forEach(this::addActivityRow);
+
+        double income = list.stream().filter(t -> t != null && t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum();
+        double expense = list.stream().filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum();
+        double savings = income - expense;
+
+        YearMonth month = YearMonth.now();
+        double monthIncome = list.stream().filter(t -> isMonth(t, month) && t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum();
+        double monthExpense = list.stream().filter(t -> isMonth(t, month) && t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum();
+        double monthSavings = monthIncome - monthExpense;
+        double rate = monthIncome > 0 ? monthSavings / monthIncome * 100 : 0;
+
+        refreshPrimaryMetrics(monthIncome, monthExpense, income - expense, month);
+        dashboardSavingsLabel.setText(formatMoney(monthSavings));
+        dashboardSavingsRateLabel.setText(String.format(Locale.US, "%.1f%%", rate));
+        dashboardMonthlyIncomeLabel.setText(formatMoney(monthIncome));
+        dashboardMonthlyExpenseLabel.setText(formatMoney(monthExpense));
+        dashboardMonthlySavingsLabel.setText(formatMoney(monthSavings));
+
+        recentActivityBox.getChildren().clear();
+        List<Transaction> recent = list.stream().filter(t -> t != null).sorted((a,b) -> {
+            if (a.getDate() == null && b.getDate() == null) return 0;
+            if (a.getDate() == null) return 1;
+            if (b.getDate() == null) return -1;
+            return b.getDate().compareTo(a.getDate());
+        }).limit(5).toList();
+        if (recent.isEmpty()) {
+            Label empty = new Label("No transactions yet. Add your first income or expense to see it here.");
+            empty.getStyleClass().add("activity-empty");
+            recentActivityBox.getChildren().add(empty);
+        } else {
+            recent.forEach(this::addActivityRow);
+        }
+    }
+
+    /** Keep the top dashboard cards semantically consistent: balance is account-wide, income/expense are current-month figures. */
+    private void refreshPrimaryMetrics(double monthIncome, double monthExpense, double accountBalance, YearMonth month) {
+        Label balance = getDashboardField("balanceLabel", Label.class);
+        Label income = getDashboardField("incomeLabel", Label.class);
+        Label expense = getDashboardField("expenseLabel", Label.class);
+        if (balance != null) balance.setText(formatMoney(accountBalance));
+        if (income != null) income.setText(formatMoney(monthIncome));
+        if (expense != null) expense.setText(formatMoney(monthExpense));
+        if (dashboardMonthLabel != null) {
+            dashboardMonthLabel.setText(month.getMonth().getDisplayName(java.time.format.TextStyle.FULL, Locale.ENGLISH) + " " + month.getYear());
+        }
     }
 
     private void refreshAnalyticsOverview() {
@@ -533,7 +582,6 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private void handleBudgetNav() { show(budgetSection); refreshBudgetStats(); }
     @FXML private void handleAddTransactionNav() { show(addTransactionSection); }
     @FXML private void handleTransactionsNav() { show(transactionsSection); }
-    private void show(Node selected) { Node[] pages = {dashboardSection, analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection}; for (Node page : pages) if (page != null) { boolean active = page == selected; page.setVisible(active); page.setManaged(active); page.setMouseTransparent(!active); } if (selected != null) selected.toFront(); }
 
     @FXML private void handleLogout() { super.handleLogout(null); }
     @FXML protected void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); refreshAnalyticsOverview(); refreshBudgetStats(); refreshReportMonths(); refreshReport(); }
