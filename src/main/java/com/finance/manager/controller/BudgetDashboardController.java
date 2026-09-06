@@ -1,13 +1,16 @@
 package com.finance.manager.controller;
 
 import com.finance.manager.model.Transaction;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.chart.PieChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -16,12 +19,15 @@ import javafx.scene.layout.VBox;
 
 import java.lang.reflect.Field;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.HashMap;
 
-/** Dashboard and analytics presentation using the live transaction list loaded by DashboardController. */
+/** Dashboard, analytics and financial reports presentation using the live transaction list loaded by DashboardController. */
 public class BudgetDashboardController extends DashboardController {
     @FXML private Node dashboardSection;
     @FXML private Node analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection;
@@ -41,14 +47,27 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private Label analyticsCashFlow;
     @FXML private Label analyticsInsight;
 
+    @FXML private ComboBox<String> reportMonthCombo;
+    @FXML private Label reportIncomeLabel;
+    @FXML private Label reportExpenseLabel;
+    @FXML private Label reportSavingsLabel;
+    @FXML private Label reportBudgetLabel;
+    @FXML private Label reportRemainingLabel;
+    @FXML private PieChart reportExpenseChart;
+
+    private static final DateTimeFormatter REPORT_MONTH_FORMATTER =
+            DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH);
+
     @FXML
     protected void initialize() {
         super.initialize();
         buildDashboardOverview();
         connectToLiveTransactions();
         setupBudgetEditing();
+        setupReports();
         refreshDashboardOverview();
         refreshAnalyticsOverview();
+        refreshReport();
         show(dashboardSection);
     }
 
@@ -62,10 +81,114 @@ public class BudgetDashboardController extends DashboardController {
                 refreshDashboardOverview();
                 refreshAnalyticsOverview();
                 refreshBudgetStats();
+                refreshReportMonths();
+                refreshReport();
             });
         } catch (Exception e) {
             liveTransactions = null;
         }
+    }
+
+    private void setupReports() {
+        if (reportMonthCombo == null) return;
+        reportMonthCombo.setOnAction(event -> refreshReport());
+        refreshReportMonths();
+    }
+
+    /** Populate the report month selector from transaction history and always include the current month. */
+    private void refreshReportMonths() {
+        if (reportMonthCombo == null) return;
+
+        YearMonth previouslySelected = selectedReportMonth();
+        List<YearMonth> months = new ArrayList<>();
+        months.add(YearMonth.now());
+
+        if (liveTransactions != null) {
+            liveTransactions.stream()
+                    .filter(t -> t != null && t.getDate() != null)
+                    .map(t -> YearMonth.from(t.getDate()))
+                    .forEach(month -> {
+                        if (!months.contains(month)) months.add(month);
+                    });
+        }
+
+        months.sort(Comparator.reverseOrder());
+        List<String> labels = months.stream()
+                .map(REPORT_MONTH_FORMATTER::format)
+                .toList();
+
+        reportMonthCombo.setItems(FXCollections.observableArrayList(labels));
+
+        if (previouslySelected != null && months.contains(previouslySelected)) {
+            reportMonthCombo.getSelectionModel().select(REPORT_MONTH_FORMATTER.format(previouslySelected));
+        } else {
+            reportMonthCombo.getSelectionModel().select(REPORT_MONTH_FORMATTER.format(YearMonth.now()));
+        }
+    }
+
+    private YearMonth selectedReportMonth() {
+        if (reportMonthCombo == null || reportMonthCombo.getValue() == null || reportMonthCombo.getValue().isBlank()) {
+            return YearMonth.now();
+        }
+        try {
+            return YearMonth.parse(reportMonthCombo.getValue(), REPORT_MONTH_FORMATTER);
+        } catch (Exception e) {
+            return YearMonth.now();
+        }
+    }
+
+    /** Recalculate the selected month's income, expense, savings, budget and category chart. */
+    private void refreshReport() {
+        if (reportIncomeLabel == null || reportExpenseLabel == null || reportExpenseChart == null) return;
+
+        YearMonth selectedMonth = selectedReportMonth();
+        List<Transaction> list = liveTransactions == null
+                ? List.of()
+                : liveTransactions.stream()
+                        .filter(t -> t != null && isMonth(t, selectedMonth))
+                        .toList();
+
+        double income = list.stream()
+                .filter(t -> t.getType() == Transaction.Type.INCOME)
+                .mapToDouble(Transaction::getAmount)
+                .sum();
+        double expense = list.stream()
+                .filter(t -> t.getType() == Transaction.Type.EXPENSE)
+                .mapToDouble(Transaction::getAmount)
+                .sum();
+        double savings = income - expense;
+
+        TextField budgetInput = getDashboardField("budgetField", TextField.class);
+        double budget = parseAmount(budgetInput == null ? null : budgetInput.getText());
+        double remaining = budget - expense;
+
+        reportIncomeLabel.setText(formatMoney(income));
+        reportExpenseLabel.setText(formatMoney(expense));
+        if (reportSavingsLabel != null) reportSavingsLabel.setText(formatMoney(savings));
+        if (reportBudgetLabel != null) reportBudgetLabel.setText(formatMoney(budget));
+        if (reportRemainingLabel != null) reportRemainingLabel.setText(formatMoney(remaining));
+
+        Map<String, Double> categoryTotals = new HashMap<>();
+        list.stream()
+                .filter(t -> t.getType() == Transaction.Type.EXPENSE)
+                .forEach(t -> {
+                    String category = firstNonBlank(t.getCategory(), "Other");
+                    categoryTotals.merge(category, t.getAmount(), Double::sum);
+                });
+
+        List<PieChart.Data> chartData = categoryTotals.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .map(entry -> new PieChart.Data(entry.getKey(), entry.getValue()))
+                .toList();
+
+        if (chartData.isEmpty()) {
+            reportExpenseChart.setData(FXCollections.observableArrayList(
+                    new PieChart.Data("No expenses", 1)
+            ));
+        } else {
+            reportExpenseChart.setData(FXCollections.observableArrayList(chartData));
+        }
+        reportExpenseChart.setTitle("Selected Month Expense by Category");
     }
 
     private void setupBudgetEditing() {
@@ -85,7 +208,10 @@ public class BudgetDashboardController extends DashboardController {
             });
         }
         if (budgetInput != null) {
-            budgetInput.textProperty().addListener((observable, oldValue, newValue) -> refreshBudgetStats());
+            budgetInput.textProperty().addListener((observable, oldValue, newValue) -> {
+                refreshBudgetStats();
+                refreshReport();
+            });
         }
         refreshBudgetStats();
     }
@@ -243,13 +369,13 @@ public class BudgetDashboardController extends DashboardController {
 
     private void addActivityRow(Transaction transaction) { HBox row = new HBox(12); row.getStyleClass().add("dashboard-activity-row"); row.setAlignment(javafx.geometry.Pos.CENTER_LEFT); Label icon = new Label(transaction.getType() == Transaction.Type.INCOME ? "↑" : "↓"); icon.getStyleClass().add(transaction.getType() == Transaction.Type.INCOME ? "dashboard-income-icon" : "dashboard-expense-icon"); VBox info = new VBox(3); HBox.setHgrow(info, Priority.ALWAYS); String title = firstNonBlank(transaction.getDescription(), transaction.getCategory(), "Transaction"); Label name = new Label(title); name.getStyleClass().add("activity-title"); String category = firstNonBlank(transaction.getCategory(), "General"); String date = transaction.getDate() == null ? "Date not set" : transaction.getDate().toString(); Label meta = new Label(category + "  •  " + date); meta.getStyleClass().add("activity-meta"); info.getChildren().addAll(name, meta); String prefix = transaction.getType() == Transaction.Type.INCOME ? "+ " : "- "; Label amount = new Label(prefix + formatMoney(transaction.getAmount())); amount.getStyleClass().add(transaction.getType() == Transaction.Type.INCOME ? "income-value-small" : "expense-value-small"); row.getChildren().addAll(icon, info, amount); recentActivityBox.getChildren().add(row); }
     private String firstNonBlank(String... values) { for (String value : values) if (value != null && !value.isBlank()) return value; return ""; }
-    private boolean isMonth(Transaction t, YearMonth month) { return t.getDate() != null && YearMonth.from(t.getDate()).equals(month); }
+    private boolean isMonth(Transaction t, YearMonth month) { return t != null && t.getDate() != null && YearMonth.from(t.getDate()).equals(month); }
     private String formatMoney(double amount) { return String.format(Locale.US, "₹%,.2f", amount); }
 
     @FXML private void handleDashboardNav() { show(dashboardSection); refreshDashboardOverview(); }
     @FXML private void handleAnalyticsNav() { show(analyticsSection); refreshAnalyticsOverview(); }
     @FXML private void handleNotificationsNav() { show(notificationsSection); }
-    @FXML private void handleReportsNav() { show(reportsSection); }
+    @FXML private void handleReportsNav() { show(reportsSection); refreshReportMonths(); refreshReport(); }
     @FXML private void handleGoalsNav() { show(goalsSection); }
     @FXML private void handleBudgetNav() { show(budgetSection); refreshBudgetStats(); }
     @FXML private void handleAddTransactionNav() { show(addTransactionSection); }
@@ -257,6 +383,6 @@ public class BudgetDashboardController extends DashboardController {
     private void show(Node selected) { Node[] pages = {dashboardSection, analyticsSection, notificationsSection, reportsSection, goalsSection, budgetSection, addTransactionSection, transactionsSection}; for (Node page : pages) if (page != null) { boolean active = page == selected; page.setVisible(active); page.setManaged(active); page.setMouseTransparent(!active); } if (selected != null) selected.toFront(); }
 
     @FXML private void handleLogout() { super.handleLogout(null); }
-    @FXML protected void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); refreshAnalyticsOverview(); refreshBudgetStats(); }
+    @FXML protected void handleAddTransaction() { super.handleAddTransaction(); refreshDashboardOverview(); refreshAnalyticsOverview(); refreshBudgetStats(); refreshReportMonths(); refreshReport(); }
     @FXML protected void handleExportCsv() { super.handleExportCsv(); }
 }
