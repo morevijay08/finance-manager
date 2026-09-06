@@ -2,6 +2,7 @@ package com.finance.manager.controller;
 
 import com.finance.manager.firebase.FirebaseAuthException;
 import com.finance.manager.service.FirebaseAuthService;
+import com.finance.manager.service.FirebaseEmailVerificationService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -18,7 +19,6 @@ import java.io.IOException;
 import java.util.concurrent.CompletionException;
 
 public class RegisterController {
-
     public TextField nameField;
     public TextField emailField;
     public PasswordField passwordField;
@@ -26,98 +26,59 @@ public class RegisterController {
     public Label errorLabel;
 
     private final FirebaseAuthService authService = new FirebaseAuthService();
-    private final FirestoreUserRepository userRepository =
-        new FirestoreUserRepository();
+    private final FirebaseEmailVerificationService verificationService = new FirebaseEmailVerificationService();
+    private final FirestoreUserRepository userRepository = new FirestoreUserRepository();
 
     public void handleRegister(ActionEvent event) {
-    String name = nameField.getText().trim();
-    String email = emailField.getText().trim();
-    String password = passwordField.getText();
-    String confirmPassword = confirmPasswordField.getText();
+        String name = nameField.getText().trim();
+        String email = emailField.getText().trim();
+        String password = passwordField.getText();
+        String confirmPassword = confirmPasswordField.getText();
 
-    if (name.isEmpty()) {
-        showError("Please enter your name.");
-        return;
+        if (name.isEmpty()) { showError("Please enter your name."); return; }
+        if (email.isEmpty() || !isValidEmail(email)) { showError("Please enter a valid email."); return; }
+        if (password.isEmpty()) { showError("Please enter a password."); return; }
+        if (password.length() < 6) { showError("Password must contain at least 6 characters."); return; }
+        if (!password.equals(confirmPassword)) { showError("Passwords do not match."); return; }
+
+        errorLabel.setText("Creating account...");
+        authService.register(name, email, password)
+                .thenCompose(session -> userRepository.createUserProfile(session, name).thenApply(ignored -> session))
+                .thenCompose(session -> verificationService.sendVerificationEmail(session).thenApply(ignored -> session))
+                .thenAccept(session -> Platform.runLater(() -> {
+                    authService.logout();
+                    showError("Account created. A verification email was sent to " + email + ". Verify it before logging in.");
+                    try { switchScene(event, "/fxml/Login.fxml"); }
+                    catch (IOException e) { showError("Account created, but the login screen could not be opened."); }
+                }))
+                .exceptionally(throwable -> {
+                    authService.logout();
+                    throwable.printStackTrace();
+                    Platform.runLater(() -> showError(authenticationMessage(throwable)));
+                    return null;
+                });
     }
 
-    if (email.isEmpty() || !isValidEmail(email)) {
-        showError("Please enter a valid email.");
-        return;
-    }
+    public void handleLogin(ActionEvent event) throws IOException { switchScene(event, "/fxml/Login.fxml"); }
 
-    if (password.isEmpty()) {
-        showError("Please enter a password.");
-        return;
-    }
-
-    if (password.length() < 6) {
-        showError("Password must contain at least 6 characters.");
-        return;
-    }
-
-    if (!password.equals(confirmPassword)) {
-        showError("Passwords do not match.");
-        return;
-    }
-
-    errorLabel.setText("Creating account...");
-
-    authService.register(name, email, password)
-            .thenCompose(session ->
-                    userRepository.createUserProfile(session, name)
-                            .thenApply(ignored -> session)
-            )
-            .thenAccept(session -> Platform.runLater(() -> {
-                try {
-                    switchScene(event, "/fxml/Main.fxml");
-                } catch (IOException e) {
-                    showError(
-                            "Account created, but the application could not be opened."
-                    );
-                }
-            }))
-            .exceptionally(throwable -> {
-    throwable.printStackTrace();
-
-    Platform.runLater(() ->
-            showError(authenticationMessage(throwable))
-    );
-
-    return null;
-});
-}
-
-    public void handleLogin(ActionEvent event) throws IOException {
-        switchScene(event, "/fxml/Login.fxml");
-    }
-
-    private void showError(String message) {
-        errorLabel.setText(message);
-    }
+    private void showError(String message) { errorLabel.setText(message); }
 
     private String authenticationMessage(Throwable throwable) {
         Throwable cause = throwable;
-        if (cause instanceof CompletionException && cause.getCause() != null) {
-            cause = cause.getCause();
-        }
-        if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) {
-            return authException.getMessage();
-        }
-        if (cause instanceof IllegalStateException) {
-            return cause.getMessage();
-        }
-       return "Unable to create the account. Please try again.";
+        while (cause instanceof CompletionException && cause.getCause() != null) cause = cause.getCause();
+        if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) return authException.getMessage();
+        if (cause instanceof IllegalStateException) return cause.getMessage();
+        return "Unable to create the account. Please try again.";
     }
 
-    private boolean isValidEmail(String email) {
-        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
-    }
+    private boolean isValidEmail(String email) { return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"); }
 
     private void switchScene(ActionEvent event, String resource) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(resource));
         Parent root = loader.load();
         Scene scene = new Scene(root, 900, 600);
-        scene.getStylesheets().add(getClass().getResource("/css/application.css").toExternalForm());
+        java.net.URL stylesheet = getClass().getResource("/css/application.css");
+        if (stylesheet != null) scene.getStylesheets().add(stylesheet.toExternalForm());
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
         stage.show();
