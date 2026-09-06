@@ -42,7 +42,7 @@
             <VBox spacing="24" styleClass="admin-main" HBox.hgrow="ALWAYS">
                 <VBox spacing="8" styleClass="details-header">
                     <Label text="User Management" styleClass="page-title" />
-                    <Label text="Search accounts, view details, and manage account access." styleClass="subtitle" />
+                    <Label text="Search accounts, view details, manage access, and export user records." styleClass="subtitle" />
                 </VBox>
                 <GridPane hgap="18" styleClass="summary-row">
                     <VBox GridPane.columnIndex="0" styleClass="summary-card" GridPane.hgrow="ALWAYS">
@@ -59,13 +59,14 @@
                     </VBox>
                 </GridPane>
                 <VBox spacing="14" styleClass="summary-card" VBox.vgrow="ALWAYS">
-                    <HBox alignment="CENTER_LEFT" spacing="16">
+                    <HBox alignment="CENTER_LEFT" spacing="12">
                         <VBox HBox.hgrow="ALWAYS" spacing="3">
                             <Label text="Accounts" styleClass="section-title" />
                             <Label text="View account information and control access." styleClass="subtitle" />
                         </VBox>
-                        <TextField fx:id="userSearchField" promptText="Search name, email, role or status..." prefWidth="330" />
+                        <TextField fx:id="userSearchField" promptText="Search name, email, role or status..." prefWidth="310" />
                         <Button text="Refresh" onAction="#handleRefresh" styleClass="secondary-button" />
+                        <Button text="Export CSV" onAction="#handleExportUsers" styleClass="secondary-button" />
                     </HBox>
                     <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" prefHeight="450">
                         <columns>
