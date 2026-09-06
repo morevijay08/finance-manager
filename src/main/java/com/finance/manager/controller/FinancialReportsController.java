@@ -1,10 +1,10 @@
 package com.finance.manager.controller;
 
 import com.finance.manager.firebase.AuthSession;
-import com.finance.manager.firebase.FirebaseAuthService;
 import com.finance.manager.model.Transaction;
 import com.finance.manager.repository.FirestoreBudgetRepository;
 import com.finance.manager.repository.FirestoreTransactionRepository;
+import com.finance.manager.service.FirebaseAuthService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -72,7 +72,10 @@ public class FinancialReportsController {
     }
 
     private void populateMonths() {
-        Set<YearMonth> months = transactions.stream().filter(t -> t.getDate() != null).map(t -> YearMonth.from(t.getDate())).collect(Collectors.toCollection(TreeSet::new));
+        Set<YearMonth> months = transactions.stream()
+                .filter(t -> t != null && t.getDate() != null)
+                .map(t -> YearMonth.from(t.getDate()))
+                .collect(Collectors.toCollection(TreeSet::new));
         months.add(YearMonth.now());
         List<String> labels = months.stream().sorted(Comparator.reverseOrder()).map(monthFormatter::format).toList();
         reportMonthCombo.setItems(FXCollections.observableArrayList(labels));
@@ -80,7 +83,9 @@ public class FinancialReportsController {
     }
 
     private void loadBudget(AuthSession session) {
-        budgetRepository.getMonthlyBudget(session, YearMonth.now()).thenAccept(amount -> Platform.runLater(() -> { currentBudget = amount; refreshReport(); })).exceptionally(error -> null);
+        budgetRepository.getMonthlyBudget(session, YearMonth.now())
+                .thenAccept(amount -> Platform.runLater(() -> { currentBudget = amount; refreshReport(); }))
+                .exceptionally(error -> null);
     }
 
     private YearMonth selectedMonth() {
@@ -91,26 +96,62 @@ public class FinancialReportsController {
     private void refreshReport() {
         if (reportMonthCombo == null || reportMonthCombo.getValue() == null) return;
         YearMonth month = selectedMonth();
-        List<Transaction> selected = transactions.stream().filter(t -> t.getDate() != null && YearMonth.from(t.getDate()).equals(month)).sorted(Comparator.comparing(Transaction::getDate).reversed()).toList();
-        double income = selected.stream().filter(t -> t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum();
-        double expense = selected.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum();
+        List<Transaction> selected = transactions.stream()
+                .filter(t -> t != null && t.getDate() != null && YearMonth.from(t.getDate()).equals(month))
+                .sorted(Comparator.comparing(Transaction::getDate).reversed())
+                .toList();
+
+        double income = selected.stream()
+                .filter(t -> t.getType() == Transaction.Type.INCOME)
+                .mapToDouble(Transaction::getAmount)
+                .sum();
+        double expense = selected.stream()
+                .filter(t -> t.getType() == Transaction.Type.EXPENSE)
+                .mapToDouble(Transaction::getAmount)
+                .sum();
         double savings = income - expense;
         double remaining = currentBudget - expense;
-        incomeLabel.setText(money(income)); expenseLabel.setText(money(expense)); savingsLabel.setText(money(savings)); budgetLabel.setText(money(currentBudget)); remainingLabel.setText(money(remaining));
+
+        incomeLabel.setText(money(income));
+        expenseLabel.setText(money(expense));
+        savingsLabel.setText(money(savings));
+        budgetLabel.setText(money(currentBudget));
+        remainingLabel.setText(money(remaining));
         transactionCountLabel.setText(String.valueOf(selected.size()));
+
         long expenseCount = selected.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).count();
         averageExpenseLabel.setText(money(expenseCount == 0 ? 0 : expense / expenseCount));
-        Transaction largest = selected.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).max(Comparator.comparingDouble(Transaction::getAmount)).orElse(null);
+
+        Transaction largest = selected.stream()
+                .filter(t -> t.getType() == Transaction.Type.EXPENSE)
+                .max(Comparator.comparingDouble(Transaction::getAmount))
+                .orElse(null);
         largestExpenseLabel.setText(largest == null ? "—" : money(largest.getAmount()));
-        Map<String, Double> categories = selected.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).collect(Collectors.groupingBy(t -> value(t.getCategory(), "Other"), LinkedHashMap::new, Collectors.summingDouble(Transaction::getAmount)));
-        topCategoryLabel.setText(categories.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("—"));
+
+        Map<String, Double> categories = selected.stream()
+                .filter(t -> t.getType() == Transaction.Type.EXPENSE)
+                .collect(Collectors.groupingBy(
+                        t -> value(t.getCategory(), "Other"),
+                        LinkedHashMap::new,
+                        Collectors.summingDouble(Transaction::getAmount)
+                ));
+        topCategoryLabel.setText(categories.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("—"));
+
         reportTable.setItems(FXCollections.observableArrayList(selected));
         categoryChart.getData().clear();
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Expense");
-        categories.entrySet().stream().sorted(Map.Entry.<String, Double>comparingByValue().reversed()).forEach(e -> series.getData().add(new XYChart.Data<>(e.getKey(), e.getValue())));
+        categories.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .forEach(e -> series.getData().add(new XYChart.Data<>(e.getKey(), e.getValue())));
         categoryChart.getData().add(series);
-        statusLabel.setText(selected.isEmpty() ? "No transactions found for " + monthFormatter.format(month) + "." : "Report updated for " + monthFormatter.format(month) + ".");
+
+        statusLabel.setText(selected.isEmpty()
+                ? "No transactions found for " + monthFormatter.format(month) + "."
+                : "Report updated for " + monthFormatter.format(month) + ".");
     }
 
     private String value(String value, String fallback) { return value == null || value.isBlank() ? fallback : value; }
