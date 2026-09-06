@@ -19,9 +19,14 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 public class UserManagementController {
@@ -80,6 +85,59 @@ public class UserManagementController {
 
     public void handleRefresh() {
         loadUsers();
+    }
+
+    public void handleExportUsers(ActionEvent event) {
+        AuthSession session = authService.getCurrentSession();
+        if (session == null) {
+            statusLabel.setText("No authenticated admin session.");
+            return;
+        }
+
+        List<AdminUser> usersToExport = List.copyOf(usersTable.getItems());
+        if (usersToExport.isEmpty()) {
+            statusLabel.setText("There are no users to export.");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export Users");
+        chooser.setInitialFileName("khatabook-users.csv");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files (*.csv)", "*.csv"));
+
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        java.io.File selectedFile = chooser.showSaveDialog(stage);
+        if (selectedFile == null) return;
+
+        Path path = selectedFile.toPath();
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+            writer.write("Name,Email,Role,Status,Account ID");
+            writer.newLine();
+            for (AdminUser user : usersToExport) {
+                writer.write(csv(user.displayName()));
+                writer.write(',');
+                writer.write(csv(user.email()));
+                writer.write(',');
+                writer.write(csv(user.displayRole()));
+                writer.write(',');
+                writer.write(csv(user.displayStatus()));
+                writer.write(',');
+                writer.write(csv(user.id()));
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            statusLabel.setText("Unable to export users: " + e.getMessage());
+            return;
+        }
+
+        statusLabel.setText(usersToExport.size() + " users exported to " + path.getFileName());
+        auditLogRepository.createLog(session, "EXPORT_USERS", usersToExport.size() + " user records")
+                .exceptionally(error -> null);
+    }
+
+    private String csv(String value) {
+        String safe = value == null ? "" : value;
+        return "\"" + safe.replace("\"", "\"\"") + "\"";
     }
 
     public void handleLogout(ActionEvent event) throws IOException {
