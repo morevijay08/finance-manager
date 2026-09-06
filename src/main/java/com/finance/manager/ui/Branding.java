@@ -7,7 +7,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputControl;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -64,7 +63,7 @@ public final class Branding {
         }
     }
 
-    private static synchronized void styleSidebar(Node root) {
+    private static void styleSidebar(Node root) {
         if (root == null) return;
         Node sidebarNode = root.lookup("#sidebar");
         if (!(sidebarNode instanceof Pane sidebar)) return;
@@ -89,23 +88,12 @@ public final class Branding {
                     "-fx-border-width: 0 0 1px 0;"
             );
 
-            // Always rebuild the logo slot so repeated branding calls can never
-            // leave two logos side by side.
+            // The sidebar logo is now intentionally controlled only by Main.fxml/scene
+            // markup. Branding must not create or inject another logo here.
             for (Node child : header.getChildren().toArray(new Node[0])) {
                 if (child instanceof ImageView) {
                     header.getChildren().remove(child);
                 }
-            }
-
-            java.net.URL logoUrl = Branding.class.getResource("/images/khatabook-logo-small.png");
-            if (logoUrl != null) {
-                Image image = new Image(logoUrl.toExternalForm(), 46, 46, true, true);
-                ImageView logo = new ImageView(image);
-                logo.setFitWidth(46);
-                logo.setFitHeight(46);
-                logo.setPreserveRatio(true);
-                logo.setSmooth(true);
-                header.getChildren().add(0, logo);
             }
 
             for (Node child : header.getChildren()) {
