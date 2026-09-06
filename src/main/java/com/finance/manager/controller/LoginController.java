@@ -4,6 +4,7 @@ import com.finance.manager.firebase.FirebaseAuthException;
 import com.finance.manager.firebase.AuthSession;
 import com.finance.manager.repository.FirestoreUserRepository;
 import com.finance.manager.service.FirebaseAuthService;
+import com.finance.manager.service.FirebaseEmailVerificationService;
 import com.finance.manager.ui.Branding;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -27,121 +28,99 @@ public class LoginController {
     public Label errorLabel;
 
     private final FirebaseAuthService authService = new FirebaseAuthService();
+    private final FirebaseEmailVerificationService verificationService = new FirebaseEmailVerificationService();
     private final FirestoreUserRepository userRepository = new FirestoreUserRepository();
 
     public void handleLogin(ActionEvent event) {
         String email = emailField.getText().trim();
         String password = passwordField.getText();
-
-        if (email.isEmpty()) {
-            showError("Please enter your email.");
-            return;
-        }
-
-        if (!isValidEmail(email)) {
-            showError("Please enter a valid email.");
-            return;
-        }
-
-        if (password.isEmpty()) {
-            showError("Please enter your password.");
-            return;
-        }
+        if (email.isEmpty()) { showError("Please enter your email."); return; }
+        if (!isValidEmail(email)) { showError("Please enter a valid email."); return; }
+        if (password.isEmpty()) { showError("Please enter your password."); return; }
 
         errorLabel.setText("Signing in...");
         authService.signIn(email, password)
-                .thenCompose(session -> userRepository.getUserStatus(session)
-                        .thenApply(status -> new LoginResult(session, status)))
+                .thenCompose(session -> verificationService.isEmailVerified(session)
+                        .thenCompose(verified -> {
+                            if (!verified) {
+                                authService.logout();
+                                return java.util.concurrent.CompletableFuture.failedFuture(
+                                        new IllegalStateException("Please verify your email before signing in. Check your inbox or use 'Resend Verification Email'."));
+                            }
+                            return userRepository.getUserStatus(session)
+                                    .thenApply(status -> new LoginResult(session, status));
+                        }))
                 .thenAccept(result -> Platform.runLater(() -> {
                     if ("DISABLED".equalsIgnoreCase(result.status())) {
                         authService.logout();
                         showError("This account has been disabled by an administrator.");
                         return;
                     }
-
-                    try {
-                        switchScene(event, "/fxml/Main.fxml");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        showError("Could not open the dashboard: " + rootCauseMessage(e));
-                    }
+                    try { switchScene(event, "/fxml/Main.fxml"); }
+                    catch (Exception e) { e.printStackTrace(); showError("Could not open the dashboard: " + rootCauseMessage(e)); }
                 }))
+                .exceptionally(throwable -> { Platform.runLater(() -> showError(authenticationMessage(throwable))); return null; });
+    }
+
+    public void handleResendVerification(ActionEvent event) {
+        String email = emailField.getText().trim();
+        String password = passwordField.getText();
+        if (email.isEmpty() || !isValidEmail(email)) { showError("Enter your account email first."); return; }
+        if (password.isEmpty()) { showError("Enter your password so we can verify the account securely."); return; }
+
+        errorLabel.setText("Sending verification email...");
+        authService.signIn(email, password)
+                .thenCompose(session -> verificationService.isEmailVerified(session)
+                        .thenCompose(verified -> {
+                            if (verified) return java.util.concurrent.CompletableFuture.failedFuture(
+                                    new IllegalStateException("Your email is already verified. You can log in normally."));
+                            return verificationService.sendVerificationEmail(session);
+                        }))
+                .thenRun(authService::logout)
+                .thenRun(() -> Platform.runLater(() -> showError("Verification email sent. Check your inbox and then log in again.")))
                 .exceptionally(throwable -> {
+                    authService.logout();
                     Platform.runLater(() -> showError(authenticationMessage(throwable)));
                     return null;
                 });
     }
 
-    public void handleAdminLogin(ActionEvent event) throws IOException {
-        switchScene(event, "/fxml/AdminLogin.fxml");
-    }
+    public void handleAdminLogin(ActionEvent event) throws IOException { switchScene(event, "/fxml/AdminLogin.fxml"); }
+    public void handleRegister(ActionEvent event) throws IOException { switchScene(event, "/fxml/Register.fxml"); }
+    public void handleForgotPassword(ActionEvent event) throws IOException { switchScene(event, "/fxml/ForgotPassword.fxml"); }
 
-    public void handleRegister(ActionEvent event) throws IOException {
-        switchScene(event, "/fxml/Register.fxml");
-    }
-
-    public void handleForgotPassword(ActionEvent event) throws IOException {
-        switchScene(event, "/fxml/ForgotPassword.fxml");
-    }
-
-    private void showError(String message) {
-        errorLabel.setText(message);
-    }
+    private void showError(String message) { errorLabel.setText(message); }
 
     private String authenticationMessage(Throwable throwable) {
         Throwable cause = throwable;
-        if (cause instanceof CompletionException && cause.getCause() != null) {
-            cause = cause.getCause();
-        }
-        if (cause instanceof IllegalStateException) {
-            return cause.getMessage();
-        }
-        if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) {
-            return authException.getMessage();
-        }
+        while (cause instanceof CompletionException && cause.getCause() != null) cause = cause.getCause();
+        if (cause instanceof IllegalStateException) return cause.getMessage();
+        if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) return authException.getMessage();
         return "Unable to sign in. Check your Firebase configuration and try again.";
     }
 
     private String rootCauseMessage(Throwable throwable) {
         Throwable cause = throwable;
-        while (cause.getCause() != null) {
-            cause = cause.getCause();
-        }
+        while (cause.getCause() != null) cause = cause.getCause();
         String message = cause.getMessage();
-        if (message == null || message.isBlank()) {
-            return cause.getClass().getSimpleName();
-        }
+        if (message == null || message.isBlank()) return cause.getClass().getSimpleName();
         return message.length() > 180 ? message.substring(0, 180) + "..." : message;
     }
 
-    private boolean isValidEmail(String email) {
-        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
-    }
+    private boolean isValidEmail(String email) { return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"); }
 
     private void switchScene(ActionEvent event, String resource) throws IOException {
         java.net.URL resourceUrl = getClass().getResource(resource);
-        if (resourceUrl == null) {
-            throw new IOException("Missing FXML resource: " + resource);
-        }
-
+        if (resourceUrl == null) throw new IOException("Missing FXML resource: " + resource);
         FXMLLoader loader = new FXMLLoader(resourceUrl);
         Parent root = loader.load();
         Branding.apply(root);
-
         java.net.URL stylesheetUrl = getClass().getResource("/css/application.css");
         Scene scene = new Scene(root, 900, 600);
-        if (stylesheetUrl != null) {
-            scene.getStylesheets().add(stylesheetUrl.toExternalForm());
-        }
-
-        if (event == null || event.getSource() == null) {
-            throw new IOException("Login window is unavailable.");
-        }
-
+        if (stylesheetUrl != null) scene.getStylesheets().add(stylesheetUrl.toExternalForm());
+        if (event == null || event.getSource() == null) throw new IOException("Login window is unavailable.");
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(scene);
-        stage.setTitle(Branding.APP_TITLE);
-        stage.show();
+        stage.setScene(scene); stage.setTitle(Branding.APP_TITLE); stage.show();
         forceMaximized(stage);
         Platform.runLater(() -> forceMaximized(stage));
         Platform.runLater(() -> Platform.runLater(() -> forceMaximized(stage)));
@@ -149,24 +128,11 @@ public class LoginController {
 
     private void forceMaximized(Stage stage) {
         if (stage == null) return;
-
-        stage.setIconified(false);
-        stage.setMaximized(false);
-
-        javafx.geometry.Rectangle2D bounds = Screen.getScreensForRectangle(
-                stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight())
-                .stream()
-                .findFirst()
-                .orElse(Screen.getPrimary())
-                .getVisualBounds();
-
-        stage.setX(bounds.getMinX());
-        stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth());
-        stage.setHeight(bounds.getHeight());
-        stage.show();
-        stage.setMaximized(true);
-        stage.toFront();
+        stage.setIconified(false); stage.setMaximized(false);
+        javafx.geometry.Rectangle2D bounds = Screen.getScreensForRectangle(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight())
+                .stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds();
+        stage.setX(bounds.getMinX()); stage.setY(bounds.getMinY()); stage.setWidth(bounds.getWidth()); stage.setHeight(bounds.getHeight());
+        stage.show(); stage.setMaximized(true); stage.toFront();
     }
 
     private record LoginResult(AuthSession session, String status) {}
