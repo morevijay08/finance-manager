@@ -100,15 +100,8 @@ public class FinancialReportsController {
                 .filter(t -> t != null && t.getDate() != null && YearMonth.from(t.getDate()).equals(month))
                 .sorted(Comparator.comparing(Transaction::getDate).reversed())
                 .toList();
-
-        double income = selected.stream()
-                .filter(t -> t.getType() == Transaction.Type.INCOME)
-                .mapToDouble(Transaction::getAmount)
-                .sum();
-        double expense = selected.stream()
-                .filter(t -> t.getType() == Transaction.Type.EXPENSE)
-                .mapToDouble(Transaction::getAmount)
-                .sum();
+        double income = selected.stream().filter(t -> t.getType() == Transaction.Type.INCOME).mapToDouble(Transaction::getAmount).sum();
+        double expense = selected.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).mapToDouble(Transaction::getAmount).sum();
         double savings = income - expense;
         double remaining = currentBudget - expense;
 
@@ -121,37 +114,21 @@ public class FinancialReportsController {
 
         long expenseCount = selected.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).count();
         averageExpenseLabel.setText(money(expenseCount == 0 ? 0 : expense / expenseCount));
-
-        Transaction largest = selected.stream()
-                .filter(t -> t.getType() == Transaction.Type.EXPENSE)
-                .max(Comparator.comparingDouble(Transaction::getAmount))
-                .orElse(null);
+        Transaction largest = selected.stream().filter(t -> t.getType() == Transaction.Type.EXPENSE).max(Comparator.comparingDouble(Transaction::getAmount)).orElse(null);
         largestExpenseLabel.setText(largest == null ? "—" : money(largest.getAmount()));
 
         Map<String, Double> categories = selected.stream()
                 .filter(t -> t.getType() == Transaction.Type.EXPENSE)
-                .collect(Collectors.groupingBy(
-                        t -> value(t.getCategory(), "Other"),
-                        LinkedHashMap::new,
-                        Collectors.summingDouble(Transaction::getAmount)
-                ));
-        topCategoryLabel.setText(categories.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse("—"));
+                .collect(Collectors.groupingBy(t -> value(t.getCategory(), "Other"), LinkedHashMap::new, Collectors.summingDouble(Transaction::getAmount)));
+        topCategoryLabel.setText(categories.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("—"));
 
         reportTable.setItems(FXCollections.observableArrayList(selected));
         categoryChart.getData().clear();
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Expense");
-        categories.entrySet().stream()
-                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                .forEach(e -> series.getData().add(new XYChart.Data<>(e.getKey(), e.getValue())));
+        categories.entrySet().stream().sorted(Map.Entry.<String, Double>comparingByValue().reversed()).forEach(e -> series.getData().add(new XYChart.Data<>(e.getKey(), e.getValue())));
         categoryChart.getData().add(series);
-
-        statusLabel.setText(selected.isEmpty()
-                ? "No transactions found for " + monthFormatter.format(month) + "."
-                : "Report updated for " + monthFormatter.format(month) + ".");
+        statusLabel.setText(selected.isEmpty() ? "No transactions found for " + monthFormatter.format(month) + "." : "Report updated for " + monthFormatter.format(month) + ".");
     }
 
     private String value(String value, String fallback) { return value == null || value.isBlank() ? fallback : value; }
