@@ -1,7 +1,11 @@
 package com.finance.manager.controller;
 
 import com.finance.manager.firebase.FirebaseAuthException;
+import com.finance.manager.firebase.AuthSession;
+import com.finance.manager.firebase.FirebaseConfig;
+import com.finance.manager.repository.FirestoreUserRepository;
 import com.finance.manager.service.FirebaseAuthService;
+import com.finance.manager.service.FirebaseEmailVerificationService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -12,7 +16,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import com.finance.manager.repository.FirestoreUserRepository;
 
 import java.io.IOException;
 import java.util.concurrent.CompletionException;
@@ -25,6 +28,7 @@ public class RegisterController {
     public Label errorLabel;
 
     private final FirebaseAuthService authService = new FirebaseAuthService();
+    private final FirebaseEmailVerificationService verificationService = new FirebaseEmailVerificationService();
     private final FirestoreUserRepository userRepository = new FirestoreUserRepository();
 
     public void handleRegister(ActionEvent event) {
@@ -42,9 +46,19 @@ public class RegisterController {
         errorLabel.setText("Creating account...");
         authService.register(name, email, password)
                 .thenCompose(session -> userRepository.createUserProfile(session, name).thenApply(ignored -> session))
+                .thenCompose(session -> {
+                    if (!FirebaseConfig.isEmailVerificationRequired()) {
+                        return java.util.concurrent.CompletableFuture.completedFuture(session);
+                    }
+                    return verificationService.sendVerificationEmail(session).thenApply(ignored -> session);
+                })
                 .thenAccept(session -> Platform.runLater(() -> {
                     authService.logout();
-                    showError("Account created successfully. You can now log in.");
+                    if (FirebaseConfig.isEmailVerificationRequired()) {
+                        showError("Account created. A verification email was sent to " + email + ". Verify it before logging in.");
+                    } else {
+                        showError("Account created successfully. You can now log in.");
+                    }
                     try { switchScene(event, "/fxml/Login.fxml"); }
                     catch (IOException e) { showError("Account created, but the login screen could not be opened."); }
                 }))
