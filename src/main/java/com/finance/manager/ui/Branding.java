@@ -140,7 +140,9 @@ public final class Branding {
         button.setPrefHeight(42);
         button.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         button.setWrapText(false);
-        button.setStyle(defaultSidebarButtonStyle());
+        button.setStyle(button.getStyleClass().contains("nav-button-active")
+                ? activeSidebarButtonStyle()
+                : defaultSidebarButtonStyle());
 
         button.setOnMouseEntered(event -> {
             if (!button.getStyleClass().contains("nav-button-active")) {
@@ -175,6 +177,20 @@ public final class Branding {
                 "-fx-border-color: rgba(147,197,253,0.16);" +
                 "-fx-border-radius: 11px;" +
                 "-fx-padding: 0 12px;" +
+                "-fx-cursor: hand;";
+    }
+
+    private static String activeSidebarButtonStyle() {
+        return "-fx-background-color: linear-gradient(to right, #2563eb, #4f46e5);" +
+                "-fx-text-fill: white;" +
+                "-fx-font-size: 13px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-radius: 11px;" +
+                "-fx-border-color: #7dd3fc;" +
+                "-fx-border-width: 1px;" +
+                "-fx-border-radius: 11px;" +
+                "-fx-padding: 0 12px;" +
+                "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.35), 12, 0.18, 0, 3);" +
                 "-fx-cursor: hand;";
     }
 
