@@ -121,6 +121,19 @@ public class LoginController {
         FXMLLoader loader = new FXMLLoader(resourceUrl);
         Parent root = loader.load();
         Branding.apply(root);
+
+        // The dashboard initially receives the email from the authentication session.
+        // Replace that secondary welcome line with the user's Firestore profile name.
+        if ("/fxml/Main.fxml".equals(resource)) {
+            AuthSession session = authService.getCurrentSession();
+            Label dashboardNameLabel = (Label) root.lookup("#emailLabel");
+            if (session != null && dashboardNameLabel != null) {
+                userRepository.getUserName(session).thenAccept(name ->
+                        Platform.runLater(() -> dashboardNameLabel.setText(name == null || name.isBlank() ? "User" : name))
+                );
+            }
+        }
+
         java.net.URL stylesheetUrl = getClass().getResource("/css/application.css");
         Scene scene = new Scene(root, 900, 600);
         if (stylesheetUrl != null) scene.getStylesheets().add(stylesheetUrl.toExternalForm());
