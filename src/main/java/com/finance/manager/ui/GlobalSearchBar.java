@@ -12,6 +12,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.fxml.FXMLLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -122,9 +124,27 @@ public class GlobalSearchBar extends TextField {
         if (subtitle != null && !subtitle.textProperty().isBound()) subtitle.setStyle("-fx-font-size: 13px;-fx-text-fill: #64748b;");
 
         addLogoToBranding(root);
+        installDedicatedReports(root);
 
         for (Node node : collect(root)) {
             if (node instanceof Button button && button.getStyleClass().contains("nav-button")) { button.setMinHeight(43); button.setPrefHeight(43); }
+        }
+    }
+
+    /** Replaces the old embedded report mock-up with the dedicated report view. */
+    private void installDedicatedReports(Parent root) {
+        Node reports = null;
+        for (Node node : collect(root)) {
+            if (node.getId() != null && "reportsSection".equals(node.getId())) { reports = node; break; }
+        }
+        if (!(reports instanceof VBox reportsBox) || Boolean.TRUE.equals(reportsBox.getProperties().get("dedicatedReportsInstalled"))) return;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/FinancialReports.fxml"));
+            Node reportView = loader.load();
+            reportsBox.getChildren().setAll(reportView);
+            reportsBox.getProperties().put("dedicatedReportsInstalled", Boolean.TRUE);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not load dedicated financial reports.", e);
         }
     }
 
@@ -132,43 +152,20 @@ public class GlobalSearchBar extends TextField {
     private void addLogoToBranding(Parent root) {
         for (Node node : collect(root)) {
             if (!(node instanceof HBox box)) continue;
-
-            if (box.getStyleClass().contains("navbar") && !hasLogo(box)) {
-                ImageView logo = createLogoView(60);
-                box.getChildren().add(1, logo);
-                box.setSpacing(10);
-            }
-
-            if (box.getStyleClass().contains("sidebar-header") && !hasLogo(box)) {
-                ImageView logo = createLogoView(54);
-                box.getChildren().add(0, logo);
-                box.setSpacing(10);
-            }
+            if (box.getStyleClass().contains("navbar") && !hasLogo(box)) { ImageView logo = createLogoView(60); box.getChildren().add(1, logo); box.setSpacing(10); }
+            if (box.getStyleClass().contains("sidebar-header") && !hasLogo(box)) { ImageView logo = createLogoView(54); box.getChildren().add(0, logo); box.setSpacing(10); }
         }
     }
 
     private ImageView createLogoView(double size) {
         java.net.URL logoUrl = getClass().getResource("/images/khatabook-logo-small.png");
         if (logoUrl == null) throw new IllegalStateException("Khatabook logo asset not found: /images/khatabook-logo-small.png");
-
         Image image = new Image(logoUrl.toExternalForm(), false);
         if (image.isError()) throw new IllegalStateException("Unable to load Khatabook logo asset: " + image.getException());
-
-        ImageView view = new ImageView(image);
-        view.setFitWidth(size);
-        view.setFitHeight(size);
-        view.setPreserveRatio(true);
-        view.setSmooth(true);
-        view.setMouseTransparent(true);
-        view.setUserData("khatabook-logo");
-        return view;
+        ImageView view = new ImageView(image); view.setFitWidth(size); view.setFitHeight(size); view.setPreserveRatio(true); view.setSmooth(true); view.setMouseTransparent(true); view.setUserData("khatabook-logo"); return view;
     }
 
-    private boolean hasLogo(HBox box) {
-        for (Node child : box.getChildren()) if ("khatabook-logo".equals(child.getUserData())) return true;
-        return false;
-    }
-
+    private boolean hasLogo(HBox box) { for (Node child : box.getChildren()) if ("khatabook-logo".equals(child.getUserData())) return true; return false; }
     private void applyStyleToClass(Node root, String className, String style) { for (Node node : collect(root)) if (node.getStyleClass().contains(className)) node.setStyle(style); }
     private Label findLabel(Node root, String text) { for (Node node : collect(root)) if (node instanceof Label label && text.equals(label.getText())) return label; return null; }
     private List<Node> collect(Node root) { List<Node> nodes = new ArrayList<>(); collectRecursive(root, nodes); return nodes; }
