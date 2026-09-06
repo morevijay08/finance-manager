@@ -20,13 +20,8 @@
         <Insets top="32" right="40" bottom="40" left="40" />
     </padding>
 
-    <ImageView fitWidth="120"
-               fitHeight="120"
-               preserveRatio="true"
-               pickOnBounds="true">
-        <image>
-            <Image url="@../images/khatabook-logo.svg" />
-        </image>
+    <ImageView fitWidth="120" fitHeight="120" preserveRatio="true" pickOnBounds="true">
+        <image><Image url="@../images/khatabook-logo.svg" /></image>
     </ImageView>
 
     <Label text="Khatabook Finance Manager" styleClass="app-title" />
@@ -43,6 +38,7 @@
         <Label fx:id="errorLabel" wrapText="true" styleClass="error-label" />
 
         <Button text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="primary-button" />
+        <Button text="Resend Verification Email" onAction="#handleResendVerification" maxWidth="Infinity" styleClass="secondary-button" />
         <Hyperlink text="Forgot Password?" onAction="#handleForgotPassword" />
         <Hyperlink text="Don't have an account? Create Account" onAction="#handleRegister" />
         <Hyperlink text="Admin Login" onAction="#handleAdminLogin" />
