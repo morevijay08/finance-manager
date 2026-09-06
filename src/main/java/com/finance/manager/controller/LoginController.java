@@ -2,8 +2,10 @@ package com.finance.manager.controller;
 
 import com.finance.manager.firebase.FirebaseAuthException;
 import com.finance.manager.firebase.AuthSession;
+import com.finance.manager.firebase.FirebaseConfig;
 import com.finance.manager.repository.FirestoreUserRepository;
 import com.finance.manager.service.FirebaseAuthService;
+import com.finance.manager.service.FirebaseEmailVerificationService;
 import com.finance.manager.ui.Branding;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -27,6 +29,7 @@ public class LoginController {
     public Label errorLabel;
 
     private final FirebaseAuthService authService = new FirebaseAuthService();
+    private final FirebaseEmailVerificationService verificationService = new FirebaseEmailVerificationService();
     private final FirestoreUserRepository userRepository = new FirestoreUserRepository();
 
     public void handleLogin(ActionEvent event) {
@@ -38,8 +41,22 @@ public class LoginController {
 
         errorLabel.setText("Signing in...");
         authService.signIn(email, password)
-                .thenCompose(session -> userRepository.getUserStatus(session)
-                        .thenApply(status -> new LoginResult(session, status)))
+                .thenCompose(session -> {
+                    if (!FirebaseConfig.isEmailVerificationRequired()) {
+                        return userRepository.getUserStatus(session)
+                                .thenApply(status -> new LoginResult(session, status));
+                    }
+                    return verificationService.isEmailVerified(session)
+                            .thenCompose(verified -> {
+                                if (!verified) {
+                                    authService.logout();
+                                    return java.util.concurrent.CompletableFuture.failedFuture(
+                                            new IllegalStateException("Please verify your email before signing in. Check your inbox or use 'Resend Verification Email'."));
+                                }
+                                return userRepository.getUserStatus(session)
+                                        .thenApply(status -> new LoginResult(session, status));
+                            });
+                })
                 .thenAccept(result -> Platform.runLater(() -> {
                     if ("DISABLED".equalsIgnoreCase(result.status())) {
                         authService.logout();
@@ -52,6 +69,29 @@ public class LoginController {
                 .exceptionally(throwable -> { Platform.runLater(() -> showError(authenticationMessage(throwable))); return null; });
     }
 
+    public void handleResendVerification(ActionEvent event) {
+        String email = emailField.getText().trim();
+        String password = passwordField.getText();
+        if (email.isEmpty() || !isValidEmail(email)) { showError("Enter your account email first."); return; }
+        if (password.isEmpty()) { showError("Enter your password so we can verify the account securely."); return; }
+
+        errorLabel.setText("Sending verification email...");
+        authService.signIn(email, password)
+                .thenCompose(session -> verificationService.isEmailVerified(session)
+                        .thenCompose(verified -> {
+                            if (verified) return java.util.concurrent.CompletableFuture.failedFuture(
+                                    new IllegalStateException("Your email is already verified. You can log in normally."));
+                            return verificationService.sendVerificationEmail(session);
+                        }))
+                .thenRun(authService::logout)
+                .thenRun(() -> Platform.runLater(() -> showError("Verification email sent. Check your inbox and then log in again.")))
+                .exceptionally(throwable -> {
+                    authService.logout();
+                    Platform.runLater(() -> showError(authenticationMessage(throwable)));
+                    return null;
+                });
+    }
+
     public void handleAdminLogin(ActionEvent event) throws IOException { switchScene(event, "/fxml/AdminLogin.fxml"); }
     public void handleRegister(ActionEvent event) throws IOException { switchScene(event, "/fxml/Register.fxml"); }
     public void handleForgotPassword(ActionEvent event) throws IOException { switchScene(event, "/fxml/ForgotPassword.fxml"); }
@@ -61,6 +101,7 @@ public class LoginController {
     private String authenticationMessage(Throwable throwable) {
         Throwable cause = throwable;
         while (cause instanceof CompletionException && cause.getCause() != null) cause = cause.getCause();
+        if (cause instanceof IllegalStateException) return cause.getMessage();
         if (cause instanceof RuntimeException && cause.getCause() instanceof FirebaseAuthException authException) return authException.getMessage();
         return "Unable to sign in. Check your Firebase configuration and try again.";
     }
