@@ -20,6 +20,7 @@ import javafx.scene.layout.VBox;
 import java.lang.reflect.Field;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -55,6 +56,12 @@ public class BudgetDashboardController extends DashboardController {
     @FXML private Label reportRemainingLabel;
     @FXML private PieChart reportExpenseChart;
 
+    private Label budgetHealthLabel;
+    private Label budgetDailyLimitLabel;
+    private Label budgetDaysLabel;
+    private Label budgetHealthDetailLabel;
+    private VBox budgetCategoryBox;
+
     private static final DateTimeFormatter REPORT_MONTH_FORMATTER =
             DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH);
 
@@ -64,9 +71,11 @@ public class BudgetDashboardController extends DashboardController {
         buildDashboardOverview();
         connectToLiveTransactions();
         setupBudgetEditing();
+        buildBudgetEnhancements();
         setupReports();
         refreshDashboardOverview();
         refreshAnalyticsOverview();
+        refreshBudgetStats();
         refreshReport();
         show(dashboardSection);
     }
@@ -216,6 +225,149 @@ public class BudgetDashboardController extends DashboardController {
         refreshBudgetStats();
     }
 
+    /** Adds the useful planning information below the main budget card. */
+    private void buildBudgetEnhancements() {
+        if (!(budgetSection instanceof VBox root)) return;
+        if (budgetHealthLabel != null) return;
+
+        HBox overview = new HBox(14);
+        overview.setFillHeight(true);
+
+        VBox healthCard = budgetInsightCard("BUDGET HEALTH", "On track", "Your spending position this month.");
+        budgetHealthLabel = findValueLabel(healthCard);
+        budgetHealthDetailLabel = findCaptionLabel(healthCard);
+
+        VBox dailyCard = budgetInsightCard("SAFE DAILY SPEND", "₹0.00", "Suggested maximum for the remaining days.");
+        budgetDailyLimitLabel = findValueLabel(dailyCard);
+
+        VBox daysCard = budgetInsightCard("DAYS REMAINING", "0 days", "Days left in the current month.");
+        budgetDaysLabel = findValueLabel(daysCard);
+
+        overview.getChildren().addAll(healthCard, dailyCard, daysCard);
+        HBox.setHgrow(healthCard, Priority.ALWAYS);
+        HBox.setHgrow(dailyCard, Priority.ALWAYS);
+        HBox.setHgrow(daysCard, Priority.ALWAYS);
+
+        VBox categoryCard = new VBox(10);
+        categoryCard.setStyle("-fx-background-color: white; -fx-background-radius: 17px; -fx-border-color: #e2e8f0; -fx-border-radius: 17px; -fx-padding: 20px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.075), 16, 0.12, 0, 5);");
+        Label title = new Label("Top Spending Categories");
+        title.setStyle("-fx-font-size: 17px; -fx-font-weight: 800; -fx-text-fill: #0f172a;");
+        Label subtitle = new Label("See where this month's budget is going.");
+        subtitle.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
+        budgetCategoryBox = new VBox(10);
+        categoryCard.getChildren().addAll(title, subtitle, budgetCategoryBox);
+
+        VBox tipCard = new VBox(10);
+        tipCard.setStyle("-fx-background-color: linear-gradient(to bottom right, #eff6ff, #eef2ff); -fx-background-radius: 17px; -fx-border-color: #c7d2fe; -fx-border-radius: 17px; -fx-padding: 20px;");
+        Label tipTitle = new Label("Budget Tip");
+        tipTitle.setStyle("-fx-font-size: 17px; -fx-font-weight: 800; -fx-text-fill: #1e1b4b;");
+        Label tipText = new Label("Set a realistic monthly limit, review your largest categories regularly, and leave some room for unexpected expenses.");
+        tipText.setWrapText(true);
+        tipText.setStyle("-fx-font-size: 12px; -fx-text-fill: #475569; -fx-line-spacing: 3px;");
+        tipCard.getChildren().addAll(tipTitle, tipText);
+
+        HBox lower = new HBox(14);
+        lower.getChildren().addAll(categoryCard, tipCard);
+        HBox.setHgrow(categoryCard, Priority.ALWAYS);
+        HBox.setHgrow(tipCard, Priority.ALWAYS);
+
+        root.getChildren().addAll(overview, lower);
+        refreshBudgetEnhancements();
+    }
+
+    private VBox budgetInsightCard(String title, String value, String caption) {
+        VBox card = new VBox(6);
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 17px; -fx-border-color: #e2e8f0; -fx-border-radius: 17px; -fx-padding: 19px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.065), 14, 0.10, 0, 4);");
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 800; -fx-text-fill: #64748b; -fx-letter-spacing: 0.7px;");
+        Label valueLabel = new Label(value);
+        valueLabel.setStyle("-fx-font-size: 23px; -fx-font-weight: 800; -fx-text-fill: #0f172a;");
+        Label captionLabel = new Label(caption);
+        captionLabel.setWrapText(true);
+        captionLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
+        card.getChildren().addAll(titleLabel, valueLabel, captionLabel);
+        return card;
+    }
+
+    private Label findValueLabel(VBox card) {
+        return (Label) card.getChildren().get(1);
+    }
+
+    private Label findCaptionLabel(VBox card) {
+        return (Label) card.getChildren().get(2);
+    }
+
+    private void refreshBudgetEnhancements() {
+        if (budgetHealthLabel == null || budgetCategoryBox == null) return;
+
+        TextField budgetInput = getDashboardField("budgetField", TextField.class);
+        double budget = parseAmount(budgetInput == null ? null : budgetInput.getText());
+        YearMonth month = YearMonth.now();
+        double spent = liveTransactions == null ? 0 : liveTransactions.stream()
+                .filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE && isMonth(t, month))
+                .mapToDouble(Transaction::getAmount)
+                .sum();
+        double remaining = budget - spent;
+        double used = budget > 0 ? spent / budget * 100.0 : 0;
+        long daysRemaining = ChronoUnit.DAYS.between(java.time.LocalDate.now(), month.atEndOfMonth());
+        double dailySafeSpend = remaining > 0 && daysRemaining > 0 ? remaining / daysRemaining : 0;
+
+        if (budget <= 0) {
+            budgetHealthLabel.setText("Set a budget");
+            budgetHealthDetailLabel.setText("Add a monthly limit to start tracking your budget health.");
+        } else if (used >= 100) {
+            budgetHealthLabel.setText("Over budget");
+            budgetHealthDetailLabel.setText(String.format(Locale.US, "You have exceeded the limit by %s.", formatMoney(Math.abs(remaining))));
+        } else if (used >= 80) {
+            budgetHealthLabel.setText("Near the limit");
+            budgetHealthDetailLabel.setText(String.format(Locale.US, "%.1f%% of the budget is already used.", used));
+        } else {
+            budgetHealthLabel.setText("On track");
+            budgetHealthDetailLabel.setText(String.format(Locale.US, "%.1f%% used — %s remains.", used, formatMoney(remaining)));
+        }
+
+        budgetDailyLimitLabel.setText(formatMoney(dailySafeSpend));
+        budgetDaysLabel.setText(daysRemaining + (daysRemaining == 1 ? " day" : " days"));
+
+        budgetCategoryBox.getChildren().clear();
+        Map<String, Double> categories = new HashMap<>();
+        if (liveTransactions != null) {
+            liveTransactions.stream()
+                    .filter(t -> t != null && t.getType() == Transaction.Type.EXPENSE && isMonth(t, month))
+                    .forEach(t -> categories.merge(firstNonBlank(t.getCategory(), "Other"), t.getAmount(), Double::sum));
+        }
+
+        if (categories.isEmpty()) {
+            Label empty = new Label("No expenses recorded for this month yet.");
+            empty.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-padding: 6px 0;");
+            budgetCategoryBox.getChildren().add(empty);
+            return;
+        }
+
+        categories.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(5)
+                .forEach(entry -> {
+                    double percent = spent > 0 ? entry.getValue() / spent : 0;
+                    HBox row = new HBox(10);
+                    row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                    Label name = new Label(entry.getKey());
+                    name.setStyle("-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #334155;");
+                    Label amount = new Label(formatMoney(entry.getValue()));
+                    amount.setStyle("-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #0f172a;");
+                    Label spacer = new Label();
+                    HBox.setHgrow(spacer, Priority.ALWAYS);
+                    row.getChildren().addAll(name, spacer, amount);
+
+                    ProgressBar categoryProgress = new ProgressBar(Math.min(percent, 1));
+                    categoryProgress.setMaxWidth(Double.MAX_VALUE);
+                    categoryProgress.setPrefHeight(7);
+                    categoryProgress.setStyle("-fx-accent: #4f46e5; -fx-background-radius: 8px; -fx-padding: 0;");
+                    VBox item = new VBox(4, row, categoryProgress);
+                    budgetCategoryBox.getChildren().add(item);
+                });
+    }
+
     private void refreshBudgetStats() {
         TextField budgetInput = getDashboardField("budgetField", TextField.class);
         if (budgetInput == null) return;
@@ -236,6 +388,7 @@ public class BudgetDashboardController extends DashboardController {
         if (budgetSavedLabel != null) budgetSavedLabel.setText(formatMoney(saved));
         if (budgetPercentageLabel != null) budgetPercentageLabel.setText(String.format(Locale.US, "%.1f%% used", Math.max(0, usedPercentage)));
         if (progressBar != null) progressBar.setProgress(budget <= 0 ? 0 : Math.min(spent / budget, 1.0));
+        refreshBudgetEnhancements();
     }
 
     @SuppressWarnings("unchecked")
