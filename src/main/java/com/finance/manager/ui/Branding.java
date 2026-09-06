@@ -89,12 +89,24 @@ public final class Branding {
                     "-fx-border-width: 0 0 1px 0;"
             );
 
-            boolean hasLogo = header.getChildren().stream().anyMatch(child -> child instanceof ImageView);
-            if (!hasLogo) {
+            // Keep exactly one sidebar logo. Branding can be applied more than once
+            // during scene/window initialization, so remove any duplicate ImageViews.
+            ImageView logo = null;
+            for (Node child : header.getChildren().toArray(new Node[0])) {
+                if (child instanceof ImageView imageView) {
+                    if (logo == null) {
+                        logo = imageView;
+                    } else {
+                        header.getChildren().remove(imageView);
+                    }
+                }
+            }
+
+            if (logo == null) {
                 java.net.URL logoUrl = Branding.class.getResource("/images/khatabook-logo-small.png");
                 if (logoUrl != null) {
                     Image image = new Image(logoUrl.toExternalForm(), 46, 46, true, true);
-                    ImageView logo = new ImageView(image);
+                    logo = new ImageView(image);
                     logo.setFitWidth(46);
                     logo.setFitHeight(46);
                     logo.setPreserveRatio(true);
