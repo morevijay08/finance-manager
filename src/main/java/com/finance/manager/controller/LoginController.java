@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.concurrent.CompletionException;
 
 public class LoginController {
-
     public TextField emailField;
     public PasswordField passwordField;
     public Label errorLabel;
