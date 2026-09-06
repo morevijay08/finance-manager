@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.finance.manager.controller.FinancialReportsController" spacing="14" styleClass="dashboard-page">
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <VBox HBox.hgrow="ALWAYS" spacing="3">
+            <Label text="Monthly Financial Statement" styleClass="page-title"/>
+            <Label text="A detailed view of one month's money in, money out, budget and transactions." styleClass="subtitle"/>
+        </VBox>
+        <ComboBox fx:id="reportMonthCombo" prefWidth="180"/>
+    </HBox>
+    <HBox spacing="12">
+        <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Income" styleClass="card-title"/><Label fx:id="incomeLabel" text="₹0.00" styleClass="income-value"/><Label text="Money received" styleClass="card-caption"/></VBox>
+        <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Expense" styleClass="card-title"/><Label fx:id="expenseLabel" text="₹0.00" styleClass="expense-value"/><Label text="Money spent" styleClass="card-caption"/></VBox>
+        <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Net Savings" styleClass="card-title"/><Label fx:id="savingsLabel" text="₹0.00" styleClass="balance-value"/><Label text="Income minus expense" styleClass="card-caption"/></VBox>
+        <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Budget" styleClass="card-title"/><Label fx:id="budgetLabel" text="₹0.00" styleClass="balance-value"/><Label text="Monthly budget" styleClass="card-caption"/></VBox>
+        <VBox HBox.hgrow="ALWAYS" styleClass="summary-card"><Label text="Remaining" styleClass="card-title"/><Label fx:id="remainingLabel" text="₹0.00" styleClass="balance-value"/><Label text="Budget after expenses" styleClass="card-caption"/></VBox>
+    </HBox>
+    <VBox spacing="8" styleClass="summary-card">
+        <Label text="Month at a Glance" styleClass="section-title"/>
+        <HBox spacing="24">
+            <VBox HBox.hgrow="ALWAYS"><Label text="Transactions" styleClass="card-title"/><Label fx:id="transactionCountLabel" text="0" styleClass="dashboard-extra-value"/></VBox>
+            <VBox HBox.hgrow="ALWAYS"><Label text="Average Expense" styleClass="card-title"/><Label fx:id="averageExpenseLabel" text="₹0.00" styleClass="expense-value"/></VBox>
+            <VBox HBox.hgrow="ALWAYS"><Label text="Largest Expense" styleClass="card-title"/><Label fx:id="largestExpenseLabel" text="—" styleClass="expense-value"/></VBox>
+            <VBox HBox.hgrow="ALWAYS"><Label text="Top Category" styleClass="card-title"/><Label fx:id="topCategoryLabel" text="—" styleClass="dashboard-extra-value"/></VBox>
+        </HBox>
+    </VBox>
+    <VBox spacing="8" styleClass="summary-card" VBox.vgrow="ALWAYS">
+        <Label text="Expense Breakdown" styleClass="section-title"/>
+        <Label text="How this month's expenses are distributed across categories." styleClass="subtitle"/>
+        <BarChart fx:id="categoryChart" animated="false" legendVisible="false" VBox.vgrow="ALWAYS"><xAxis><CategoryAxis label="Category"/></xAxis><yAxis><NumberAxis label="Amount (₹)"/></yAxis></BarChart>
+    </VBox>
+    <VBox spacing="8" styleClass="summary-card" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT"><VBox HBox.hgrow="ALWAYS"><Label text="Monthly Transactions" styleClass="section-title"/><Label text="Every income and expense recorded in the selected month." styleClass="subtitle"/></VBox><Label fx:id="statusLabel" text="Loading..." styleClass="message-label"/></HBox>
+        <TableView fx:id="reportTable" VBox.vgrow="ALWAYS" prefHeight="300"><columns><TableColumn fx:id="dateColumn" text="Date" prefWidth="110"/><TableColumn fx:id="typeColumn" text="Type" prefWidth="110"/><TableColumn fx:id="categoryColumn" text="Category" prefWidth="150"/><TableColumn fx:id="descriptionColumn" text="Description" prefWidth="300"/><TableColumn fx:id="amountColumn" text="Amount" prefWidth="150"/></columns></TableView>
+    </VBox>
+</VBox>
