@@ -16,7 +16,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -139,19 +138,16 @@ public class LoginController {
         if (stylesheetUrl != null) scene.getStylesheets().add(stylesheetUrl.toExternalForm());
         if (event == null || event.getSource() == null) throw new IOException("Login window is unavailable.");
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(scene); stage.setTitle(Branding.APP_TITLE); stage.show();
-        forceMaximized(stage);
-        Platform.runLater(() -> forceMaximized(stage));
-        Platform.runLater(() -> Platform.runLater(() -> forceMaximized(stage)));
-    }
 
-    private void forceMaximized(Stage stage) {
-        if (stage == null) return;
-        stage.setIconified(false); stage.setMaximized(false);
-        javafx.geometry.Rectangle2D bounds = Screen.getScreensForRectangle(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight())
-                .stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds();
-        stage.setX(bounds.getMinX()); stage.setY(bounds.getMinY()); stage.setWidth(bounds.getWidth()); stage.setHeight(bounds.getHeight());
-        stage.show(); stage.setMaximized(true); stage.toFront();
+        // Configure the final dashboard window state BEFORE showing the new scene.
+        // This prevents the small login-sized window from being painted for a frame
+        // before JavaFX maximizes it.
+        stage.setScene(scene);
+        stage.setTitle(Branding.APP_TITLE);
+        stage.setIconified(false);
+        stage.setMaximized(true);
+        stage.show();
+        stage.toFront();
     }
 
     private record LoginResult(AuthSession session, String status) {}
