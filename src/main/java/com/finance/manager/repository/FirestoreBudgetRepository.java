@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.YearMonth;
 import java.util.concurrent.CompletableFuture;
 
+/** Firestore persistence for the authenticated user's monthly budgets. */
 public class FirestoreBudgetRepository {
 
     private static final String PROJECT_ID = "khatabook-finance-manager";
@@ -27,34 +28,28 @@ public class FirestoreBudgetRepository {
     public CompletableFuture<Double> getMonthlyBudget(AuthSession session, YearMonth month) {
         return CompletableFuture.supplyAsync(() -> {
             validateSession(session);
-            HttpRequest request = authorizedRequest(documentUrl(session, month), session.getIdToken())
-                    .GET().build();
             try {
-                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                HttpRequest request = authorizedRequest(
+                        documentUrl(session, month), session.getIdToken()).GET().build();
+                HttpResponse<String> response = httpClient.send(
+                        request, HttpResponse.BodyHandlers.ofString());
+
                 if (response.statusCode() == 404) return 0.0;
                 ensureSuccess(response);
-
-                JsonObject fields = JsonParser.parseString(response.body()).getAsJsonObject()
-                        .getAsJsonObject("fields");
-                if (fields == null || !fields.has("amount")) return 0.0;
-
-                JsonObject amount = fields.getAsJsonObject("amount");
-                if (amount.has("doubleValue")) return amount.get("doubleValue").getAsDouble();
-                if (amount.has("integerValue")) return amount.get("integerValue").getAsDouble();
-                return 0.0;
+                return readAmount(response.body());
             } catch (IOException e) {
-                throw new RuntimeException("Unable to load monthly budget.", e);
+                throw new RuntimeException("Unable to load monthly budget from Firestore.", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException("Budget request was interrupted.", e);
+                throw new RuntimeException("Budget load was interrupted.", e);
             }
         });
     }
 
     /**
-     * Saves the monthly budget with an explicit upsert.
-     * If the document exists, PATCH updates it. If it does not exist,
-     * createDocument creates it under users/{uid}/budgets/{yyyy-MM}.
+     * Upserts users/{uid}/budgets/{yyyy-MM} and then verifies the saved value.
+     * The verification makes sure the UI never reports success when Firestore
+     * rejected or failed to persist the write.
      */
     public CompletableFuture<Void> saveMonthlyBudget(AuthSession session, YearMonth month, double amount) {
         return CompletableFuture.runAsync(() -> {
@@ -65,40 +60,54 @@ public class FirestoreBudgetRepository {
             JsonObject document = budgetDocument(month, amount);
 
             try {
-                HttpRequest getRequest = authorizedRequest(
-                        documentUrl(session, month), session.getIdToken()).GET().build();
+                String documentUrl = documentUrl(session, month);
+                HttpRequest getRequest = authorizedRequest(documentUrl, session.getIdToken())
+                        .GET().build();
                 HttpResponse<String> getResponse = httpClient.send(
                         getRequest, HttpResponse.BodyHandlers.ofString());
 
                 if (getResponse.statusCode() == 200) {
-                    HttpRequest updateRequest = authorizedRequest(
-                            documentUrl(session, month), session.getIdToken())
+                    HttpRequest patchRequest = authorizedRequest(documentUrl, session.getIdToken())
                             .method("PATCH", HttpRequest.BodyPublishers.ofString(document.toString()))
                             .build();
-                    sendAndReturn(updateRequest);
-                    return;
-                }
-
-                if (getResponse.statusCode() != 404) {
+                    sendAndEnsureSuccess(patchRequest);
+                } else if (getResponse.statusCode() == 404) {
+                    HttpRequest createRequest = authorizedRequest(
+                            budgetsCollectionUrl(session)
+                                    + "?documentId=" + encode(monthId)
+                                    + "&key=" + FirebaseConfig.getWebApiKey(),
+                            session.getIdToken())
+                            .POST(HttpRequest.BodyPublishers.ofString(document.toString()))
+                            .build();
+                    sendAndEnsureSuccess(createRequest);
+                } else {
                     ensureSuccess(getResponse);
                 }
 
-                HttpRequest createRequest = authorizedRequest(
-                        budgetsCollectionUrl(session)
-                                + "?documentId=" + encode(monthId)
-                                + "&key=" + FirebaseConfig.getWebApiKey(),
-                        session.getIdToken())
-                        .POST(HttpRequest.BodyPublishers.ofString(document.toString()))
-                        .build();
-                sendAndReturn(createRequest);
-
+                double persistedAmount = getMonthlyBudget(session, month).join();
+                if (Math.abs(persistedAmount - amount) > 0.000001) {
+                    throw new RuntimeException(
+                            "Firestore verification failed. Expected " + amount
+                                    + " but found " + persistedAmount + ".");
+                }
             } catch (IOException e) {
-                throw new RuntimeException("Unable to connect to Firestore.", e);
+                throw new RuntimeException("Unable to connect to Firestore while saving budget.", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException("Budget request was interrupted.", e);
+                throw new RuntimeException("Budget save was interrupted.", e);
             }
         });
+    }
+
+    private double readAmount(String body) {
+        JsonObject root = JsonParser.parseString(body).getAsJsonObject();
+        JsonObject fields = root.getAsJsonObject("fields");
+        if (fields == null || !fields.has("amount")) return 0.0;
+
+        JsonObject amount = fields.getAsJsonObject("amount");
+        if (amount.has("doubleValue")) return amount.get("doubleValue").getAsDouble();
+        if (amount.has("integerValue")) return amount.get("integerValue").getAsDouble();
+        return 0.0;
     }
 
     private JsonObject budgetDocument(YearMonth month, double amount) {
@@ -137,17 +146,10 @@ public class FirestoreBudgetRepository {
                 .header("Content-Type", "application/json");
     }
 
-    private HttpResponse<String> sendAndReturn(HttpRequest request) {
-        try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            ensureSuccess(response);
-            return response;
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to connect to Firestore.", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Budget request was interrupted.", e);
-        }
+    private void sendAndEnsureSuccess(HttpRequest request) throws IOException, InterruptedException {
+        HttpResponse<String> response = httpClient.send(
+                request, HttpResponse.BodyHandlers.ofString());
+        ensureSuccess(response);
     }
 
     private void validateSession(AuthSession session) {
@@ -159,7 +161,8 @@ public class FirestoreBudgetRepository {
 
     private void ensureSuccess(HttpResponse<String> response) {
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new RuntimeException("Firestore error " + response.statusCode() + ": " + response.body());
+            throw new RuntimeException(
+                    "Firestore error " + response.statusCode() + ": " + response.body());
         }
     }
 }
