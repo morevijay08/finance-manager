@@ -20,10 +20,10 @@
         <Insets top="28" right="40" bottom="40" left="40" />
     </padding>
 
-    <!-- Khatabook branding: logo directly above the Welcome Back heading -->
+    <!-- Khatabook branding: reliable PNG logo directly above Welcome Back -->
     <VBox alignment="CENTER" spacing="2">
         <ImageView fitWidth="112" fitHeight="112" preserveRatio="true" pickOnBounds="true">
-            <image><Image url="@../images/khatabook-logo.svg" /></image>
+            <image><Image url="@../images/khatabook-logo-small.png" /></image>
         </ImageView>
         <Label text="KHATABOOK" style="-fx-font-size: 19px; -fx-font-weight: 900; -fx-text-fill: #17324d;" />
         <Label text="FINANCE MANAGER" style="-fx-font-size: 9px; -fx-font-weight: bold; -fx-text-fill: #2563a6; -fx-letter-spacing: 0.8px;" />
