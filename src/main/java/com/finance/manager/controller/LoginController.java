@@ -16,6 +16,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -121,8 +122,6 @@ public class LoginController {
         Parent root = loader.load();
         Branding.apply(root);
 
-        // The dashboard initially receives the email from the authentication session.
-        // Replace that secondary welcome line with the user's Firestore profile name.
         if ("/fxml/Main.fxml".equals(resource)) {
             AuthSession session = authService.getCurrentSession();
             Label dashboardNameLabel = (Label) root.lookup("#emailLabel");
@@ -134,19 +133,29 @@ public class LoginController {
         }
 
         java.net.URL stylesheetUrl = getClass().getResource("/css/application.css");
-        Scene scene = new Scene(root, 900, 600);
-        if (stylesheetUrl != null) scene.getStylesheets().add(stylesheetUrl.toExternalForm());
         if (event == null || event.getSource() == null) throw new IOException("Login window is unavailable.");
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
-        // Configure the final dashboard window state BEFORE showing the new scene.
-        // This prevents the small login-sized window from being painted for a frame
-        // before JavaFX maximizes it.
+        // Make the new dashboard occupy the complete Windows work area BEFORE
+        // the scene is first painted. This avoids the small login window flashing
+        // on screen during the login-to-dashboard transition.
+        javafx.geometry.Rectangle2D bounds = Screen.getScreensForRectangle(
+                stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight())
+                .stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds();
+
+        Scene scene = new Scene(root, bounds.getWidth(), bounds.getHeight());
+        if (stylesheetUrl != null) scene.getStylesheets().add(stylesheetUrl.toExternalForm());
+
+        stage.setIconified(false);
+        stage.setMaximized(false);
         stage.setScene(scene);
         stage.setTitle(Branding.APP_TITLE);
-        stage.setIconified(false);
-        stage.setMaximized(true);
+        stage.setX(bounds.getMinX());
+        stage.setY(bounds.getMinY());
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.show();
+        stage.setMaximized(true);
         stage.toFront();
     }
 
