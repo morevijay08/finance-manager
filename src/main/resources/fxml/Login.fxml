@@ -14,17 +14,21 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.finance.manager.controller.LoginController"
       alignment="CENTER"
-      spacing="12"
+      spacing="10"
       styleClass="auth-screen">
     <padding>
-        <Insets top="32" right="40" bottom="40" left="40" />
+        <Insets top="28" right="40" bottom="40" left="40" />
     </padding>
 
-    <ImageView fitWidth="120" fitHeight="120" preserveRatio="true" pickOnBounds="true">
-        <image><Image url="@../images/khatabook-logo.svg" /></image>
-    </ImageView>
+    <!-- Khatabook branding: logo directly above the Welcome Back heading -->
+    <VBox alignment="CENTER" spacing="2">
+        <ImageView fitWidth="112" fitHeight="112" preserveRatio="true" pickOnBounds="true">
+            <image><Image url="@../images/khatabook-logo.svg" /></image>
+        </ImageView>
+        <Label text="KHATABOOK" style="-fx-font-size: 19px; -fx-font-weight: 900; -fx-text-fill: #17324d;" />
+        <Label text="FINANCE MANAGER" style="-fx-font-size: 9px; -fx-font-weight: bold; -fx-text-fill: #2563a6; -fx-letter-spacing: 0.8px;" />
+    </VBox>
 
-    <Label text="Khatabook Finance Manager" styleClass="app-title" />
     <Label text="Welcome Back" styleClass="screen-title" />
     <Label text="Sign in to manage your finances" styleClass="subtitle" />
 
